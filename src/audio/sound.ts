@@ -263,6 +263,33 @@ export function playGolden(): void {
   });
 }
 
+/**
+ * "Something just appeared" — played when a findable spawns, not when it is
+ * caught. Deliberately quiet and short: the common lane fires every 10-25s, so
+ * at catch-volume this would become nagging within a minute. The rare lane gets
+ * a brighter, longer arpeggio so a golden dumpling is audibly different from a
+ * coin without the player having to look.
+ */
+export function playAppear(rare: boolean): void {
+  if (!ctx || !sfxBus || muted) return;
+  const notes = rare ? [659.25, 987.77, 1318.51] : [880, 1174.66];
+  const peak = rare ? 0.16 : 0.075;
+  notes.forEach((f, i) => {
+    const t = ctx!.currentTime + i * (rare ? 0.075 : 0.055);
+    const osc = ctx!.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    const g = ctx!.createGain();
+    // a soft attack, so it reads as a chime rather than a click
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (rare ? 0.3 : 0.16));
+    osc.connect(g).connect(sfxBus!);
+    osc.start(t);
+    osc.stop(t + 0.34);
+  });
+}
+
 /** Tiny fanfare for unlocking the Squishy Boss. */
 export function playFanfare(): void {
   if (!ctx || !sfxBus || muted) return;

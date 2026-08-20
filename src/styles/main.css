@@ -792,3 +792,20 @@ button {
   display: block;
   overflow: visible;
 }
+
+/* Bigger findables: at the original sizes the drawn icon sat small inside its
+   button and read as an unidentifiable speck, especially the common lane. The
+   button box also grows, so the tap target grows with it. */
+.findable-icon {
+  font-size: 3.4rem;
+}
+
+.findable.common {
+  width: 16%;
+  max-width: 72px;
+  min-width: 54px;
+}
+
+.findable.common .findable-icon {
+  font-size: 2.6rem;
+}

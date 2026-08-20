@@ -14,6 +14,7 @@ import { createInitialState, type GameState } from './game/state';
 import { STR } from './i18n/strings.he';
 import {
   playFanfare,
+  playAppear,
   playGolden,
   playPurchase,
   playSquish,
@@ -105,6 +106,9 @@ const findables = initFindables(
     }
     saveToStorage(state, at);
   },
+  // a spawn has no user gesture behind it, so this is silent until the first
+  // tap unlocks the audio context — which is fine, that tap always comes first
+  (kind) => playAppear(kind !== 'common'),
 );
 
 const shop = initShop(document.getElementById('shop')!, state, (kind, id) => {

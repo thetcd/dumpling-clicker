@@ -43,6 +43,7 @@ export function initFindables(
   host: HTMLElement,
   getAvatar: () => AvatarDesign,
   onCatch: (kind: FindableKind, x: number, y: number, icon: string) => void,
+  onSpawn: (kind: FindableKind) => void = () => {},
   rand: () => number = Math.random,
 ): FindablesApi {
   let based = false;
@@ -128,6 +129,7 @@ export function initFindables(
     lane.el.classList.remove('findable-in');
     void lane.el.offsetWidth;
     lane.el.classList.add('findable-in');
+    onSpawn(kind);
   };
 
   const hide = (lane: Lane) => {
