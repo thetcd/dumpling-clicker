@@ -215,11 +215,34 @@ an airdrop.** Findables are not `click()` or `accrue()`, so they stay outside
 `dpsOf()` and offline earnings. Findables also never pay offline: they exist on
 screen and have to be tapped.
 
-**One slot.** At most one findable, golden dumpling included, is on screen at a
-time. A single schedule fires every 3 to 8 minutes and picks a type by weight.
-This avoids two things overlapping over the squishy's face, reuses the existing
-face-protection placement, and keeps the total interruption rate deliberate
-rather than emergent from two independent timers.
+**Two lanes, one slot each.** Kids need something happening every few seconds,
+not every few minutes, so findables split into two independent lanes. Each lane
+holds at most one thing at a time.
+
+| Lane | Interval | Contents | Payout | Placement |
+|---|---|---|---|---|
+| common | 10-25s | coin, dollar, gem, star, red envelope, fortune cookie | 5s of production | edge margins only |
+| rare | 3-8 min | golden dumpling, airdrop package | frenzy / 90s of production | face-protected centre |
+
+A single shared slot does not work at this frequency: something spawning every
+10 to 25 seconds and living 7 would occupy the slot almost permanently and
+starve the golden dumpling, turning the rare reward into a thing that never
+happens. Separate lanes keep the rare rewards rare and the common ones constant.
+
+The common lane's skins are cosmetic variety over one mechanic, not six
+mechanics. Rotating the art is what keeps it feeling fresh; the payout maths is
+identical.
+
+**The common lane never covers the character or the tap target.** It spawns in
+the margins beside and above the squishy, sized small. At this frequency an
+element landing over the face would make the game annoying rather than
+exciting, and it must never intercept a squish.
+
+**Income impact is deliberate and unmeasured.** 5 seconds of production every
+17.5 on average is roughly +29% if every one is caught; with the rare lane on
+top the total lands near +65%, which would pull a 25.5-hour first run toward
+15. That is an estimate. Every interval, duration and payout is a named knob in
+`balance.ts` so retuning after playtesting never touches logic.
 
 **The scheduler gets extracted.** `ui/golden.ts` currently owns spawn timing,
 lifetime and rescheduling as private mutable state with no `tests/` coverage,
