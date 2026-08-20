@@ -7,12 +7,13 @@
 // only rebuilds when the set of owned producers actually changes.
 import { BURST_POOL_SIZE, BURST_MS, GOLD_WASH_MS } from '../game/config/scene';
 import { burstSpec, sceneSprites, type SceneSprite } from '../game/scene';
+import { renderIcon } from './icons';
 
 export interface SceneApi {
   /** Rebuild the crowd. Cheap to call often — it no-ops unless it changed. */
   update(producers: Record<string, number>): void;
-  /** Throw `emoji` across the scene from a catch at viewport (x, y). */
-  burst(emoji: string, x: number, y: number): void;
+  /** Throw the caught art across the scene from a catch at viewport (x, y). */
+  burst(icon: string, x: number, y: number): void;
   /** A golden catch also washes the whole scene, tying it to the frenzy. */
   goldWash(): void;
 }
@@ -43,7 +44,7 @@ export function initScene(host: HTMLElement): SceneApi {
     for (const s of sprites) {
       const el = document.createElement('span');
       el.className = 'scene-sprite';
-      el.textContent = s.icon;
+      renderIcon(el, s.tierId, s.icon);
       el.style.left = `${s.xPct}%`;
       el.style.top = `${s.yPct}%`;
       el.style.opacity = String(s.opacity);
@@ -67,12 +68,12 @@ export function initScene(host: HTMLElement): SceneApi {
       paint(sprites);
     },
 
-    burst(emoji, x, y) {
+    burst(icon, x, y) {
       const stage = host.getBoundingClientRect();
-      for (const p of burstSpec(emoji)) {
+      for (const p of burstSpec(icon)) {
         const el = pool[nextBit];
         nextBit = (nextBit + 1) % BURST_POOL_SIZE;
-        el.textContent = p.emoji;
+        renderIcon(el, p.icon, p.icon);
         el.style.left = `${x - stage.left}px`;
         el.style.top = `${y - stage.top}px`;
         el.style.setProperty('--dx', `${p.dx}px`);

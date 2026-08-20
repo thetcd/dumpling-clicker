@@ -7,6 +7,7 @@ import { UPGRADES } from '../game/config/upgrades';
 import type { GameState } from '../game/state';
 import { STR } from '../i18n/strings.he';
 import { formatNumber, formatRate } from './format';
+import { renderIcon } from './icons';
 
 export interface ShopApi {
   update(): void;
@@ -152,7 +153,7 @@ export function initShop(
       if (r.row.hidden) continue;
       const cost = costOf(r.def, owned);
       if (known) {
-        r.icon.textContent = r.def.icon;
+        renderIcon(r.icon, r.def.id, r.def.icon);
         r.name.textContent = r.def.nameHe;
         r.desc.textContent = r.def.descHe;
         // What this purchase gives you — the row showed a price and an owned

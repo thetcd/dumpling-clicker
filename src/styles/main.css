@@ -783,3 +783,12 @@ button {
     animation-duration: 0.01ms;
   }
 }
+
+/* Drawn icons scale off their parent's font-size, so every existing size rule
+   (shop rows, crowd sprites, findables, burst bits) keeps working unchanged. */
+.game-icon {
+  width: 1em;
+  height: 1em;
+  display: block;
+  overflow: visible;
+}

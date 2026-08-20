@@ -40,7 +40,8 @@ export interface LaneDef {
 
 // Cosmetic rotation over ONE mechanic. Six skins, identical payout maths —
 // the variety is what keeps it feeling fresh, not six sets of rules.
-export const COMMON_SKINS = ['🪙', '💵', '💎', '⭐', '🧧', '🥠'];
+// These are ART IDS, not emoji: ui/icons.ts draws each one.
+export const COMMON_SKINS = ['coin', 'bill', 'gem', 'star', 'envelope', 'candy'];
 
 export const LANES: LaneDef[] = [
   {

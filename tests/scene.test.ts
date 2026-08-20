@@ -121,20 +121,20 @@ describe('sceneSprites', () => {
 });
 
 describe('burstSpec', () => {
-  test('throws the emoji you actually caught, so theming is free', () => {
-    const parts = burstSpec('💎', 6, () => 0.5);
+  test('throws the art you actually caught, so theming is free', () => {
+    const parts = burstSpec('gem', 6, () => 0.5);
     expect(parts).toHaveLength(6);
-    expect(parts.every((p) => p.emoji === '💎')).toBe(true);
+    expect(parts.every((p) => p.icon === 'gem')).toBe(true);
   });
 
   test('particles fall, so the eye follows them down the scene', () => {
-    for (const p of burstSpec('🪙', 20, Math.random)) {
+    for (const p of burstSpec('coin', 20, Math.random)) {
       expect(p.dy).toBeGreaterThan(0);
     }
   });
 
   test('every value is finite', () => {
-    for (const p of burstSpec('⭐', 20, Math.random)) {
+    for (const p of burstSpec('star', 20, Math.random)) {
       expect(Number.isFinite(p.dx)).toBe(true);
       expect(Number.isFinite(p.dy)).toBe(true);
       expect(Number.isFinite(p.rot)).toBe(true);
@@ -144,7 +144,7 @@ describe('burstSpec', () => {
   });
 
   test('a zero or negative count produces nothing rather than throwing', () => {
-    expect(burstSpec('🪙', 0)).toEqual([]);
-    expect(burstSpec('🪙', -3)).toEqual([]);
+    expect(burstSpec('coin', 0)).toEqual([]);
+    expect(burstSpec('coin', -3)).toEqual([]);
   });
 });

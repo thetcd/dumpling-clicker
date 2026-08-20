@@ -27,7 +27,8 @@ export interface SceneSprite {
 }
 
 export interface BurstParticle {
-  emoji: string;
+  /** art id, drawn by ui/icons.ts */
+  icon: string;
   dx: number;
   dy: number;
   rot: number;
@@ -98,17 +99,17 @@ export function sceneSprites(producers: Record<string, number>): SceneSprite[] {
 
 /**
  * What a catch throws across the scene. Themed for free: the burst reuses the
- * emoji the player just tapped, so a coin rains coins and a gem rains gems with
+ * art the player just tapped, so a coin rains coins and a gem rains gems with
  * no per-skin configuration.
  */
 export function burstSpec(
-  emoji: string,
+  icon: string,
   count: number = BURST_PARTICLES,
   rand: () => number = Math.random,
 ): BurstParticle[] {
   const n = Math.max(0, Math.floor(count));
   return Array.from({ length: n }, () => ({
-    emoji,
+    icon,
     dx: (rand() - 0.5) * 200,
     dy: 60 + rand() * 190, // they fall, so the eye follows them down the scene
     rot: (rand() - 0.5) * 140,

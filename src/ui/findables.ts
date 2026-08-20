@@ -13,6 +13,7 @@ import {
 import { STR } from '../i18n/strings.he';
 import type { AvatarDesign } from '../game/state';
 import { avatarSVG } from './avatar';
+import { renderIcon } from './icons';
 
 const GOLD = '#f3c033';
 // The fill override only reaches the body, so accessories kept their own
@@ -34,7 +35,7 @@ interface Lane {
   def: LaneDef;
   el: HTMLButtonElement;
   schedule: Schedule;
-  /** the emoji currently shown, so a catch can theme its background burst */
+  /** the art id currently shown, so a catch can theme its background burst */
   icon: string;
 }
 
@@ -64,13 +65,14 @@ export function initFindables(
       const svg = el.querySelector('svg');
       if (svg) svg.style.filter = GOLD_FILTER;
       el.setAttribute('aria-label', STR.goldenLabel);
-      // the golden one is drawn art, not an emoji, so the burst borrows a
-      // dumpling to throw across the scene
-      lane.icon = '🥟';
+      // the golden one is the player's own squishy, so the burst borrows the
+      // apprentice dumpling to throw across the scene
+      lane.icon = 'apprentice';
     } else {
-      const icon = kind === 'airdrop' ? '🎁' : pickSkin(rand);
+      const icon = kind === 'airdrop' ? 'gift' : pickSkin(rand);
       lane.icon = icon;
-      el.innerHTML = `<span class="findable-icon">${icon}</span>`;
+      el.innerHTML = '<span class="findable-icon"></span>';
+      renderIcon(el.firstElementChild as HTMLElement, icon, '🎁');
       el.setAttribute('aria-label', kind === 'airdrop' ? STR.airdropLabel : STR.commonLabel);
     }
   };
