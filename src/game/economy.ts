@@ -10,6 +10,7 @@ import {
   OFFLINE_RATE,
 } from './config/balance';
 import { isFrenzyActive } from './golden';
+import { rebirthMultiplier } from './rebirth';
 import { PRODUCER_BY_ID, type ProducerDef } from './config/producers';
 import { UPGRADE_BY_ID } from './config/upgrades';
 import type { GameState } from './state';
@@ -32,7 +33,10 @@ export function producerDps(state: GameState): number {
 
 /** Total earning rate: what the player built, plus the free BASE_DPS trickle. */
 export function dpsOf(state: GameState): number {
-  return producerDps(state) + BASE_DPS;
+  // The rebirth scalar is applied HERE and in clickValue, never inside
+  // producerDps — the click share-term reads producerDps raw, so scaling both
+  // would square the bonus.
+  return (producerDps(state) + BASE_DPS) * rebirthMultiplier(state.prestige);
 }
 
 /**
@@ -43,7 +47,7 @@ export function dpsOf(state: GameState): number {
  * does not.
  */
 export function clickValue(state: GameState): number {
-  return clickValueFrom(state.upgrades, state);
+  return clickValueFrom(state.upgrades, state) * rebirthMultiplier(state.prestige);
 }
 
 /**
@@ -56,7 +60,9 @@ export function clickValueWith(state: GameState, upgradeId: string): number {
   if (!UPGRADE_BY_ID[upgradeId] || state.upgrades.includes(upgradeId)) {
     return clickValue(state);
   }
-  return clickValueFrom([...state.upgrades, upgradeId], state);
+  // must carry the same rebirth scalar as clickValue(), or the shop's
+  // "before -> after" would show an upgrade LOWERING your click at prestige > 0
+  return clickValueFrom([...state.upgrades, upgradeId], state) * rebirthMultiplier(state.prestige);
 }
 
 function clickValueFrom(upgradeIds: string[], state: GameState): number {

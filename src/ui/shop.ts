@@ -15,7 +15,12 @@ export interface ShopApi {
 
 export function initShop(
   host: HTMLElement,
-  state: GameState,
+  /**
+   * A GETTER, not the state object. Rebirth REPLACES the state, and a captured
+   * reference would leave the shop reading and mutating the dead run — the same
+   * trap that startLoop documents.
+   */
+  getState: () => GameState,
   onPurchase: (kind: 'producer' | 'upgrade', id: string) => void,
 ): ShopApi {
   host.innerHTML = `
@@ -41,7 +46,7 @@ export function initShop(
         <span class="p-owned"></span>
       </span>`;
     row.addEventListener('click', () => {
-      if (buyProducer(state, def.id)) {
+      if (buyProducer(getState(), def.id)) {
         // audio is owned by the onPurchase handler in main.ts, which knows the
         // tier and whether this is the first of its kind
         onPurchase('producer', def.id);
@@ -66,9 +71,9 @@ export function initShop(
   let upgradeSignature = '';
 
   function rebuildUpgrades(): void {
-    const clicks = state.stats.totalClicks;
-    const earned = state.totalEarned;
-    const owned = (u: { id: string }) => state.upgrades.includes(u.id);
+    const clicks = getState().stats.totalClicks;
+    const earned = getState().totalEarned;
+    const owned = (u: { id: string }) => getState().upgrades.includes(u.id);
     const unlocked = UPGRADES.filter(
       (u) => !owned(u) && isUpgradeRevealed(u, clicks, earned),
     );
@@ -103,7 +108,7 @@ export function initShop(
         <span class="u-gain" data-upgrade-gain="${def.id}"></span>
         <span class="u-cost">🥟 ${formatNumber(def.cost)}</span>`;
       chip.addEventListener('click', () => {
-        if (buyUpgrade(state, def.id)) {
+        if (buyUpgrade(getState(), def.id)) {
           onPurchase('upgrade', def.id);
           upgradeSignature = ''; // force rebuild (chip disappears)
           update();
@@ -126,14 +131,14 @@ export function initShop(
 
   function updateUpgradeDynamic(): void {
     for (const chip of upgradeHost.querySelectorAll<HTMLButtonElement>('.upgrade-chip:not(.teaser)')) {
-      chip.disabled = state.dumplings < Number(chip.dataset.cost);
+      chip.disabled = getState().dumplings < Number(chip.dataset.cost);
     }
     // the gain is live: a share-scaling upgrade is worth more as production grows
     for (const el of upgradeHost.querySelectorAll<HTMLElement>('[data-upgrade-gain]')) {
       const id = el.dataset.upgradeGain!;
       el.textContent = STR.gainClick(
-        formatNumber(clickValue(state)),
-        formatNumber(clickValueWith(state, id)),
+        formatNumber(clickValue(getState())),
+        formatNumber(clickValueWith(getState(), id)),
       );
     }
     const teaser = upgradeHost.querySelector<HTMLElement>('.teaser [data-teaser]');
@@ -142,20 +147,20 @@ export function initShop(
     // `unlockAt`, and Number(undefined) is NaN, which rendered as the nonsense
     // "unlocks after 0 more squishes" while the real blocker was the price.
     if (teaser && teaserChip && teaserChip.dataset.unlockAt !== undefined) {
-      const remaining = Number(teaserChip.dataset.unlockAt) - state.stats.totalClicks;
+      const remaining = Number(teaserChip.dataset.unlockAt) - getState().stats.totalClicks;
       teaser.textContent = STR.upgradeTeaser(formatNumber(Math.max(remaining, 0)));
     }
   }
 
   function update(): void {
     for (const r of rows) {
-      const owned = state.producers[r.def.id] ?? 0;
+      const owned = getState().producers[r.def.id] ?? 0;
       // reveal rule: always show the first tier, anything owned, anything the
       // player has earned enough to have "heard of" (25% of base cost), and
       // tease exactly one locked tier beyond the frontier as ???
-      const prevOwned = r.index === 0 || (state.producers[rows[r.index - 1].def.id] ?? 0) > 0;
+      const prevOwned = r.index === 0 || (getState().producers[rows[r.index - 1].def.id] ?? 0) > 0;
       const known =
-        r.index === 0 || owned > 0 || state.totalEarned >= r.def.baseCost * 0.25;
+        r.index === 0 || owned > 0 || getState().totalEarned >= r.def.baseCost * 0.25;
       const teased = !known && prevOwned;
       r.row.hidden = !known && !teased;
       if (r.row.hidden) continue;
@@ -185,7 +190,7 @@ export function initShop(
       // the cost too, or there is nothing left to be curious about.
       r.cost.textContent = known ? `🥟 ${formatNumber(cost)}` : '🥟 ???';
       r.ownedEl.textContent = owned > 0 ? String(owned) : '';
-      (r.row as HTMLButtonElement).disabled = state.dumplings < cost || !known;
+      (r.row as HTMLButtonElement).disabled = getState().dumplings < cost || !known;
     }
     rebuildUpgrades();
   }

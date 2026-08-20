@@ -9,7 +9,7 @@ import { showModal } from './modal';
 
 export function initSettings(
   button: HTMLElement,
-  state: GameState,
+  getState: () => GameState,
   hooks: {
     onEditSquishy: () => void;
     onReset: () => void;
@@ -21,11 +21,11 @@ export function initSettings(
       bodyHTML: `
         <label class="setting-row">
           <span>${STR.sound}</span>
-          <input type="checkbox" id="set-sound" ${state.settings.sound ? 'checked' : ''}>
+          <input type="checkbox" id="set-sound" ${getState().settings.sound ? 'checked' : ''}>
         </label>
         <label class="setting-row">
           <span>${STR.music}</span>
-          <input type="checkbox" id="set-music" ${state.settings.music ? 'checked' : ''}>
+          <input type="checkbox" id="set-music" ${getState().settings.music ? 'checked' : ''}>
         </label>
         <button class="btn setting-btn" id="set-edit">🎨 ${STR.editSquishy}</button>
         <button class="btn setting-btn" id="set-share">📤 ${STR.share}</button>
@@ -33,14 +33,14 @@ export function initSettings(
       buttons: [{ label: STR.close, primary: true }],
     });
     document.getElementById('set-sound')!.addEventListener('change', (e) => {
-      state.settings.sound = (e.target as HTMLInputElement).checked;
-      setMuted(!state.settings.sound);
+      getState().settings.sound = (e.target as HTMLInputElement).checked;
+      setMuted(!getState().settings.sound);
     });
     document.getElementById('set-music')!.addEventListener('change', (e) => {
-      state.settings.music = (e.target as HTMLInputElement).checked;
+      getState().settings.music = (e.target as HTMLInputElement).checked;
       unlockAudio();
-      setMusicEnabled(state.settings.music);
-      if (state.settings.music) startMusic();
+      setMusicEnabled(getState().settings.music);
+      if (getState().settings.music) startMusic();
       else stopMusic();
     });
     document.getElementById('set-edit')!.addEventListener('click', () => {
@@ -48,7 +48,7 @@ export function initSettings(
       hooks.onEditSquishy();
     });
     document.getElementById('set-share')!.addEventListener('click', () => {
-      void shareGame(state);
+      void shareGame(getState());
     });
     document.getElementById('set-reset')!.addEventListener('click', () => {
       showModal({
@@ -82,7 +82,7 @@ export async function shareGame(state: GameState): Promise<void> {
   }
 }
 
-function toast(text: string): void {
+export function toast(text: string): void {
   const el = document.createElement('div');
   el.className = 'toast';
   el.textContent = text;

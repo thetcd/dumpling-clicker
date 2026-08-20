@@ -5,6 +5,7 @@ import { clickValue, costOf, dpsOf, incomeMultiplier } from './economy';
 import { FRENZY_DURATION_MS, MAX_TICK_DT_MS } from './config/balance';
 import { PRODUCER_BY_ID } from './config/producers';
 import { UPGRADE_BY_ID } from './config/upgrades';
+import { canRebirth } from './rebirth';
 import { createInitialState, type GameState } from './state';
 
 /** One squish. Returns the amount earned (for the +N popup). */
@@ -12,6 +13,7 @@ export function click(state: GameState, now: number): number {
   const earned = clickValue(state) * incomeMultiplier(state, now);
   state.dumplings += earned;
   state.totalEarned += earned;
+  state.runEarned += earned;
   state.stats.totalClicks += 1;
   return earned;
 }
@@ -53,6 +55,7 @@ export function accrue(state: GameState, dtMs: number, now: number): void {
     dpsOf(state) * (clamped / 1000) * incomeMultiplier(state, now);
   state.dumplings += earned;
   state.totalEarned += earned;
+  state.runEarned += earned;
   state.stats.playtimeMs += dtMs;
 }
 
@@ -62,5 +65,27 @@ export function resetGame(state: GameState, now: number): GameState {
   fresh.avatar = { ...state.avatar };
   fresh.designed = state.designed;
   fresh.settings = { ...state.settings };
+  return fresh;
+}
+
+/**
+ * Spend the run for a permanent step up. Producers, upgrades, banked dumplings
+ * and the run counter all go; the squishy, the settings, the lifetime stats and
+ * every perk already earned stay.
+ *
+ * `totalEarned` is LIFETIME and deliberately survives — it drives which
+ * upgrades are revealed, so a rebirthed player does not have to re-earn the
+ * right to see the shop they already know.
+ */
+export function rebirth(state: GameState, now: number): GameState {
+  if (!canRebirth(state)) return state;
+  const fresh = createInitialState(now);
+  fresh.avatar = { ...state.avatar };
+  fresh.designed = state.designed;
+  fresh.settings = { ...state.settings };
+  fresh.stats = { ...state.stats };
+  fresh.totalEarned = state.totalEarned;
+  fresh.prestige = state.prestige + 1;
+  fresh.runEarned = 0;
   return fresh;
 }

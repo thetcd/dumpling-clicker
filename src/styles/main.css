@@ -834,3 +834,73 @@ button {
   font-size: 0.75rem;
   color: var(--accent);
 }
+
+/* ---------- rebirth bar ----------
+   Sits between the stage and the shop. The rank is displayed, not tucked into
+   a menu: the count itself is the status symbol and the cheapest retention
+   feature in the design. */
+#rebirth {
+  flex: none;
+  /* It sits below the shop, so the home-indicator inset moved here from #shop —
+     without it the button clips under the indicator on an iPhone. */
+  margin: 0 14px calc(6px + env(safe-area-inset-bottom));
+  padding: 8px 12px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: center;
+}
+
+#rebirth.ready {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(240, 178, 94, 0.25);
+}
+
+.rb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.rb-rank {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.rb-bonus,
+.rb-next {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.rb-track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.rb-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+  transition: width 0.25s ease;
+}
+
+.rb-go {
+  margin-top: 2px;
+  padding: 9px 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-fill {
+    transition: none;
+  }
+}

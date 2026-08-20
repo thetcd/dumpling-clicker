@@ -28,6 +28,18 @@ export const STR = {
   share: 'שתפו את הסקווישי שלכם',
   shareText: (count: string) =>
     `הסקווישי שלי כבר ייצר ${count} כופתאות בדאמפלינג קליקר! 🥟 בואו תמעכו גם`,
+  // Deliberately NOT worded like `reset` below, which DESTROYS the save. These
+  // two must never look alike in the UI.
+  rebirthTitle: 'עלייה לדרגה',
+  rebirthLevel: (n: number) => `דרגה ${n}`,
+  rebirthReady: 'עולים דרגה!',
+  rebirthBonus: (mult: string) => `בונוס קבוע ×${mult}`,
+  rebirthNext: (mult: string) => `אחרי העלייה: ×${mult} לתמיד`,
+  rebirthConfirmTitle: 'לעלות דרגה?',
+  rebirthConfirmBody:
+    'הכופתאות והצוות שלכם יתאפסו. הסקווישי, הדרגה והבונוס הקבוע נשארים — ואקססוריז חדשים ייפתחו.',
+  rebirthYes: 'קדימה!',
+  rebirthDone: (n: number) => `דרגה ${n}! 🎉`,
   reset: 'התחלה מחדש',
   resetConfirm: 'בטוחים? כל הכופתאות והצוות יימחקו. הסקווישי שלכם יישאר.',
   resetYes: 'כן, למחוק הכל',

@@ -1,6 +1,6 @@
 // Boot: load save → offline progress → build UI → first-launch designer →
 // start the loop → register the service worker (via vite-plugin-pwa).
-import { click, resetGame, startFrenzy } from './game/actions';
+import { click, rebirth, resetGame, startFrenzy } from './game/actions';
 import { clickValue, dpsOf, incomeMultiplier, offlineEarnings } from './game/economy';
 import { startLoop } from './game/loop';
 import { frenzyRemainingMs } from './game/golden';
@@ -15,7 +15,8 @@ import { STR } from './i18n/strings.he';
 import {
   playFanfare,
   playAppear,
-  playGolden,
+  playCatch,
+  playRebirth,
   playPurchase,
   playSquish,
   setMuted,
@@ -29,12 +30,14 @@ import { openDesigner } from './ui/designer';
 import { initDumpling } from './ui/dumpling';
 import { initFindables } from './ui/findables';
 import { initScene } from './ui/scene';
+import { initRebirth } from './ui/rebirth';
+import { canRebirth } from './game/rebirth';
 import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
 import { showModal } from './ui/modal';
 import { initPopups, spawnFloater } from './ui/popups';
-import { initSettings, shareGame } from './ui/settings';
+import { initSettings, shareGame, toast } from './ui/settings';
 import { initShop } from './ui/shop';
 
 const now = Date.now();
@@ -89,7 +92,7 @@ const findables = initFindables(
   (kind, x, y, icon) => {
     const at = Date.now();
     ensureAudio();
-    playGolden();
+    playCatch();
     navigator.vibrate?.([12, 40, 12]);
     // every catch throws what you caught across the background
     scene.burst(icon, x, y);
@@ -111,7 +114,42 @@ const findables = initFindables(
   (kind) => playAppear(kind !== 'common'),
 );
 
-const shop = initShop(document.getElementById('shop')!, state, (kind, id) => {
+const rebirthBar = initRebirth(
+  document.getElementById('app')!,
+  () => state,
+  () => {
+    const at = Date.now();
+    if (!canRebirth(state)) return;
+    showModal({
+      title: STR.rebirthConfirmTitle,
+      bodyHTML: `<p>${STR.rebirthConfirmBody}</p>`,
+      buttons: [
+        {
+          label: STR.rebirthYes,
+          primary: true,
+          onClick: () => {
+            state = rebirth(state, at);
+            ensureAudio();
+            playRebirth();
+            navigator.vibrate?.([18, 60, 18, 60, 26]);
+            saveToStorage(state, at);
+            // the shop and settings read through getters, so they follow the
+            // replaced state automatically; the scene and dumpling hold their
+            // own render output and have to be repainted
+            scene.update(state.producers);
+            dumpling.setAvatar(avatarSVG(state.avatar, 'squishy-svg'));
+            rebirthBar.update();
+            paintHud();
+            toast(STR.rebirthDone(state.prestige));
+          },
+        },
+        { label: STR.cancel },
+      ],
+    });
+  },
+);
+
+const shop = initShop(document.getElementById('shop')!, () => state, (kind, id) => {
   // Escalating payoff: a tier you have never owned before is a "jackpot" —
   // longer run, low thump, ringing tail. Restocking one you already have gets
   // the same run without the celebration, so the first of each still lands.
@@ -140,7 +178,7 @@ const shop = initShop(document.getElementById('shop')!, state, (kind, id) => {
   maybeShowInstallHint();
 });
 
-initSettings(document.getElementById('settings-btn')!, state, {
+initSettings(document.getElementById('settings-btn')!, () => state, {
   onEditSquishy: () =>
     openDesigner(state, (design) => {
       state.avatar = design;
@@ -214,7 +252,10 @@ paintHud();
 
 startLoop(() => state, {
   updateHud: paintHud,
-  updateShop: () => shop.update(),
+  updateShop: () => {
+    shop.update();
+    rebirthBar.update();
+  },
   tickGolden: (at) => findables.tick(at),
 });
 

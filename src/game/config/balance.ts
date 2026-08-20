@@ -55,4 +55,30 @@ export const AIRDROP_SECONDS = 90;
 export const AIRDROP_FLOOR_CLICKS = 25;
 export const FRENZY_MULTIPLIER = 7;
 export const FRENZY_DURATION_MS = 30_000;
+// --- rebirth ---
+// Modelled on Roblox simulators, which compute the requirement as
+// base * growth^n directly. That single curve is what reconciles "tons of
+// prestiges" with "each one takes a few hours": rebirth 1 is minutes and
+// rebirth 30 is hours, because the requirement is not a constant.
+//
+// MEASURED by tools/simulate.mjs, not reasoned about — the first guess (growth
+// 2.6) was wrong by orders of magnitude, reaching 341h by rebirth 25. Never
+// hand-tune these without re-running the simulation.
+//
+// At 2 taps/sec: rebirth 1 ~7m, 5 ~13m, 10 ~24m, 20 ~1.3h, 25 ~2.2h, 30 ~3.8h,
+// ~34h of play to reach 30. Tapping barely matters (30.7h at 5 taps/sec, 38.7h
+// idle-only), so the curve is not grind-gated.
+//
+// KNOWN WALL: past ~rebirth 40 runs pass 14h and by 50 they are 57h. The cause
+// is structural — the producer table has 10 tiers, and once the top one is
+// owned, extra income costs 1.15x more per unit for flat dps, so growth turns
+// logarithmic. Extending the game past 40 needs more tiers, not a smaller
+// growth constant.
+export const REBIRTH_BASE = 3_000;
+export const REBIRTH_GROWTH = 1.5;
+// LINEAR and small, deliberately: multiplier = 1 + BUFF * n, never compounding.
+// A compounding buff against an exponential requirement makes late rebirths a
+// formality, which is exactly what "not exponentially easy" rules out.
+export const REBIRTH_BUFF = 0.05;
+
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s

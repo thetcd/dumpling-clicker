@@ -290,6 +290,57 @@ export function playAppear(rare: boolean): void {
   });
 }
 
+/**
+ * Catching a findable. Runs its OWN streak counter, separate from the squish
+ * combo: consecutive catches climb in pitch, the Subway Surfers trick that
+ * Roblox simulators copy for coin pickups. Chaining a few in a row is the
+ * moment worth rewarding.
+ */
+let catchStreak = 0;
+let lastCatchAt = 0;
+const CATCH_WINDOW_MS = 6_000;
+const CATCH_MAX = 6;
+
+export function playCatch(): void {
+  if (!ctx || !sfxBus || muted) return;
+  const nowMs = performance.now();
+  catchStreak = nowMs - lastCatchAt < CATCH_WINDOW_MS ? Math.min(catchStreak + 1, CATCH_MAX) : 0;
+  lastCatchAt = nowMs;
+  const pitch = 2 ** (catchStreak / CATCH_MAX); // 1.0 -> 2.0 across a streak
+  const t = ctx.currentTime;
+  [1, 1.5].forEach((mult, i) => {
+    const osc = ctx!.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880 * pitch * mult, t + i * 0.05);
+    const g = ctx!.createGain();
+    g.gain.setValueAtTime(0.0001, t + i * 0.05);
+    g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.05 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.2);
+    osc.connect(g).connect(sfxBus!);
+    osc.start(t + i * 0.05);
+    osc.stop(t + i * 0.05 + 0.24);
+  });
+}
+
+/** Levelling up: the biggest moment in the game, so it gets the biggest sound. */
+export function playRebirth(): void {
+  if (!ctx || !sfxBus || muted) return;
+  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1568];
+  notes.forEach((f, i) => {
+    const t = ctx!.currentTime + i * 0.09;
+    const osc = ctx!.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(f, t);
+    const g = ctx!.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.26, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    osc.connect(g).connect(sfxBus!);
+    osc.start(t);
+    osc.stop(t + 0.55);
+  });
+}
+
 /** Tiny fanfare for unlocking the Squishy Boss. */
 export function playFanfare(): void {
   if (!ctx || !sfxBus || muted) return;
