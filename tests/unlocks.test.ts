@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { isPartUnlocked, unlockLevel, unlockedCount } from '../src/game/unlocks';
-import { ACCESSORIES, EYES, MOUTHS } from '../src/game/config/parts';
+import { ACCESSORIES, BODY_COLORS, EYES, MOUTHS } from '../src/game/config/parts';
 
 describe('isPartUnlocked', () => {
   test('an ungated part is always choosable', () => {
@@ -43,26 +43,49 @@ describe('the accessory ladder', () => {
     expect(isPartUnlocked(none, 0)).toBe(true);
   });
 
-  test('every locked accessory opens at a reachable level', () => {
-    for (const a of ACCESSORIES) {
-      expect(unlockLevel(a), a.id).toBeLessThanOrEqual(6);
-      expect(unlockLevel(a), a.id).toBeGreaterThanOrEqual(0);
+  test('rewards thin out as runs lengthen', () => {
+    // runs pass an hour around rank 20, so unlocks spread out past it rather
+    // than demanding one every rank forever
+    const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+    const early = all.filter((p) => unlockLevel(p) > 0 && unlockLevel(p) <= 20).length;
+    const late = all.filter((p) => unlockLevel(p) > 20).length;
+    expect(early).toBeGreaterThan(late);
+  });
+
+  test('every category keeps a real choice at rank 0', () => {
+    // "lock some, not everything" applies per category — a designer with one
+    // eye option is not a designer
+    for (const [name, parts] of [
+      ['colours', BODY_COLORS],
+      ['eyes', EYES],
+      ['mouths', MOUTHS],
+      ['accessories', ACCESSORIES],
+    ] as const) {
+      const free = unlockedCount(parts as never, 0);
+      expect(free, `${name} free at rank 0`).toBeGreaterThanOrEqual(5);
+      expect(free, `${name} all free`).toBeLessThan(parts.length);
     }
   });
 
-  test('the ladder has no gaps — every level from 1 to 6 opens something', () => {
-    const levels = new Set(ACCESSORIES.map(unlockLevel).filter((n) => n > 0));
-    for (let i = 1; i <= 6; i++) {
-      expect(levels.has(i), `nothing unlocks at prestige ${i}`).toBe(true);
+  test('every rank from 1 to 20 unlocks something', () => {
+    // the early ranks are minutes apart, so each one has to hand over a reward
+    const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+    const levels = new Set(all.map(unlockLevel).filter((n) => n > 0));
+    for (let i = 1; i <= 20; i++) {
+      expect(levels.has(i), `nothing unlocks at rank ${i}`).toBe(true);
     }
   });
 
-  test('everything is open by the final prestige', () => {
-    expect(unlockedCount(ACCESSORIES, 6)).toBe(ACCESSORIES.length);
+  test('no rank has to carry two unlocks from the same category', () => {
+    // interleaved on purpose: two colours in a row reads as one reward
+    for (const parts of [BODY_COLORS, EYES, MOUTHS, ACCESSORIES]) {
+      const levels = parts.map(unlockLevel).filter((n) => n > 0);
+      expect(new Set(levels).size).toBe(levels.length);
+    }
   });
 
-  test('eyes and mouths stay free — only accessories are gated', () => {
-    expect(unlockedCount(EYES, 0)).toBe(EYES.length);
-    expect(unlockedCount(MOUTHS, 0)).toBe(MOUTHS.length);
+  test('the whole wardrobe is open by rank 40', () => {
+    const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+    expect(all.every((p) => unlockLevel(p) <= 40)).toBe(true);
   });
 });

@@ -39,13 +39,32 @@ export function openDesigner(
 
   // color swatches
   const colorHost = overlay.querySelector<HTMLElement>('#dz-color')!;
-  for (const c of BODY_COLORS) {
+  // Available first, locked after. In registry order the two interleave and the
+  // first screen a new player sees is a checkerboard of greys — it has to read
+  // as "here are your choices" with the ladder below, not "mostly locked".
+  const byAvailability = <T extends PartOption>(list: T[], worn: string): T[] => {
+    const open = list.filter((o) => isPartUnlocked(o, state.prestige, worn));
+    const shut = list.filter((o) => !isPartUnlocked(o, state.prestige, worn));
+    return [...open, ...shut];
+  };
+
+  for (const c of byAvailability(BODY_COLORS, state.avatar.color)) {
     const b = document.createElement('button');
     b.className = 'dz-swatch';
     b.style.background = c.fill;
-    b.title = c.nameHe;
     b.dataset.id = c.id;
+    // Colours are gated on the same ladder as the part tiles, but they are
+    // built here rather than through partGroup, so the lock has to be applied
+    // separately — easy to miss and the reason this comment exists.
+    const colorOpen = isPartUnlocked(c, state.prestige, state.avatar.color);
+    b.title = colorOpen ? c.nameHe : STR.partLocked(unlockLevel(c));
+    if (!colorOpen) {
+      b.classList.add('locked');
+      b.disabled = true;
+      b.innerHTML = `<span class="dz-lock">🔒<b>${unlockLevel(c)}</b></span>`;
+    }
     b.addEventListener('click', () => {
+      if (!isPartUnlocked(c, state.prestige, state.avatar.color)) return;
       draft.color = c.id;
       mark(colorHost, c.id);
       render();
@@ -87,8 +106,9 @@ export function openDesigner(
     options: PartOption[],
     key: 'eyes' | 'mouth' | 'accessory',
   ) => {
-    groups.push({ host, options, key });
-    for (const opt of options) {
+    const ordered = byAvailability(options, state.avatar[key]);
+    groups.push({ host, options: ordered, key });
+    for (const opt of ordered) {
       const b = document.createElement('button');
       b.className = 'dz-part';
       b.dataset.id = opt.id;

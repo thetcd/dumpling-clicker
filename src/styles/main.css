@@ -904,3 +904,21 @@ button {
     transition: none;
   }
 }
+
+/* A locked colour keeps its swatch shape but greys out and carries the lock. */
+.dz-swatch.locked {
+  opacity: 0.4;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dz-swatch.locked .dz-lock {
+  font-size: 0.85rem;
+  filter: grayscale(1);
+}
+
+.dz-swatch.locked .dz-lock b {
+  font-size: 0.6rem;
+}
