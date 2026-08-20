@@ -6,6 +6,7 @@ import {
   advance,
   collect,
   createSchedule,
+  pickFreeX,
   pickSkin,
   type Schedule,
 } from '../game/findables';
@@ -84,14 +85,30 @@ export function initFindables(
     const size = el.offsetWidth || stage.width * 0.2;
     const maxX = Math.max(0, stage.width - size);
     const GAP = 8;
+    const SEPARATION = 16;
     // The face starts ~35% down the SVG's box (eyes sit at viewBox y≈110/200,
     // and the drawn body starts at y≈26 — see bodyLayer in ui/avatar.ts).
     const faceTop =
       heroBox && heroBox.width > 0 ? heroBox.top + heroBox.height * 0.35 : stage.bottom;
     const band = Math.max(0, faceTop - GAP - size - stage.top);
+    // Both lanes draw into the same strip, so a fresh spawn has to dodge
+    // whatever the other lane already has on screen. Without this a 96px
+    // airdrop and a 56px coin collide into one blob and the lower element
+    // cannot be tapped at all. Extents are stage-relative, matching `left`.
+    //
+    // SEPARATION is wider than the face GAP on purpose. The idle bob rotates
+    // these elements 4deg, which inflates an axis-aligned box by about
+    // width*sin(4deg) — ~7px for the airdrop plus ~4px for a coin. At an 8px
+    // gap the laid-out boxes are correctly apart but the rendered ones graze.
+    const occupied = lanes
+      .filter((l) => l !== lane && !l.el.hidden)
+      .map((l) => {
+        const b = l.el.getBoundingClientRect();
+        return [b.left - stage.left, b.right - stage.left] as [number, number];
+      });
     // Positioned with left/top, never transform (the bob/pop animations own it).
     el.style.insetInlineStart = 'auto';
-    el.style.left = `${rand() * maxX}px`;
+    el.style.left = `${pickFreeX(size, maxX, occupied, rand, SEPARATION)}px`;
     el.style.top = `${band > 4 ? rand() * band : 0}px`;
   };
 

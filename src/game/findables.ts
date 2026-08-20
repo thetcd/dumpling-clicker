@@ -61,6 +61,51 @@ export function pickSkin(rand: () => number = Math.random): string {
 }
 
 /**
+ * Horizontal placement that avoids whatever is already on screen.
+ *
+ * Placement geometry, but pure and therefore tested here rather than in the DOM
+ * half. Two lanes place independently, so without this they collide: a 430px
+ * stage with a 96px airdrop and a 56px coin both drawing a random x lands them
+ * on top of each other often enough to see, and the one underneath becomes
+ * untappable. Avoiding overlap horizontally is enough — it guarantees no
+ * collision whatever the vertical offsets are.
+ *
+ * `occupied` is a list of [start, end] horizontal extents in the same
+ * coordinate space as the returned x. Falls back to the point furthest from
+ * everything when no gap is wide enough, which cannot happen at current sizes
+ * but must not throw if someone widens an element later.
+ */
+export function pickFreeX(
+  size: number,
+  maxX: number,
+  occupied: Array<[number, number]>,
+  rand: () => number = Math.random,
+  gap = 8,
+): number {
+  const clear = (x: number) =>
+    occupied.every(([s, e]) => x + size + gap <= s || x >= e + gap);
+  for (let i = 0; i < 12; i++) {
+    const x = rand() * maxX;
+    if (clear(x)) return x;
+  }
+  // nothing random worked: take the position furthest from every occupied span
+  let best = 0;
+  let bestDistance = -1;
+  for (let i = 0; i <= 20; i++) {
+    const x = (i / 20) * maxX;
+    const centre = x + size / 2;
+    const d = occupied.length
+      ? Math.min(...occupied.map(([s, e]) => Math.abs(centre - (s + e) / 2)))
+      : Number.POSITIVE_INFINITY;
+    if (d > bestDistance) {
+      bestDistance = d;
+      best = x;
+    }
+  }
+  return best;
+}
+
+/**
  * Clearing a slot and rolling its next spawn are ONE operation, on purpose.
  * A natural spawn fires when `now >= nextAt`, which leaves `nextAt` in the past
  * for as long as that findable is alive. Any path that clears `active` without

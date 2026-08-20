@@ -3,6 +3,7 @@ import {
   advance,
   collect,
   createSchedule,
+  pickFreeX,
   pickKind,
   pickSkin,
   rollNextSpawn,
@@ -123,6 +124,49 @@ describe('pickKind', () => {
     const seen = new Set<string>();
     for (let i = 0; i < 100; i++) seen.add(pickKind(RARE, () => i / 100));
     expect(seen).toEqual(new Set(['golden', 'airdrop']));
+  });
+});
+
+describe('pickFreeX', () => {
+  // Two lanes place independently. Without avoidance a 96px airdrop and a 56px
+  // coin on a 430px stage land on top of each other often enough to see, and
+  // whichever ends up underneath cannot be tapped.
+  const overlaps = (a: [number, number], b: [number, number], gap = 8) =>
+    a[0] < b[1] + gap && b[0] < a[1] + gap;
+
+  test('with nothing on screen it stays inside the stage', () => {
+    for (let i = 0; i <= 10; i++) {
+      const x = pickFreeX(56, 374, [], () => i / 10);
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(374);
+    }
+  });
+
+  test('never overlaps an occupied span', () => {
+    const occupied: Array<[number, number]> = [[150, 246]]; // a 96px element mid-stage
+    for (let i = 0; i < 40; i++) {
+      const x = pickFreeX(56, 374, occupied, () => (i * 0.025) % 1);
+      expect(overlaps([x, x + 56], occupied[0])).toBe(false);
+    }
+  });
+
+  test('falls back to the furthest point when no gap fits', () => {
+    // an occupied span covering effectively the whole stage
+    const x = pickFreeX(56, 374, [[0, 430]], () => 0.5);
+    expect(Number.isFinite(x)).toBe(true);
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(x).toBeLessThanOrEqual(374);
+  });
+
+  test('avoids several occupied spans at once', () => {
+    const occupied: Array<[number, number]> = [
+      [0, 60],
+      [300, 380],
+    ];
+    for (let i = 0; i < 40; i++) {
+      const x = pickFreeX(56, 374, occupied, () => (i * 0.025) % 1);
+      for (const span of occupied) expect(overlaps([x, x + 56], span)).toBe(false);
+    }
   });
 });
 
