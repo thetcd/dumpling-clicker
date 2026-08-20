@@ -33,6 +33,8 @@ how it feels, not what it does.
    changes the world instead of only a number.
 3. Click upgrades arrive often enough to keep a player curious, across the
    whole run rather than only the first 0.007% of the cost curve.
+4. There is more than one thing worth watching the screen for, and the
+   framework to add more without new code.
 
 ## Non-goals
 
@@ -189,6 +191,48 @@ less new code.
 All exact numbers above are proposals, pinned by a simulation test rather than
 by arithmetic in this document.
 
+## 5. Findables
+
+New: `src/game/config/findables.ts`, `src/game/findables.ts`
+
+Things that appear on screen, wait to be tapped, and pay out. The first is a
+dumpling airdrop package. It is written as a config-driven family rather than a
+single item, so a mystery box or anything else later is a data entry rather
+than new code, matching how `producers.ts` and `parts.ts` already work.
+
+The golden dumpling is not folded into this. It grants a temporary multiplier;
+findables grant a payout. Different mechanics, kept separate.
+
+**Airdrop reward.** `max(dps * AIRDROP_SECONDS, floor)` where `AIRDROP_SECONDS`
+starts at 90. It scales itself at every stage, needs no per-stage table, and
+cannot go stale when the producer curve changes. The floor keeps it from being
+worthless in the first minutes and is expressed in click values, not a constant,
+so it also self-scales.
+
+The payout derives from `dpsOf()`, which is raw. **A frenzy does not multiply
+an airdrop.** Findables are not `click()` or `accrue()`, so they stay outside
+`incomeMultiplier` entirely, consistent with the rule that keeps frenzy out of
+`dpsOf()` and offline earnings. Findables also never pay offline: they exist on
+screen and have to be tapped.
+
+**One slot.** At most one findable, golden dumpling included, is on screen at a
+time. A single schedule fires every 3 to 8 minutes and picks a type by weight.
+This avoids two things overlapping over the squishy's face, reuses the existing
+face-protection placement, and keeps the total interruption rate deliberate
+rather than emergent from two independent timers.
+
+**The scheduler gets extracted.** `ui/golden.ts` currently owns spawn timing,
+lifetime and rescheduling as private mutable state with no `tests/` coverage,
+which is exactly how the "catching one spawns the next instantly" bug shipped
+and stayed hidden. A second spawner makes sharing that logic necessary rather
+than optional, so it moves into a pure reducer in `src/game/findables.ts` over
+`(state, event, now, rand)`, unit-tested without a DOM. `ui/golden.ts` becomes
+a thin element adapter.
+
+The rule that fix established carries over: clearing something from the screen
+and scheduling the next spawn are one operation, and no exit path may do one
+without the other. That becomes a test rather than a comment.
+
 ## Save compatibility
 
 No `SAVE_VERSION` bump. New upgrade ids simply do not appear in existing saves,
@@ -220,6 +264,12 @@ Unit tests, following the existing TDD split of pure logic in `tests/`:
 - Endgame click share lands on target with every share upgrade owned.
 - Crit expected value, and crit excluded from `dpsOf()` and offline earnings.
 - Scene selection from producers owned, including the boss flourish.
+- The findable scheduler: clearing always reschedules, from every exit path
+  including a catch. This is the regression guard for the bug fixed on
+  2026-08-20 and the reason the scheduler is being extracted.
+- Only one findable is ever on screen at once.
+- Airdrop payout scales with dps, respects the floor, is not multiplied by an
+  active frenzy, and never pays offline.
 
 Browser verification on a 430x900 touch viewport, per the established pattern:
 
