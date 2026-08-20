@@ -44,6 +44,9 @@ export const STR = {
   gainClick: (from: string, to: string) => `מעיכה: ${from} ← ${to}`,
   producesNow: (amount: string) => `מייצרים ${amount} לשנייה`,
   goldenLabel: 'כופתאה מוזהבת!',
+  airdropLabel: 'חבילת כופתאות!',
+  commonLabel: 'משהו נוצץ!',
+  rewardCaught: (amount: string) => `‎+${amount}`,
   frenzyBadge: (mult: number, secs: number) => `🔥 טירוף ×${mult} — ${secs} שנ׳`,
   frenzyStart: (mult: number) => `×${mult} טירוף!`,
 } as const;

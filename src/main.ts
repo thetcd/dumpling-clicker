@@ -26,7 +26,8 @@ import { PRODUCERS } from './game/config/producers';
 import { avatarSVG } from './ui/avatar';
 import { openDesigner } from './ui/designer';
 import { initDumpling } from './ui/dumpling';
-import { initGolden } from './ui/golden';
+import { initFindables } from './ui/findables';
+import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
 import { showModal } from './ui/modal';
@@ -75,17 +76,25 @@ const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {
 });
 dumpling.setAvatar(avatarSVG(state.avatar, 'squishy-svg'));
 
-// --- golden dumpling: random spawn, tap for a frenzy ---
-const golden = initGolden(
+// --- findables: a common lane every 10-25s, a rare lane every 3-8min ---
+const findables = initFindables(
   document.getElementById('stage')!,
   () => state.avatar,
-  (x, y) => {
+  (kind, x, y) => {
     const at = Date.now();
-    startFrenzy(state, at);
     ensureAudio();
     playGolden();
     navigator.vibrate?.([12, 40, 12]);
-    spawnFloater(x, y, STR.frenzyStart(FRENZY_MULTIPLIER));
+    if (kind === 'golden') {
+      startFrenzy(state, at);
+      spawnFloater(x, y, STR.frenzyStart(FRENZY_MULTIPLIER));
+    } else {
+      // raw dps on purpose: a frenzy must not multiply a findable payout
+      const amount = rewardFor(kind, dpsOf(state), clickValue(state));
+      state.dumplings += amount;
+      state.totalEarned += amount;
+      spawnFloater(x, y, STR.rewardCaught(formatNumber(amount)));
+    }
     saveToStorage(state, at);
   },
 );
@@ -123,7 +132,7 @@ initSettings(document.getElementById('settings-btn')!, state, {
     openDesigner(state, (design) => {
       state.avatar = design;
       dumpling.setAvatar(avatarSVG(design, 'squishy-svg'));
-      golden.setAvatar(design); // keep an on-screen golden one in sync
+      findables.setAvatar(design); // keep an on-screen golden one in sync
       saveToStorage(state, Date.now());
     }),
   onReset: () => {
@@ -193,13 +202,15 @@ paintHud();
 startLoop(() => state, {
   updateHud: paintHud,
   updateShop: () => shop.update(),
-  tickGolden: (at) => golden.tick(at),
+  tickGolden: (at) => findables.tick(at),
 });
 
-// dev handle: window.__spawnGolden() forces one to appear
+// dev handles: force any findable to appear right now
 if (import.meta.env.DEV) {
-  // dev-only backdoor: shipping this would let anyone farm x7 frenzies
-  // from the console. Vite strips the branch from the production bundle.
-  (window as unknown as Record<string, unknown>).__spawnGolden = () =>
-    golden.spawnNow(Date.now());
+  // dev-only backdoor: shipping this would let anyone farm rewards from the
+  // console. Vite strips the branch from the production bundle.
+  const w = window as unknown as Record<string, unknown>;
+  w.__spawnGolden = () => findables.spawnNow(Date.now(), 'golden');
+  w.__spawnAirdrop = () => findables.spawnNow(Date.now(), 'airdrop');
+  w.__spawnCommon = () => findables.spawnNow(Date.now(), 'common');
 }

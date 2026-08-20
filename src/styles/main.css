@@ -128,8 +128,8 @@ body {
   }
 }
 
-/* ---------- golden dumpling ---------- */
-.golden {
+/* ---------- findables ---------- */
+.findable {
   position: absolute;
   width: 20%;
   max-width: 96px;
@@ -151,7 +151,7 @@ body {
   display: block;
 }
 
-.golden-in {
+.findable-in {
   animation:
     golden-pop 0.35s cubic-bezier(0.2, 1.5, 0.4, 1),
     golden-bob 2.2s ease-in-out 0.35s infinite;
@@ -174,9 +174,35 @@ body {
   }
 }
 
+/* The rare lane's airdrop: a cooler glow so it reads as a different thing
+   from the golden dumpling without needing a second size or animation. */
+.findable.airdrop {
+  filter: drop-shadow(0 0 14px rgba(120, 200, 255, 0.75));
+}
+
+/* The common lane is small and quiet on purpose. It appears every 10-25s, so
+   at the rare lane's size and glow it would dominate the screen and read as
+   noise rather than as a reward. Still a 44px tap target. */
+.findable.common {
+  width: 12%;
+  max-width: 56px;
+  min-width: 44px;
+  filter: drop-shadow(0 0 10px rgba(255, 226, 150, 0.7));
+}
+
+.findable-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  display: block;
+}
+
+.findable.common .findable-icon {
+  font-size: 1.7rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .golden,
-  .golden-in,
+  .findable,
+  .findable-in,
   .hud-frenzy {
     animation: none;
   }
