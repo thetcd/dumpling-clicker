@@ -86,43 +86,41 @@ either reads as nothing or reads as broken.
 **Glances.** A small rotation and offset on a longer random timer, so the
 character occasionally looks around.
 
-## 3. Scene backgrounds
+## 3. Living background
 
-New: `src/ui/background.ts`, `src/game/config/scenes.ts`
+**Supersedes the unlockable-scenes idea.** Scenes that changed every few hours
+did not answer the actual complaint, which is that the screen is dead right now.
+This delivers progression-driven backgrounds out of the same mechanism, so
+building both would be duplicated work.
 
-Five scenes, unlocked by owning the first unit of a producer tier, following
-the config-not-logic split the producers and parts already use.
+Two layers behind the hero, both inert to pointers, both CSS-animated so nothing
+joins the single rAF loop.
 
-| Scene | Unlocks at | Direction |
-|---|---|---|
-| מטבח ביתי | start | warm and cosy, lighter than today's purple |
-| דוכן ברחוב | first `kindergarten` | daylight, street colour |
-| מאפייה | first `bakery` | warm ovens, richer saturation |
-| עיר הסקווישים | first `army` | bright city, busiest layer count |
-| חלל | first `space` | vivid, high contrast, most motion |
+**Layer 1, always on: the team you own.** The background fills with the
+producers you actually bought, using the emoji already in `producers.ts` (the
+config comment there always said icons could become art paths without code
+changes). Sprites per tier grow logarithmically with the count — 1 owned shows
+1, 4 shows 3, 16 shows 5 — and only the highest `SCENE_TIERS_SHOWN` owned tiers
+render, so the world evolves rather than accumulating: stalls give way to
+factories, factories to cities.
 
-Buying the boss adds a flourish to the final scene rather than a sixth scene.
+Positions are a pure hash of (tier, index), never random. With random placement
+every purchase re-rolls the crowd and all the workers teleport, which looks fine
+in a screenshot and awful in the hand.
 
-Each scene is a palette plus three or four parallax prop layers (steam wisps,
-drifting lights, floating mini dumplings, scene-specific objects). Props are
-CSS and SVG shapes plus emoji as placeholders, defined in config so real art
-drops in by editing data.
+The crowd is clamped to the band above the hero. The squishy is ~70% of stage
+width and sits at the bottom, so mid-stage sprites are invisible — measured, 3
+of 11 showed before the band was clamped.
 
-Motion is CSS transforms on the prop layers, so it runs on the compositor and
-costs no per-frame JS.
+**Layer 2, on every catch: a themed burst.** The burst reuses the emoji the
+player just tapped, so a coin rains coins and a gem rains gems with no per-skin
+configuration. A golden catch additionally washes the scene gold, tying the
+background to the frenzy that just started. Particles come from a pre-allocated
+pool, the way `popups.ts` already handles floaters.
 
-Palette moves from global constants to per-scene custom properties. `--bg-top`
-and `--bg-bottom` stop being fixed. The designer screen keeps a fixed neutral
-background so part thumbnails stay judgeable.
-
-**Unlocking is a moment**, not a swap: crossfade plus a celebration beat reusing
-the escalating `playPurchase` audio. This is the payoff that makes the feature
-worth building rather than repainting.
-
-**Contrast risk.** The avatar has known readability limits on dark bodies, and
-the `shekel` eyes carry a cream halo specifically to survive them. Brighter
-scenes put all 16 body colours at risk. Verification is a rendered contact
-sheet of every body colour against every scene, checked by eye. Not assumed.
+Reactions alone were considered and rejected: a burst only fires on a catch, so
+the screen would be alive maybe 10-20% of the time and dead in between, which is
+the original complaint with pauses.
 
 ## 4. Upgrade density
 

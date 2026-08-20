@@ -34,12 +34,14 @@ interface Lane {
   def: LaneDef;
   el: HTMLButtonElement;
   schedule: Schedule;
+  /** the emoji currently shown, so a catch can theme its background burst */
+  icon: string;
 }
 
 export function initFindables(
   host: HTMLElement,
   getAvatar: () => AvatarDesign,
-  onCatch: (kind: FindableKind, x: number, y: number) => void,
+  onCatch: (kind: FindableKind, x: number, y: number, icon: string) => void,
   rand: () => number = Math.random,
 ): FindablesApi {
   let based = false;
@@ -50,7 +52,7 @@ export function initFindables(
     el.type = 'button';
     el.hidden = true;
     host.appendChild(el);
-    return { def, el, schedule: createSchedule(def, 0, rand) };
+    return { def, el, schedule: createSchedule(def, 0, rand), icon: '' };
   });
 
   const render = (lane: Lane, kind: FindableKind) => {
@@ -62,8 +64,12 @@ export function initFindables(
       const svg = el.querySelector('svg');
       if (svg) svg.style.filter = GOLD_FILTER;
       el.setAttribute('aria-label', STR.goldenLabel);
+      // the golden one is drawn art, not an emoji, so the burst borrows a
+      // dumpling to throw across the scene
+      lane.icon = '🥟';
     } else {
       const icon = kind === 'airdrop' ? '🎁' : pickSkin(rand);
+      lane.icon = icon;
       el.innerHTML = `<span class="findable-icon">${icon}</span>`;
       el.setAttribute('aria-label', kind === 'airdrop' ? STR.airdropLabel : STR.commonLabel);
     }
@@ -139,7 +145,7 @@ export function initFindables(
       // wall clock, matching the `now` the loop feeds tick()
       lane.schedule = collect(lane.def, Date.now(), rand);
       hide(lane);
-      onCatch(kind, x, y);
+      onCatch(kind, x, y, lane.icon);
     });
   }
 

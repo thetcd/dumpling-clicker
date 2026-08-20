@@ -677,3 +677,109 @@ button {
   font-size: 1.05rem;
   padding: 14px 30px;
 }
+
+/* ---------- living background ----------
+   Two layers behind the steamer: the crowd of what you own (always moving) and
+   a pooled burst fired on every catch. Both are inert to pointers — a
+   background must never swallow a squish — and both sit behind the hero so
+   nothing ever covers the face. Motion is transform/opacity only, so it stays
+   on the compositor and off the single rAF loop. */
+.scene-crowd,
+.scene-bursts,
+.scene-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.scene-sprite {
+  position: absolute;
+  font-size: 2.1rem;
+  line-height: 1;
+  will-change: transform;
+  /* the scale lives in a custom property so the keyframes can multiply it
+     instead of clobbering it */
+  transform: scale(var(--s, 1));
+  animation-name: scene-bob;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes scene-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(var(--s, 1));
+  }
+  50% {
+    transform: translate3d(6px, -10px, 0) scale(var(--s, 1));
+  }
+}
+
+.burst-bit {
+  position: absolute;
+  font-size: 1.5rem;
+  line-height: 1;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.burst-go {
+  animation-name: burst-fly;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes burst-fly {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate3d(calc(var(--dx) * 0.25), calc(var(--dy) * -0.15), 0)
+      scale(var(--s, 1)) rotate(calc(var(--rot) * 0.2));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), var(--dy), 0) scale(calc(var(--s, 1) * 0.8))
+      rotate(var(--rot));
+  }
+}
+
+.scene-wash {
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(243, 192, 51, 0.42),
+    rgba(243, 192, 51, 0) 68%
+  );
+}
+
+.wash-go {
+  animation: scene-wash-pulse 1.2s ease-out forwards;
+}
+
+@keyframes scene-wash-pulse {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Reduce, don't remove: the colour and the crowd stay, the movement stops. */
+@media (prefers-reduced-motion: reduce) {
+  .scene-sprite {
+    animation: none;
+  }
+  .burst-go,
+  .wash-go {
+    animation-duration: 0.01ms;
+  }
+}

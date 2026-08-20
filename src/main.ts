@@ -27,6 +27,7 @@ import { avatarSVG } from './ui/avatar';
 import { openDesigner } from './ui/designer';
 import { initDumpling } from './ui/dumpling';
 import { initFindables } from './ui/findables';
+import { initScene } from './ui/scene';
 import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
@@ -76,17 +77,24 @@ const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {
 });
 dumpling.setAvatar(avatarSVG(state.avatar, 'squishy-svg'));
 
+// --- living background: the team you own, always working ---
+const scene = initScene(document.getElementById('stage')!);
+scene.update(state.producers);
+
 // --- findables: a common lane every 10-25s, a rare lane every 3-8min ---
 const findables = initFindables(
   document.getElementById('stage')!,
   () => state.avatar,
-  (kind, x, y) => {
+  (kind, x, y, icon) => {
     const at = Date.now();
     ensureAudio();
     playGolden();
     navigator.vibrate?.([12, 40, 12]);
+    // every catch throws what you caught across the background
+    scene.burst(icon, x, y);
     if (kind === 'golden') {
       startFrenzy(state, at);
+      scene.goldWash();
       spawnFloater(x, y, STR.frenzyStart(FRENZY_MULTIPLIER));
     } else {
       // raw dps on purpose: a frenzy must not multiply a findable payout
@@ -123,6 +131,7 @@ const shop = initShop(document.getElementById('shop')!, state, (kind, id) => {
       ],
     });
   }
+  scene.update(state.producers);
   saveToStorage(state, Date.now());
   maybeShowInstallHint();
 });
