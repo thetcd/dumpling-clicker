@@ -1,16 +1,9 @@
-// Golden dumpling timing. Pure functions over (now, rand) so the schedule and
-// the frenzy window are testable without a clock or a DOM — the UI half lives
-// in src/ui/golden.ts and owns the element.
-import {
-  GOLDEN_MAX_INTERVAL_MS,
-  GOLDEN_MIN_INTERVAL_MS,
-} from './config/balance';
-
-/** Epoch ms for the next spawn: uniform in [MIN, MAX] after `now`. */
-export function rollNextSpawn(now: number, rand: () => number = Math.random): number {
-  const span = GOLDEN_MAX_INTERVAL_MS - GOLDEN_MIN_INTERVAL_MS;
-  return now + GOLDEN_MIN_INTERVAL_MS + rand() * span;
-}
+// The frenzy window: how long a golden dumpling's bonus runs and how much is
+// left. Pure functions over (now) so they are testable without a clock.
+//
+// Spawn SCHEDULING used to live here too; it moved to src/game/findables.ts
+// when a second lane of findables arrived. Frenzy stayed behind because it is a
+// separate mechanic — a temporary multiplier, not a thing on the screen.
 
 /**
  * Is a frenzy running? `frenzyUntil` is a wall-clock stamp, so a value left in

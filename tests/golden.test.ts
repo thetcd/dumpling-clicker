@@ -1,35 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { rollNextSpawn, isFrenzyActive, frenzyRemainingMs } from '../src/game/golden';
-import {
-  GOLDEN_MAX_INTERVAL_MS,
-  GOLDEN_MIN_INTERVAL_MS,
-  FRENZY_DURATION_MS,
-} from '../src/game/config/balance';
-
-describe('rollNextSpawn', () => {
-  test('rand=0 schedules the soonest allowed spawn', () => {
-    expect(rollNextSpawn(1_000, () => 0)).toBe(1_000 + GOLDEN_MIN_INTERVAL_MS);
-  });
-
-  test('rand just under 1 schedules the latest allowed spawn', () => {
-    const t = rollNextSpawn(1_000, () => 0.999999);
-    expect(t).toBeGreaterThan(1_000 + GOLDEN_MAX_INTERVAL_MS - 100);
-    expect(t).toBeLessThanOrEqual(1_000 + GOLDEN_MAX_INTERVAL_MS);
-  });
-
-  test('rand=0.5 lands mid-window', () => {
-    const mid = (GOLDEN_MIN_INTERVAL_MS + GOLDEN_MAX_INTERVAL_MS) / 2;
-    expect(rollNextSpawn(0, () => 0.5)).toBe(mid);
-  });
-
-  test('is always in the future and inside the window', () => {
-    for (let i = 0; i <= 20; i++) {
-      const t = rollNextSpawn(5_000, () => i / 20);
-      expect(t).toBeGreaterThanOrEqual(5_000 + GOLDEN_MIN_INTERVAL_MS);
-      expect(t).toBeLessThanOrEqual(5_000 + GOLDEN_MAX_INTERVAL_MS);
-    }
-  });
-});
+import { isFrenzyActive, frenzyRemainingMs } from '../src/game/golden';
+import { FRENZY_DURATION_MS } from '../src/game/config/balance';
 
 describe('isFrenzyActive', () => {
   test('a fresh game has no frenzy', () => {

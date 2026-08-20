@@ -25,9 +25,27 @@ export const AUTOSAVE_INTERVAL_MS = 10_000;
 // ALL income by FRENZY_MULTIPLIER for FRENZY_DURATION_MS. Deliberately does not
 // apply to offline earnings — catching it is the reward for being here.
 // Caught every time, this is roughly +30% income on the average interval.
-export const GOLDEN_MIN_INTERVAL_MS = 5 * 60 * 1000;
-export const GOLDEN_MAX_INTERVAL_MS = 15 * 60 * 1000;
+// Two lanes, each holding at most one thing at a time. A single shared slot
+// does not work: the common lane spawns every 10-25s and lives 7, so it would
+// occupy a shared slot almost permanently and the golden dumpling would
+// effectively never appear.
+//
+// The common lane exists because kids disengage when nothing happens for
+// minutes at a time. Catching every one is worth roughly +29% income, and with
+// the rare lane on top the total is near +65%, which pulls a 25.5h first run
+// toward ~15h. That is an estimate, not a measurement — retune here.
+export const COMMON_SPAWN_MIN_MS = 10_000;
+export const COMMON_SPAWN_MAX_MS = 25_000;
+export const COMMON_LIFETIME_MS = 7_000;
+export const COMMON_SECONDS = 5; // a common findable is worth 5s of production
+export const COMMON_FLOOR_CLICKS = 3; // ...but never less than 3 taps' worth
+
+export const RARE_SPAWN_MIN_MS = 3 * 60 * 1000;
+export const RARE_SPAWN_MAX_MS = 8 * 60 * 1000;
 export const GOLDEN_LIFETIME_MS = 13_000;
+export const AIRDROP_LIFETIME_MS = 11_000;
+export const AIRDROP_SECONDS = 90;
+export const AIRDROP_FLOOR_CLICKS = 25;
 export const FRENZY_MULTIPLIER = 7;
 export const FRENZY_DURATION_MS = 30_000;
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s
