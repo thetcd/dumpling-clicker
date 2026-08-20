@@ -7,6 +7,15 @@ dumplings; producers ("הצוות שלך") auto-generate them. The final tier is
 
 Hebrew-first RTL, installable PWA, fully offline after first load, no backend.
 
+## Play it
+
+**https://thetcd.github.io/dumpling-clicker/**
+
+Works in any phone browser. On iPhone: Share → "הוסף למסך הבית" to install it as
+an app. Progress is saved in the browser, so it survives closing the tab.
+
+Feedback → open an issue: https://github.com/thetcd/dumpling-clicker/issues
+
 ## How it plays
 
 - **Squish** the dumpling to earn. A squish is worth `flat + 1% of your
