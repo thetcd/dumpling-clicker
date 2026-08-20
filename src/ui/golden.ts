@@ -47,10 +47,22 @@ export function initGolden(
     if (svg) svg.style.filter = GOLD_FILTER;
   };
 
-  const hide = () => {
+  /**
+   * The ONLY way a golden dumpling leaves the screen. It rolls the next spawn
+   * as part of clearing, because the two are inseparable: a natural spawn fires
+   * when `now >= nextAt`, which leaves `nextAt` in the past for as long as that
+   * dumpling is alive. Any exit path that clears `alive` without rescheduling
+   * therefore re-enters `spawn()` on the very next frame, forever.
+   *
+   * That is exactly what caught ones used to do — the tap handler called a
+   * reschedule-free hide, so catching one spawned the next instantly and every
+   * catch restarted the x7 frenzy, leaving it permanently active.
+   */
+  const clear = (now: number) => {
     alive = false;
     el.hidden = true;
     el.classList.remove('golden-in');
+    nextAt = rollNextSpawn(now, rand);
   };
 
   const spawn = (now: number) => {
@@ -93,7 +105,8 @@ export function initGolden(
     e.stopPropagation(); // never let the tap reach the squishy behind it
     if (!alive) return;
     const r = el.getBoundingClientRect();
-    hide();
+    // wall clock, matching the `now` the loop feeds tick()
+    clear(Date.now());
     // report where it was caught so the burst text lands under the finger
     onCatch(e.clientX || r.left + r.width / 2, e.clientY || r.top + r.height / 2);
   });
@@ -107,10 +120,7 @@ export function initGolden(
         return;
       }
       if (alive) {
-        if (now >= despawnAt) {
-          hide();
-          nextAt = rollNextSpawn(now, rand);
-        }
+        if (now >= despawnAt) clear(now);
         return;
       }
       if (now >= nextAt) spawn(now);
