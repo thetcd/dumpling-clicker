@@ -18,6 +18,13 @@ export const OFFLINE_RATE = 0.5; // offline earns 50% of live dps
 export const WELCOME_BACK_MIN_AWAY_MS = 2 * 60 * 1000;
 export const WELCOME_BACK_MIN_SECONDS = 60; // at least a minute of production
 export const AUTOSAVE_INTERVAL_MS = 10_000;
+// An upgrade appears once you have earned this fraction of its price. Cost is
+// the real gate (the tap gates are tiny on purpose), but without this ALL
+// upgrades appear at once and their chips push the producer list off screen —
+// measured: at 260 banked the shop showed five chips up to 5,000,000 and no
+// producers at all. Keyed to totalEarned, which only grows, so an upgrade can
+// never un-reveal itself after a purchase.
+export const UPGRADE_REVEAL_FRACTION = 0.4;
 
 // --- golden dumpling (the variable reward) ---
 // A golden copy of the player's own squishy appears on a random timer while the

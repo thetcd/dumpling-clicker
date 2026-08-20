@@ -2,6 +2,7 @@
 // (config, state) so it stays trivially testable and deterministic.
 import {
   BASE_DPS,
+  UPGRADE_REVEAL_FRACTION,
   CLICK_DPS_SHARE,
   COST_GROWTH,
   FRENZY_MULTIPLIER,
@@ -89,4 +90,22 @@ export function offlineEarnings(
 ): number {
   const elapsedMs = Math.min(Math.max(now - savedAt, 0), OFFLINE_CAP_MS);
   return dps * (elapsedMs / 1000) * OFFLINE_RATE;
+}
+
+/**
+ * Should this upgrade be on the shop shelf yet?
+ *
+ * Two conditions, doing different jobs. The tap gate keeps the very first
+ * launch from being a wall of chips and is deliberately tiny. The earnings
+ * gate is what actually staggers them: without it every upgrade shows at once
+ * and the chips push the producer list, which is the core purchase loop, off
+ * the bottom of the shop.
+ */
+export function isUpgradeRevealed(
+  def: { cost: number; unlockAtClicks: number },
+  totalClicks: number,
+  totalEarned: number,
+): boolean {
+  if (totalClicks < def.unlockAtClicks) return false;
+  return totalEarned >= def.cost * UPGRADE_REVEAL_FRACTION;
 }

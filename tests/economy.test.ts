@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  isUpgradeRevealed,
   clickValue,
   clickValueWith,
   costOf,
@@ -17,6 +18,7 @@ import {
   OFFLINE_CAP_MS,
   OFFLINE_RATE,
 } from '../src/game/config/balance';
+import { UPGRADES } from '../src/game/config/upgrades';
 
 const apprentice = PRODUCERS[0]; // baseCost 15
 
@@ -217,5 +219,63 @@ describe('offlineEarnings', () => {
 
   test('zero dps earns 0', () => {
     expect(offlineEarnings(0, 0, 3_600_000)).toBe(0);
+  });
+});
+
+describe('click upgrade gates', () => {
+  // Dor flagged 2026-08-20: the shop teases the next locked upgrade as
+  // "unlocks after N more squishes", so a big gate reads as "tap 1,700 more
+  // times" and turns a reward into homework. Cost is the real gate; these
+  // exist only so the first launch is not a wall of chips.
+  const MAX_GATE = 300;
+
+  test('no upgrade demands an unreasonable number of taps', () => {
+    for (const u of UPGRADES) {
+      expect(u.unlockAtClicks, `${u.id} gate is too high`).toBeLessThanOrEqual(MAX_GATE);
+    }
+  });
+
+  test('gates rise with cost, so the cheap ones always arrive first', () => {
+    const byCost = [...UPGRADES].sort((a, b) => a.cost - b.cost);
+    for (let i = 1; i < byCost.length; i++) {
+      expect(byCost[i].unlockAtClicks).toBeGreaterThanOrEqual(byCost[i - 1].unlockAtClicks);
+    }
+  });
+
+  test('the first upgrade is reachable in the opening seconds', () => {
+    const cheapest = [...UPGRADES].sort((a, b) => a.cost - b.cost)[0];
+    expect(cheapest.unlockAtClicks).toBeLessThanOrEqual(15);
+  });
+});
+
+describe('isUpgradeRevealed', () => {
+  // Two conditions doing different jobs. Lowering the tap gates alone made
+  // every upgrade appear at once, and five chips pushed the producer list —
+  // the core purchase loop — off the bottom of the shop.
+  const cheap = { cost: 100, unlockAtClicks: 10 };
+  const dear = { cost: 5_000_000, unlockAtClicks: 250 };
+
+  test('hidden until the tap gate is met', () => {
+    expect(isUpgradeRevealed(cheap, 9, 1e9)).toBe(false);
+    expect(isUpgradeRevealed(cheap, 10, 1e9)).toBe(true);
+  });
+
+  test('hidden until you have earned a real fraction of the price', () => {
+    expect(isUpgradeRevealed(dear, 999, 0)).toBe(false);
+    expect(isUpgradeRevealed(dear, 999, 100)).toBe(false);
+    expect(isUpgradeRevealed(dear, 999, 5_000_000)).toBe(true);
+  });
+
+  test('an early player sees the cheap upgrade but not the expensive one', () => {
+    // the exact state that produced the regression: 260 banked, 257 taps
+    expect(isUpgradeRevealed(cheap, 257, 260)).toBe(true);
+    expect(isUpgradeRevealed(dear, 257, 260)).toBe(false);
+  });
+
+  test('reveals never reverse, because they key off totalEarned', () => {
+    // totalEarned only grows, so spending everything cannot hide a chip again
+    const earnedSoFar = 400;
+    expect(isUpgradeRevealed(cheap, 257, earnedSoFar)).toBe(true);
+    expect(isUpgradeRevealed(cheap, 257, earnedSoFar + 1)).toBe(true);
   });
 });

@@ -1,4 +1,11 @@
 // Click upgrades. Hidden until unlockAtClicks total squishes.
+//
+// KEEP THESE GATES SMALL. Cost is already the real gate — nobody affords the
+// 5M upgrade in hour one — so the tap count is a SECOND condition on top, and
+// the shop teases the next locked one as "unlocks after N more squishes".
+// At the old numbers (10/50/200/700/2000) that message read "tap 1,700 more
+// times", which turns a reward into homework. Dor flagged it on 2026-08-20;
+// the gates exist only so the shop is not full of chips on the first launch.
 // ids are stable save keys — NEVER rename after ship.
 //
 // A click is worth `flat + share * dps` (see economy.ts). The cheap early
@@ -30,7 +37,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'הסקווישי נהנה מזה. כפול 2.',
     cost: 1_000,
     multiplier: 2,
-    unlockAtClicks: 50,
+    unlockAtClicks: 25,
   },
   {
     id: 'secret-technique',
@@ -38,7 +45,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'עברה במשפחה שלוש דורות. כפול 3.',
     cost: 15_000,
     multiplier: 3,
-    unlockAtClicks: 200,
+    unlockAtClicks: 60,
   },
   {
     id: 'grandma-hands',
@@ -46,7 +53,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'אין מעיכה כמו של סבתא. החלק מהייצור שבכל מעיכה — כפול 2.',
     cost: 200_000,
     shareMultiplier: 2,
-    unlockAtClicks: 700,
+    unlockAtClicks: 120,
   },
   {
     id: 'quantum-squish',
@@ -54,7 +61,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'מועך בכל היקומים במקביל. החלק מהייצור שבכל מעיכה — כפול 2.5.',
     cost: 5_000_000,
     shareMultiplier: 2.5,
-    unlockAtClicks: 2_000,
+    unlockAtClicks: 250,
   },
 ];
 

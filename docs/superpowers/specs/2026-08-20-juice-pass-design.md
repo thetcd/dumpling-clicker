@@ -133,25 +133,32 @@ so nothing above ~15k is priced as a flat multiplier. That rule exists because
 `grandma-hands` and `quantum-squish` were flat ×3/×5 traps worth 3 to 7 times
 less than simply buying buildings, fixed earlier today.
 
+**Tap gates stay small — 300 at the very most.** The shop teases the next
+locked upgrade as "unlocks after N more squishes", so a big gate reads as "tap
+1,700 more times" and turns a reward into homework. Dor flagged exactly this on
+2026-08-20 and the live gates were cut from 10/50/200/700/2000 to
+10/25/60/120/250. Cost is the real gate; the tap count exists only so the first
+launch is not a wall of chips. `tests/economy.test.ts` now enforces the ceiling.
+
 **Flat tier**, denser early so the first ten minutes hand out something every
 minute or two:
 
 | Cost | Effect | Gate (taps) |
 |---|---|---|
 | 100 | ×2 | 10 (existing `fast-fingers`) |
-| 400 | ×2 | 25 (new) |
-| 1,000 | ×2 | 50 (existing `silk-gloves`) |
-| 4,000 | ×2 | 110 (new) |
-| 15,000 | ×3 | 200 (existing `secret-technique`) |
+| 400 | ×2 | 20 (new) |
+| 1,000 | ×2 | 35 (existing `silk-gloves`) |
+| 4,000 | ×2 | 55 (new) |
+| 15,000 | ×3 | 80 (existing `secret-technique`) |
 
 **Share tier**, above 15k:
 
 | Cost | Effect | Gate (taps) |
 |---|---|---|
-| 60,000 | share ×1.5 | 350 (new) |
-| 200,000 | share ×2 | 700 (existing `grandma-hands`) |
-| 800,000 | share ×1.4 | 1,200 (new) |
-| 5,000,000 | share ×2.5 | 2,000 (existing `quantum-squish`) |
+| 60,000 | share ×1.5 | 110 (new) |
+| 200,000 | share ×2 | 140 (existing `grandma-hands`) |
+| 800,000 | share ×1.4 | 175 (new) |
+| 5,000,000 | share ×2.5 | 210 (existing `quantum-squish`) |
 
 Compounded that is ×10.5 on `CLICK_DPS_SHARE`, so a tap is worth about 10.5%
 of one second of production, which at 5 taps per second is roughly 52% on top
@@ -170,9 +177,9 @@ that `playPurchase(tier, jackpot)` already has.
 
 | Cost | Effect | Gate (taps) |
 |---|---|---|
-| 40,000,000 | 5% chance of ×7 | 3,000 |
-| 400,000,000 | crit chance 5% to 10% | 4,500 |
-| 4,000,000,000 | crit multiplier ×7 to ×12 | 6,500 |
+| 40,000,000 | 5% chance of ×7 | 240 |
+| 400,000,000 | crit chance 5% to 10% | 270 |
+| 4,000,000,000 | crit multiplier ×7 to ×12 | 300 |
 
 This is variable reward, the lever DESIGN-NOTES already identifies as the
 strongest psychological pull in the genre and the reason the golden dumpling

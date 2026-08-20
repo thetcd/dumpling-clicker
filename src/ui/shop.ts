@@ -1,7 +1,7 @@
 // Shop: upgrade chips on top, producer list below. Rows are built once and
 // refreshed in place (throttled by the game loop) — no per-frame DOM churn.
 import { buyProducer, buyUpgrade } from '../game/actions';
-import { clickValue, clickValueWith, costOf } from '../game/economy';
+import { isUpgradeRevealed, clickValue, clickValueWith, costOf } from '../game/economy';
 import { PRODUCERS } from '../game/config/producers';
 import { UPGRADES } from '../game/config/upgrades';
 import type { GameState } from '../game/state';
@@ -67,13 +67,19 @@ export function initShop(
 
   function rebuildUpgrades(): void {
     const clicks = state.stats.totalClicks;
+    const earned = state.totalEarned;
     const owned = (u: { id: string }) => state.upgrades.includes(u.id);
-    const unlocked = UPGRADES.filter((u) => !owned(u) && clicks >= u.unlockAtClicks);
+    const unlocked = UPGRADES.filter(
+      (u) => !owned(u) && isUpgradeRevealed(u, clicks, earned),
+    );
     // tease the next locked upgrade so the player always sees that squishing
     // itself unlocks stronger squishes
-    const nextLocked = UPGRADES.filter((u) => !owned(u) && clicks < u.unlockAtClicks)
-      .sort((a, b) => a.unlockAtClicks - b.unlockAtClicks)[0];
-    const sig = `${unlocked.map((u) => u.id).join()}|${nextLocked?.id ?? ''}`;
+    const nextLocked = UPGRADES.filter((u) => !owned(u) && !isUpgradeRevealed(u, clicks, earned))
+      .sort((a, b) => a.cost - b.cost)[0];
+    // which condition is actually blocking it decides what the teaser says —
+    // "tap N more times" is a lie when the tap gate is already satisfied
+    const teaserNeedsClicks = nextLocked !== undefined && clicks < nextLocked.unlockAtClicks;
+    const sig = `${unlocked.map((u) => u.id).join()}|${nextLocked?.id ?? ''}|${teaserNeedsClicks}`;
     if (sig === upgradeSignature) {
       updateUpgradeDynamic();
       return;
@@ -109,10 +115,10 @@ export function initShop(
       const chip = document.createElement('button');
       chip.className = 'upgrade-chip teaser';
       chip.disabled = true;
-      chip.dataset.unlockAt = String(nextLocked.unlockAtClicks);
+      if (teaserNeedsClicks) chip.dataset.unlockAt = String(nextLocked.unlockAtClicks);
       chip.innerHTML = `
         <span class="u-name">❓</span>
-        <span class="u-desc" data-teaser></span>`;
+        <span class="u-desc" data-teaser>${teaserNeedsClicks ? '' : STR.upgradeTeaserEarn}</span>`;
       upgradeHost.appendChild(chip);
     }
     updateUpgradeDynamic();
@@ -132,9 +138,11 @@ export function initShop(
     }
     const teaser = upgradeHost.querySelector<HTMLElement>('.teaser [data-teaser]');
     const teaserChip = upgradeHost.querySelector<HTMLElement>('.teaser');
-    if (teaser && teaserChip) {
-      const remaining =
-        Number(teaserChip.dataset.unlockAt) - state.stats.totalClicks;
+    // Only a tap-gated teaser gets the countdown. A cost-gated one has no
+    // `unlockAt`, and Number(undefined) is NaN, which rendered as the nonsense
+    // "unlocks after 0 more squishes" while the real blocker was the price.
+    if (teaser && teaserChip && teaserChip.dataset.unlockAt !== undefined) {
+      const remaining = Number(teaserChip.dataset.unlockAt) - state.stats.totalClicks;
       teaser.textContent = STR.upgradeTeaser(formatNumber(Math.max(remaining, 0)));
     }
   }
