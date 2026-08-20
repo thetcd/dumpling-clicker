@@ -1,0 +1,165 @@
+# Dumpling Clicker — QA pass
+
+**Build tested:** live dev server at `http://192.168.1.158:5173/`, driven in Chrome on dors-macbook-pro
+**Date:** 2026-08-20
+**Scope:** product QA — functional bugs, layout, RTL, persistence, plus a craft review of what makes the game read as machine-generated
+**Not done:** nothing was fixed. This is diagnosis only.
+
+Two notes on method, so you can weigh the results:
+
+- The browser window would not resize below 1512×810 CSS px (macOS fullscreen), so all live measurements are at **1512×810**, not 430×900. Layout findings that depend on narrow width are marked *(width-dependent)* and were reasoned from the CSS rather than measured at 430px.
+- The build has **16 colors / 11 eyes / 11 mouths / 11 accessories**, not the 12/7/7/7 in the test brief, and it has a golden-dumpling frenzy mechanic (`src/game/golden.ts`, `src/ui/golden.ts`) that the brief doesn't mention. The brief is stale.
+
+---
+
+## Scoreboard
+
+| Area | Result |
+|---|---|
+| Unit tests (`npm test`) | 42/42 pass, 4 files, 1.21s |
+| Avatar art — all combinations | **21,296 / 21,296 clean**: every layer renders non-empty, nothing escapes the 200×200 viewBox |
+| Offline progress | **Exact**: 20h away @ 100 dps → 1,440,000 = 8h cap × 50% |
+| Combo pitch ladder | **Exact**: 1400 → 1462 → 1526.7 → 1594.3 → 1664.9 Hz (2^(combo/16)); resets to 1400 after a 1.5s pause |
+| Squish spring | **No drift**: settles to `scale(1,1) skewX(0)`, element returns to exactly left 604 / right 908 |
+| Persistence across reload | Count, producers, upgrades, avatar all survive |
+| Regression: `[hidden]{display:none!important}` | **Holds** — hidden producer rows compute `display: none` |
+| Regression: `.squish-wrap` centering | **Holds** — `inset-inline: 0/0` + `margin-inline: auto` (18px each side); `transform` used only by the spring |
+| Hebrew compact numbers | Correct 10^6–10^12, **breaks above 10^12** (see B5) |
+| Reset | **Broken — does nothing** (see B1) |
+
+---
+
+## Blockers
+
+### B1 — "התחלה מחדש" (reset) is a no-op. Every time.
+
+Confirmed end to end. Before: 292,859 dumplings, `{apprentice:20, stall:10, kindergarten:5, school:2, bakery:1}`. Settings → reset → "כן, למחוק הכל" → page reloads → **316,105 dumplings and all five producer tiers still there.**
+
+Cause: `startLoop(state, …)` in `main.ts` captures the state object *by reference at boot*. `onReset` does `state = resetGame(state, …)`, which builds a **new** object, saves it, then calls `location.reload()`. The reload fires `pagehide`, whose handler inside `loop.ts` still holds the **old** object — so it writes the old save back over the fresh one.
+
+```
+onReset:  resetGame → clearStorage → saveToStorage(NEW)  → location.reload()
+reload:                                                    pagehide → saveToStorage(OLD)  ← wins
+```
+
+Same stale reference also means the loop accrues income into the old object while `click()` mutates the new one, for the few ms before the reload.
+
+Repro: get any nonzero balance, reset, confirm, look at the counter after reload.
+
+### B2 — Reset ends in a congratulations screen
+
+The reset reload also trips the offline-progress path and pops the "ברוך שובך!" modal awarding **43 dumplings**. So "delete everything" resolves to a celebration.
+
+### B3 — "Welcome back" fires on every refresh
+
+The gate is `away >= 1` **dumpling**, not any amount of time. With dps 407 I reloaded after ~1 second and got the full-screen modal awarding **27** dumplings against a balance of 200,521 — 0.013% of holdings, given the largest UI treatment in the game. Any real player refreshing, or a PWA resuming from background for two seconds, gets this.
+
+Suggested gate: minimum absence (60s+) *and* a reward worth naming (say ≥1% of balance or ≥30s of production); below that, credit silently.
+
+### B4 — The squishy floats above the steamer *(visible at every width)*
+
+Measured at a 340px hit box:
+
+| | y |
+|---|---|
+| Bottom edge of the dumpling body (viewBox y=170/200 of the 304px wrap) | **411** |
+| Surface of the steamer plate (viewBox y≈82/150) | **453** |
+| Gap | **42px** |
+
+`.squish-wrap { bottom: 19% }` positions the *wrap*, but the drawn dumpling stops at 85% of the wrap's height, so 15% of it is empty air below the body. The hero object of the game does not touch its container — it reads as a balloon hovering over a plate.
+
+Same root cause makes the squash worse, not better: `transform-origin: 50% 100%` is the wrap's bottom, 46px *below* the visible dumpling, so squashing scales it toward a point in mid-air instead of planting it on the plate.
+
+### B5 — Number formatting collapses above 10^12
+
+`Intl.NumberFormat('he', {notation:'compact', compactDisplay:'long'})` has no unit above טריליון:
+
+| Input | Output |
+|---|---|
+| 1e6 | `1 מיליון` |
+| 1.5e9 | `1.5 מיליארד` |
+| 1.234e12 | `1.2 טריליון` |
+| **1e15** | **`1000 טריליון`** |
+| **1.7e18** | **`1,700,000 טריליון`** |
+| **1e24** | **`1,000,000,000,000 טריליון`** |
+| NaN | `NaN` |
+
+Reachable, not theoretical: the boss tier is 1.6M/s *per unit*. Own 30 of them and you cross 10^12 in a day of idling. Needs a custom scale (or scientific notation) above טריליון, and a non-finite guard so the HUD can't print "NaN".
+
+### B6 — The stage clips the steamer, and the layout jumps mid-loop
+
+`.squish-hit` is `min(88vw, 360px)` tall. `#stage` gets `100dvh − hud − 44dvh`; at 810px with the frenzy badge visible that's ~314px, so the bottom of the steamer is cut off by the shop panel.
+
+Worse than the clipping: the frenzy badge is a normal-flow element inside `#hud`, so **the whole scene shifts ~30px down when a frenzy starts and back up 30 seconds later.** That jump lands in the middle of the most intense moment in the game.
+
+---
+
+## Medium
+
+**M1 — The mystery row leaks the tier's exact price.** It hides icon, name and description behind ❓/`???` — and then prints `🥟 1.4 מיליון` right next to it. Anyone can price-match the tier. Hide the cost too, or stop hiding the name.
+
+**M2 — The designer's "done" button is below the fold on first launch.** Measured: button bottom at y=975 against a viewport of 810 — **165px off-screen**, with no scroll shadow, no sticky footer, no hint. This is the first screen a new player ever sees. *(width-dependent — worse on a phone, where the four groups are taller.)*
+
+**M3 — The designer's part tiles are stale.** `partGroup()` renders each tile once from `{...draft}` at open time, so after you pick hearts eyes, every mouth tile still shows dot eyes. And `color: 'classic'` is hardcoded, so no tile ever shows your chosen color. You pick a mouth by looking at a face that isn't yours. Re-render the tiles on every change.
+
+**M4 — The golden dumpling overlaps the hero, contradicting its own code comment.** `ui/golden.ts` says *"Spawn in the open band above the steamer, never over the main squishy"*, but `insetInlineStart = 5 + rand()*69` % of a 560px stage against a 304px centered squishy makes overlap likely. I caught one at x 575–637 sitting on the dumpling's cap. *(width-dependent — at 430px the squishy is 76vw, so overlap becomes the normal case.)*
+
+**M5 — `window.__spawnGolden` ships to production.** Dev backdoor left on `window` in `main.ts`. Anyone with a console can farm ×7 frenzies indefinitely.
+
+**M6 — Mystery row contrast.** `opacity: 0.35` on `--text-dim` over the panel is far below any legibility floor. It's not "teased", it's unreadable.
+
+**M7 — The shop's scrollbar is raw chrome.** A bare grey track renders on the left (RTL) *outside* the panel's 22px rounded corner. Needs `scrollbar-width: none` / styled thumb, or the panel needs to own its own overflow.
+
+**M8 — HUD flashes 0.** `initHud` writes a hardcoded `<span id="hud-num">0</span>` and the value is only ever written from inside the rAF loop. A returning player with 1.4M sees "0 כופתאות" until the first frame — and longer if the tab was backgrounded, which is the normal PWA resume path. Write the real value once at init.
+
+**M9 — No desktop layout.** At 1512px the game is a 560px column marooned in a black field. Fine if phone-only is the call; worth a background treatment or a max-width scale-up if not.
+
+---
+
+## Why it reads as AI-generated
+
+The mechanics are genuinely good — the economy is clean, the spring is nice, the combo ladder is a real idea, the golden-dumpling frenzy is well-factored. What gives it away is texture, and almost all of it is cheap to fix. Ranked by damage:
+
+**1. Emoji as art. This is the whole thing.**
+Ten producer icons (🥟 🏪 🧸 🏫 🥠 🏭 🪖 🌆 🚀 👑), 🥟 before every price, 👆 and ⏱ in the HUD pills, 🔥 on the frenzy badge, ❓ on locks, 👑 in the boss modal, ⚙️ 🎨 📤 🗑️ in settings, 🥟 in the tab title. You hand-drew a layered SVG dumpling — pleats, top knot, blush, a catchlight in the eye — and then put Apple's emoji font next to it. Two art directions in the same row, and the emoji win because they're louder.
+
+It's worst in the first shop row: the apprentice's icon is 🥟 and the currency marker in its own price is also 🥟, so the row reads `🥟 … 🥟 245`.
+
+Fix: ten SVG icons in the avatar's ink color (`#3a2e26`) and stroke weight. Drop 👆/⏱/🔥/❓ entirely — the words already say it.
+
+**2. The title is a transliteration.** "דאמפלינג קליקר" is "Dumpling Clicker" respelled in Hebrew letters. That's the output of a translation pass, not the name of a Hebrew game.
+
+**3. The producer ladder is the Cookie Clicker template.** apprentice → stall → kindergarten → school → bakery → factory → army → city → **space** → **final boss**. "…and then space, and then the boss" is the single most recognizable generated structure in the genre. You already have the good one: the army kitchen. Anything locally specific beats a rocket — a Friday-afternoon shuk stall, a wedding caterer, a grandmother's kitchen.
+
+**4. Every description is the same shape.** Ten rows, each one 4–7 words, comma-spliced, landing on a soft joke: *"מועך בשבילך, לאט אבל באהבה"* / *"סקווישים טריים, שקל ליחידה"* / *"קטנים, רכים, ומייצרים כופתאות"*. Identical rhythm ten times running is the tell, more than any single line. Break it: make two of them one word, make one of them long.
+
+**5. Rule of three.** *"קטנים, רכים, ומייצרים כופתאות"*. Also in the reset confirm. Cut to two, or to four.
+
+**6. Em dashes in Hebrew UI copy.** *"ידיים של סבתא — החלק מהייצור שבכל מעיכה — כפול 2"*, *"🔥 טירוף ×7 — 30 שנ׳"*, *"גל בכבודו ובעצמו — הצטרף"*. Hebrew interface copy almost never uses them; it's an English-prose habit carried over.
+
+**7. "מעיכה קוונטית / מועך בכל היקומים במקביל".** Quantum-plus-multiverse as the top-tier joke is the default punchline. So is "עברה במשפחה שלוש דורות" for a secret technique.
+
+**8. The buttons are enthusiastic on the player's behalf.** *"איזה כיף, קח לי הכל"*, *"זה הסקווישי שלי!"*, *"לספר לכולם"*. Real buttons are flat — *"אספתי"*, *"יאללה"*, *"סיימתי"*. Excitement belongs in the animation, not in the label.
+
+**9. Descriptions explain their own mechanics.** *"החלק מהייצור שבכל מעיכה — כפול 2.5."* is a spec sheet. Put ×2.5 in the row as data and give the line back to voice.
+
+**10. Every customization option is equally safe.** 16 pastels, 11 pleasant eyes, 11 pleasant mouths, 11 pleasant accessories. Nothing ugly, nothing stupid, nothing that makes a nine-year-old laugh out loud. Uniform pleasantness is what generation produces; a designed set has three great options and one deliberately terrible one.
+
+**11. Per-option art finish is inconsistent** — a symptom of parts written independently rather than drawn together:
+- `dot` eyes have a white catchlight; `star` eyes are flat solid black with none. Side by side the star face looks dead.
+- `grin` is a solid dark blob that reads as a hole in the face rather than a laugh.
+- `cap`'s brim juts past the body silhouette into empty space with no contact shading, and it covers the top knot rather than sitting behind it.
+- The golden dumpling only tints the **body** fill, so a golden squishy keeps a bright blue baseball cap.
+
+---
+
+## Verified working (don't regress these)
+
+- All 21,296 avatar combinations render with every layer non-empty and nothing outside the viewBox.
+- Offline earnings land exactly on `dps × min(elapsed, 8h) × 0.5`.
+- Combo pitch is exactly `2^(combo/16)` and resets on a >900ms gap.
+- The squish spring returns to identity with zero positional drift over ~1.2s of sampling.
+- Producer reveal thresholds behave as coded (`totalEarned ≥ 0.25 × baseCost`, plus one teased tier behind an owned frontier).
+- Cost growth, click value (`flat × multipliers + share × dps`), and the ×7 frenzy multiplier all match the config: dps 407 → 2,849 and click 5 → 35 under frenzy.
+- Upgrade unlock teaser counts down correctly against `stats.totalClicks`.
+- Save healing rejects garbage field-by-field; `dir="rtl"` is intact on every screen and nothing overflowed horizontally at the tested width.

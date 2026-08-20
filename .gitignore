@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+
+# build output (Vercel/Netlify build this themselves — never commit it)
+dist/
+dist-ssr/
+*.local
+
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# env (no backend today, but don't let a stray key in later)
+.env
+.env.*
+!.env.example
+
+# host tooling
+.vercel/
+.netlify/
+
+# scratch / staging junk
+_to_delete/
+*.tgz

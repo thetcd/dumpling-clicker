@@ -1,0 +1,142 @@
+DUMPLING CLICKER — AI ART GENERATION PLAYBOOK (Gemini)
+========================================================
+
+WHY GEMINI: yes, Gemini is the right tool here. Its image model (Nano Banana)
+is the best at ITERATIVE EDITING — "keep the exact same toy, change only the
+eyes" — and that's exactly what we need, because the game builds every player's
+squishy from layers (body x eyes x mouth x accessory) that must align pixel-
+perfect. It also accepts reference photos, which we need for the Gal boss.
+(Midjourney makes prettier one-offs but can't hold a consistent part set;
+ChatGPT images can do this too but Gemini's editing is stronger.)
+
+WORKFLOW — IMPORTANT:
+1. Do EVERYTHING in ONE Gemini chat so the style stays consistent.
+2. If it helps, first attach a real photo of a dumpling squishy toy (the viral
+   one) and say "this is the material/vibe reference".
+3. Generate the master body FIRST. Every other image is an EDIT of it.
+4. If style drifts, re-attach the master image and say "match this exactly".
+5. Ask for square 1:1, plain white background (easy to cut out).
+6. Send me the finished PNGs — I'll cut the backgrounds, align the layers,
+   and wire them into the game (small change, the code is built for it).
+
+WHAT WE NEED (checklist):
+[ ] 1 master body (blank face)      [ ] 8 body colors
+[ ] 4 eye sets                      [ ] 4 mouths
+[ ] 3 accessories (bow/cap/glasses) [ ] 1 bamboo steamer
+[ ] 1 boss Gal squishy (AFTER his OK + his photo)
+[ ] 1 app icon / social preview
+
+AUTHENTIC TOY TRAITS — sprinkle these into prompts so the art matches the
+real viral toy: pleated top gathered into a knot, dough-soft matte finish
+with a slight sheen, blush cheeks (every real one has them), sits in a
+bamboo steamer with a white paper liner, "slow-rise squishy" softness.
+Finish variants that exist in the real product line (future skins): pastel
+solids, glitter, tie-dye/rainbow, galaxy, glow-in-the-dark, metallic gold.
+
+STYLE ANCHOR — paste this into every prompt (it's what keeps the art "game",
+not "photo"):
+  Stylized 3D game mascot render, NOT photorealistic, NOT product photography.
+  Cute chibi proportions: extra round, extra puffy, slightly wider than tall.
+  Smooth simplified surfaces like a Pixar toy, soft pastel colors, big soft
+  highlights, gentle rim light. Looks like a character from a cozy mobile
+  game.
+
+FIX FOR AN IMAGE THAT CAME OUT TOO REALISTIC (edit it in the same chat):
+  Redraw this exact dumpling as a stylized cute 3D game mascot instead of a
+  realistic product photo: rounder and puffier chibi proportions, simplified
+  smooth surfaces, fewer and softer pleats, brighter and more playful pastel
+  lighting with big soft highlights, like a character from a cozy mobile
+  game (Pixar-toy style). Keep the same pose, framing, blank face and white
+  background.
+
+--------------------------------------------------------
+PROMPT 1 — MASTER BODY (everything derives from this)
+--------------------------------------------------------
+A single cute kawaii dumpling squishy character for a mobile game — a bao bun
+shape with a few soft simplified pleats gathered into a little top knot.
+Stylized 3D game mascot render, NOT photorealistic, NOT product photography:
+cute chibi proportions (extra round, extra puffy, slightly wider than tall),
+smooth simplified surfaces like a Pixar toy, soft squishy-vinyl material with
+big soft highlights and a gentle rim light. Front view, facing the camera,
+perfectly centered. Cream-white dough color. IMPORTANT: completely blank
+face — no eyes, no mouth, nothing painted on it. Plain solid white
+background, soft shadow under the character only. Square 1:1, high
+resolution.
+
+--------------------------------------------------------
+PROMPT 2 — BODY COLORS (run once per color, as edits of Prompt 1's image)
+--------------------------------------------------------
+Keep this exact same squishy toy — same shape, same pleats, same lighting,
+same camera angle, same blank face. Change ONLY the body color to: {COLOR}.
+
+Colors to run: pastel blush pink / matcha green / baby blue / soft lavender /
+pastel sunny yellow / peach / charcoal black-sesame gray.
+(Cream-white is the master itself — that's color #8.)
+
+--------------------------------------------------------
+PROMPT 3 — EYES (run once per set; these become transparent overlays)
+--------------------------------------------------------
+In the exact same art style, material and lighting as the squishy toy: render
+ONLY a pair of eyes, isolated on a plain white background, as they would look
+painted on the toy's vinyl face — glossy paint-on-vinyl finish, positioned as
+a matching left/right pair with the same spacing they'd have on the toy's
+face. Nothing else in the image. The eyes are: {EYES}.
+
+Eye sets to run:
+- round black bead eyes with a tiny white glint
+- happy closed eyes, two upward arcs
+- sleepy half-closed eyes with tiny lashes
+- star-shaped sparkly eyes
+
+--------------------------------------------------------
+PROMPT 4 — MOUTHS (same pattern)
+--------------------------------------------------------
+Same instruction as the eyes, but render ONLY a mouth: {MOUTH}.
+
+Mouths to run:
+- a small content smile
+- a surprised open mouth with a tiny pink tongue inside
+- a cat-like "w" mouth
+- a cheeky smile with the tongue sticking out
+
+--------------------------------------------------------
+PROMPT 5 — ACCESSORIES
+--------------------------------------------------------
+In the same style: render ONLY a {ACCESSORY}, isolated on a plain white
+background, made as a tiny soft vinyl toy accessory sized for the dumpling
+squishy's head, same lighting and material family. Nothing else in the image.
+
+Accessories to run:
+- small pink bow
+- tiny blue baseball cap
+- small round glasses
+
+--------------------------------------------------------
+PROMPT 6 — BAMBOO STEAMER (the stage the squishy sits in)
+--------------------------------------------------------
+A round bamboo dim-sum steamer basket with a white paper liner inside,
+photographed front-on with a slight top-down angle so the liner is visible.
+Same soft kawaii product lighting and style as the squishy toy. Empty — no
+food in it. Centered, plain white background, square 1:1. Leave the middle of
+the liner clear so a toy can sit there.
+
+--------------------------------------------------------
+PROMPT 7 — THE SQUISHY BOSS (Gal) — ONLY after his written OK
+--------------------------------------------------------
+Attach 1-2 clear photos of Gal, then:
+
+Using the attached photos as reference, create a cute kawaii squishy dumpling
+toy CARICATURE of this person, in the exact same style as the other dumpling
+squishies: bao-bun body in cream dough color, his recognizable hairstyle,
+eyebrows and facial hair painted on the vinyl in a cute simplified way, plus
+a small gold crown sitting on the top knot. Friendly smiling expression. Same
+squishy PVC material, same studio lighting, front view, centered, plain white
+background, square 1:1.
+
+--------------------------------------------------------
+PROMPT 8 — APP ICON / SOCIAL PREVIEW
+--------------------------------------------------------
+The cream dumpling squishy toy with round bead eyes and a small smile,
+sitting inside the bamboo steamer, centered on a solid dark plum background
+(hex #241a28), composed like an app icon with generous margins around the
+subject. Warm, inviting, kawaii. Square 1:1.
