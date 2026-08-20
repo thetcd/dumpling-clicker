@@ -10,6 +10,7 @@ import {
 import type { AvatarDesign, GameState } from '../game/state';
 import { STR } from '../i18n/strings.he';
 import { avatarSVG } from './avatar';
+import { isPartUnlocked, unlockLevel } from '../game/unlocks';
 
 export function openDesigner(
   state: GameState,
@@ -68,7 +69,15 @@ export function openDesigner(
     for (const g of groups) {
       for (const el of Array.from(g.host.children) as HTMLElement[]) {
         const id = el.dataset.id!;
-        el.innerHTML = avatarSVG({ ...draft, [g.key]: id }, 'mini-svg');
+        const opt = g.options.find((o) => o.id === id)!;
+        // A locked tile shows the LOCK, not the part. Showing the part greyed
+        // out reads as "broken", and showing the level it opens at is the whole
+        // motivational point of gating them in the first place.
+        if (!isPartUnlocked(opt, state.prestige, state.avatar[g.key])) {
+          el.innerHTML = `<span class="dz-lock">🔒<b>${unlockLevel(opt)}</b></span>`;
+        } else {
+          el.innerHTML = avatarSVG({ ...draft, [g.key]: id }, 'mini-svg');
+        }
       }
     }
   };
@@ -83,8 +92,14 @@ export function openDesigner(
       const b = document.createElement('button');
       b.className = 'dz-part';
       b.dataset.id = opt.id;
-      b.title = opt.nameHe;
+      const unlocked = isPartUnlocked(opt, state.prestige, state.avatar[key]);
+      b.title = unlocked ? opt.nameHe : STR.partLocked(unlockLevel(opt));
+      if (!unlocked) {
+        b.classList.add('locked');
+        b.disabled = true;
+      }
       b.addEventListener('click', () => {
+        if (!isPartUnlocked(opt, state.prestige, state.avatar[key])) return;
         draft[key] = opt.id;
         mark(host, opt.id);
         render();

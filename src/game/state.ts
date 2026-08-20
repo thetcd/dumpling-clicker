@@ -17,6 +17,7 @@ export interface GameState {
   producers: Record<string, number>; // producer id -> count owned
   upgrades: string[]; // purchased upgrade ids
   frenzyUntil: number; // epoch ms a golden-dumpling frenzy runs until; 0 = none
+  prestige: number; // resets completed; gates designer parts and scales income
   avatar: AvatarDesign;
   designed: boolean; // has the player been through the creator yet
   settings: { sound: boolean; music: boolean };
@@ -32,6 +33,7 @@ export function createInitialState(now: number): GameState {
     producers: {},
     upgrades: [],
     frenzyUntil: 0,
+    prestige: 0,
     avatar: { ...DEFAULT_AVATAR },
     designed: false,
     settings: { sound: true, music: true },

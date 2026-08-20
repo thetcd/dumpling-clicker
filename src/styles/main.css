@@ -809,3 +809,28 @@ button {
 .findable.common .findable-icon {
   font-size: 2.6rem;
 }
+
+/* Locked designer parts. Shown, never hidden — the ladder being visible from
+   the first launch is the whole reason to gate them. */
+.dz-part.locked {
+  opacity: 0.55;
+  cursor: default;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dz-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dz-lock b {
+  font-size: 0.75rem;
+  color: var(--accent);
+}

@@ -4,6 +4,12 @@
 export interface PartOption {
   id: string;
   nameHe: string;
+  /**
+   * Prestige level required to CHOOSE this part. Absent means available from
+   * the first launch. Never gates RENDERING — a save already wearing a part
+   * keeps it, whatever the gate says.
+   */
+  unlockAtPrestige?: number;
 }
 
 export const BODY_COLORS: { id: string; nameHe: string; fill: string }[] = [
@@ -53,18 +59,22 @@ export const MOUTHS: PartOption[] = [
   { id: 'drool', nameHe: 'מזיל ריר' },
 ];
 
+// Five are free from the first launch and six are prestige rewards. NOT all
+// of them: the designer is the first screen anyone ever sees, and emptying it
+// makes run 1 look like the whole game is three choices wide. Five free keeps
+// a real decision on launch; the locked six are why a reset is worth pressing.
 export const ACCESSORIES: PartOption[] = [
   { id: 'none', nameHe: 'בלי' },
   { id: 'bow', nameHe: 'פפיון' },
   { id: 'cap', nameHe: 'כובע' },
   { id: 'glasses', nameHe: 'משקפיים' },
   { id: 'flower', nameHe: 'פרח' },
-  { id: 'sprout', nameHe: 'נבט' },
-  { id: 'headphones', nameHe: 'אוזניות' },
-  { id: 'chef', nameHe: 'כובע שף' },
-  { id: 'sunglasses', nameHe: 'משקפי שמש' },
-  { id: 'bandaid', nameHe: 'פלסטר' },
-  { id: 'scarf', nameHe: 'צעיף' },
+  { id: 'sprout', nameHe: 'נבט', unlockAtPrestige: 1 },
+  { id: 'headphones', nameHe: 'אוזניות', unlockAtPrestige: 2 },
+  { id: 'bandaid', nameHe: 'פלסטר', unlockAtPrestige: 3 },
+  { id: 'scarf', nameHe: 'צעיף', unlockAtPrestige: 4 },
+  { id: 'chef', nameHe: 'כובע שף', unlockAtPrestige: 5 },
+  { id: 'sunglasses', nameHe: 'משקפי שמש', unlockAtPrestige: 6 },
 ];
 
 export const DEFAULT_AVATAR = {

@@ -19,6 +19,7 @@ export const STR = {
   designEyes: 'עיניים',
   designMouth: 'פה',
   designAccessory: 'אקססורי',
+  partLocked: (level: number) => `ייפתח אחרי ${level} התחלות מחדש`,
   designDone: 'זה הסקווישי שלי!',
   settings: 'הגדרות',
   sound: 'צלילים',

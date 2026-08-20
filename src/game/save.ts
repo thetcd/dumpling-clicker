@@ -57,6 +57,7 @@ function heal(d: Record<string, unknown>): GameState {
     // registering migrations[2] would make deserialize() return null and
     // wipe every existing save.
     frenzyUntil: finite(d.frenzyUntil, 0),
+    prestige: Math.max(0, Math.floor(finite(d.prestige, 0))),
     avatar: healAvatar(d.avatar, base.avatar),
     designed: d.designed === true,
     settings: {
