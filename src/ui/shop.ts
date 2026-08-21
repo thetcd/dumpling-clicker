@@ -1,9 +1,9 @@
 // Shop: upgrade chips on top, producer list below. Rows are built once and
 // refreshed in place (throttled by the game loop) — no per-frame DOM churn.
 import { buyProducer, buyUpgrade } from '../game/actions';
-import { isUpgradeRevealed, clickValue, clickValueWith, costOf } from '../game/economy';
+import { isUpgradeRevealed, clickValue, clickValueWith, costOf, critParams } from '../game/economy';
 import { PRODUCERS } from '../game/config/producers';
-import { UPGRADES } from '../game/config/upgrades';
+import { CRIT_BASE_MULT, UPGRADES, type UpgradeDef } from '../game/config/upgrades';
 import { MAX_UPGRADE_CHIPS } from '../game/config/balance';
 import type { GameState } from '../game/state';
 import { STR } from '../i18n/strings.he';
@@ -12,6 +12,42 @@ import { renderIcon } from './icons';
 
 export interface ShopApi {
   update(): void;
+}
+
+/**
+ * What a chip promises, phrased per tier — one label for all three was wrong.
+ *
+ * The absolute "מעיכה: 2 ← 4" reads as "your click BECOMES 4". With several x2
+ * upgrades on the shelf at once, each independently doubling from the same
+ * current value, every one of them promised 4 at a different price and they
+ * looked like the same upgrade duplicated. Dor hit exactly this. They are
+ * sequential doublings — a relative "×2" says that and stays true whatever the
+ * player buys first.
+ *
+ * A share upgrade keeps the before/after, because its real gain depends on
+ * current production and is the one number nobody can work out in their head.
+ *
+ * A crit upgrade needs its own phrasing or it is actively broken: crit lives
+ * outside clickValue by design, so the before/after preview rendered "49 ← 49",
+ * an upgrade that looks like it does nothing at all.
+ */
+export function upgradeGainLabel(def: UpgradeDef, state: GameState): string {
+  if (def.multiplier) return STR.gainMult(def.multiplier);
+  if (def.critChance || def.critMult) {
+    const now = critParams(state.upgrades);
+    const after = critParams([...state.upgrades, def.id]);
+    // `after.mult` is 0 when no crit CHANCE is owned yet — critParams reports
+    // "no crit at all" in that case, which is right for the economy and wrong
+    // for a label: a payout upgrade previewed on its own rendered "×0".
+    const mult = after.mult || def.critMult || CRIT_BASE_MULT;
+    return def.critChance && after.chance !== now.chance
+      ? STR.gainCritChance(Math.round(after.chance * 100), mult)
+      : STR.gainCritMult(mult);
+  }
+  return STR.gainClick(
+    formatNumber(clickValue(state)),
+    formatNumber(clickValueWith(state, def.id)),
+  );
 }
 
 export function initShop(
@@ -106,9 +142,7 @@ export function initShop(
       const chip = document.createElement('button');
       chip.className = 'upgrade-chip';
       chip.dataset.cost = String(def.cost);
-      // Concrete before/after, not just "x2": with the share-scaling upgrades
-      // the real gain depends on current production, which no player can work
-      // out in their head.
+      // the effect line is phrased per tier — see upgradeGainLabel
       chip.innerHTML = `
         <span class="u-name">${def.nameHe}</span>
         <span class="u-desc">${def.descHe}</span>
@@ -142,11 +176,8 @@ export function initShop(
     }
     // the gain is live: a share-scaling upgrade is worth more as production grows
     for (const el of upgradeHost.querySelectorAll<HTMLElement>('[data-upgrade-gain]')) {
-      const id = el.dataset.upgradeGain!;
-      el.textContent = STR.gainClick(
-        formatNumber(clickValue(getState())),
-        formatNumber(clickValueWith(getState(), id)),
-      );
+      const def = UPGRADES.find((u) => u.id === el.dataset.upgradeGain);
+      if (def) el.textContent = upgradeGainLabel(def, getState());
     }
     const teaser = upgradeHost.querySelector<HTMLElement>('.teaser [data-teaser]');
     const teaserChip = upgradeHost.querySelector<HTMLElement>('.teaser');
