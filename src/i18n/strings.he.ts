@@ -6,6 +6,7 @@ export const STR = {
   perClick: 'למעיכה',
   upgradeTeaser: (n: string) => `ייפתח אחרי עוד ${n} מעיכות`,
   upgradeTeaserEarn: 'ייפתח כשתאספו עוד קצת',
+  upgradeTeaserNext: 'ייפתח אחרי שתקנו את השדרוג שלמעלה',
   shopProducers: 'הצוות שלך',
   shopUpgrades: 'שדרוגים',
   owned: 'ברשותך',

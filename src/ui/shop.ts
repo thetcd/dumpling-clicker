@@ -31,6 +31,44 @@ export interface ShopApi {
  * outside clickValue by design, so the before/after preview rendered "49 ← 49",
  * an upgrade that looks like it does nothing at all.
  */
+/**
+ * Which click upgrades the shop offers right now, and what the teaser is
+ * waiting on.
+ *
+ * **One at a time, in cost order.** Every click upgrade improves the same
+ * thing, so two on the shelf together — "ידיים חמות" and "כפפות משי", both ×2 —
+ * read as one upgrade listed twice at two prices. Dor reported exactly that.
+ * Selling them in sequence makes the ladder obvious: buy this, the next
+ * appears. It also keeps the shelf short, which is what stops twelve upgrades
+ * burying the producer list.
+ *
+ * The teaser is the next one by cost whether or not it is revealed, because
+ * with a sequence the honest message is "after you buy this one" — the old
+ * "next LOCKED upgrade" would skip past anything the sequence is holding back
+ * and tease a tier further up.
+ */
+export function upgradeShelf(state: GameState): {
+  shown: UpgradeDef[];
+  teaser?: UpgradeDef;
+  teaserReason?: 'sequence' | 'clicks' | 'cost';
+} {
+  const { totalClicks } = state.stats;
+  const unbought = UPGRADES.filter((u) => !state.upgrades.includes(u.id)).sort(
+    (a, b) => a.cost - b.cost,
+  );
+  const shown = unbought
+    .filter((u) => isUpgradeRevealed(u, totalClicks, state.totalEarned))
+    .slice(0, MAX_UPGRADE_CHIPS);
+  const teaser = unbought.find((u) => !shown.includes(u));
+  if (!teaser) return { shown };
+  const teaserReason = isUpgradeRevealed(teaser, totalClicks, state.totalEarned)
+    ? 'sequence'
+    : totalClicks < teaser.unlockAtClicks
+      ? 'clicks'
+      : 'cost';
+  return { shown, teaser, teaserReason };
+}
+
 export function upgradeGainLabel(def: UpgradeDef, state: GameState): string {
   if (def.multiplier) return STR.gainMult(def.multiplier);
   if (def.critChance || def.critMult) {
@@ -108,26 +146,10 @@ export function initShop(
   let upgradeSignature = '';
 
   function rebuildUpgrades(): void {
-    const clicks = getState().stats.totalClicks;
-    const earned = getState().totalEarned;
-    const owned = (u: { id: string }) => getState().upgrades.includes(u.id);
-    // Cheapest first, and only a few at a time. A chip is a tall card and they
-    // wrap one per row, so at twelve upgrades the shelf measured 270% of the
-    // shop's height and buried every producer row — the core purchase loop —
-    // below the fold. UPGRADE_REVEAL_FRACTION staggers WHEN they appear; this
-    // bounds HOW MANY are on screen at once. Buying one immediately promotes
-    // the next, so the shelf is a steady drip rather than a wall.
-    const unlocked = UPGRADES.filter((u) => !owned(u) && isUpgradeRevealed(u, clicks, earned))
-      .sort((a, b) => a.cost - b.cost)
-      .slice(0, MAX_UPGRADE_CHIPS);
-    // tease the next locked upgrade so the player always sees that squishing
-    // itself unlocks stronger squishes
-    const nextLocked = UPGRADES.filter((u) => !owned(u) && !isUpgradeRevealed(u, clicks, earned))
-      .sort((a, b) => a.cost - b.cost)[0];
-    // which condition is actually blocking it decides what the teaser says —
-    // "tap N more times" is a lie when the tap gate is already satisfied
-    const teaserNeedsClicks = nextLocked !== undefined && clicks < nextLocked.unlockAtClicks;
-    const sig = `${unlocked.map((u) => u.id).join()}|${nextLocked?.id ?? ''}|${teaserNeedsClicks}`;
+    // one at a time, in cost order — see upgradeShelf
+    const { shown: unlocked, teaser: nextLocked, teaserReason } = upgradeShelf(getState());
+    const teaserNeedsClicks = teaserReason === 'clicks';
+    const sig = `${unlocked.map((u) => u.id).join()}|${nextLocked?.id ?? ''}|${teaserReason ?? ''}`;
     if (sig === upgradeSignature) {
       updateUpgradeDynamic();
       return;
@@ -162,9 +184,17 @@ export function initShop(
       chip.className = 'upgrade-chip teaser';
       chip.disabled = true;
       if (teaserNeedsClicks) chip.dataset.unlockAt = String(nextLocked.unlockAtClicks);
+      // "after this one" is the honest message when the sequence is the only
+      // thing holding it back — the player can already afford it
+      const waiting =
+        teaserReason === 'sequence'
+          ? STR.upgradeTeaserNext
+          : teaserReason === 'cost'
+            ? STR.upgradeTeaserEarn
+            : '';
       chip.innerHTML = `
         <span class="u-name">❓</span>
-        <span class="u-desc" data-teaser>${teaserNeedsClicks ? '' : STR.upgradeTeaserEarn}</span>`;
+        <span class="u-desc" data-teaser>${waiting}</span>`;
       upgradeHost.appendChild(chip);
     }
     updateUpgradeDynamic();

@@ -83,9 +83,14 @@ export const REBIRTH_BUFF = 0.05;
 
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s
 
-// How many upgrade chips may sit on the shop shelf at once, cheapest first.
-// The chips are tall cards that wrap one per row: at twelve upgrades the shelf
-// measured 270% of the shop's height on a 430px phone and pushed every producer
-// row out of view. Three plus the teaser keeps the producer list — the core
-// purchase loop — on screen at every bank level.
-export const MAX_UPGRADE_CHIPS = 3;
+// How many click upgrades the shop offers at once, cheapest first.
+//
+// ONE. Every click upgrade improves the same thing, so two on the shelf
+// together read as one upgrade listed twice at two prices — Dor reported
+// "ידיים חמות" and "כפפות משי", both x2, side by side. Selling them in
+// sequence makes the ladder legible: buy this one, the next appears.
+//
+// It also fixes the layout problem it was first written for. The chips wrap one
+// per row, and twelve of them measured 270% of the shop's height on a 430px
+// phone, pushing every producer row — the core purchase loop — out of view.
+export const MAX_UPGRADE_CHIPS = 1;
