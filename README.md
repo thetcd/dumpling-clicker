@@ -24,8 +24,12 @@ Feedback → open an issue: https://github.com/thetcd/dumpling-clicker/issues
 - **Buy producers** (10 tiers, Cookie Clicker's cost curve) and **click
   upgrades** — the cheap ones raise the flat per-tap base, the two expensive
   ones raise the share-of-production cut, so they never go dead.
-- **Golden dumpling**: a gold copy of your own squishy appears every 5–15 min
-  while the app is open, sits 13s. Tap it for **×7 all income for 30s**.
+- **Findables**, two lanes: something shiny every 10–25s worth 5s of
+  production, and every 3–8 min either a gold copy of your own squishy —
+  tap it for **×7 all income for 30s** — or an airdrop worth 90s of production.
+- **Critical squishes**: past 40M the click upgrades buy a chance for a tap to
+  pay up to ×12.
+- **Rebirth**: spend the run for a permanent bonus and unlock designer parts.
 - **Design your squishy** from 16 colours × 11 eyes × 11 mouths × 11
   accessories = 21,296 combinations.
 - Away up to 8h earns at 50% rate. A free 0.5/sec trickle means the game is
@@ -36,7 +40,8 @@ Feedback → open an issue: https://github.com/thetcd/dumpling-clicker/issues
 ```bash
 npm run dev          # dev server (auto-picks a port if 5173 is busy)
 npm run dev:phone    # dev server on the LAN — open the printed URL on your phone
-npm test             # 99 unit tests: economy, save healing, actions, formatting, avatar art, golden dumpling
+npm test             # 214 unit tests: economy, save healing, actions, formatting, avatar art,
+                     # spring feel, findables, scene, rebirth, unlocks, icons, notes
 npm run build        # typecheck + production build + service worker (dist/)
 npm run preview      # serve the production build locally
 ```
@@ -64,11 +69,13 @@ still works with no changes. Never commit `dist/`; the host builds it.
 - `src/game/` — pure logic, no DOM: `economy.ts` (math), `actions.ts` (the only
   state mutators), `save.ts` (versioned localStorage saves + healing),
   `golden.ts` (golden-dumpling / frenzy timing), `loop.ts` (the single rAF loop).
-- `src/ui/golden.ts` — the golden dumpling element, driven by one `tick(now)`
-  from the game loop. `__spawnGolden()` in the dev console forces one to appear
-  (dev builds only).
-- `src/ui/dumpling.ts` — the squish: spring-driven CSS transforms. Feel-tuning
-  knobs are the constants in its `frame()` (stiffness/damping/scale/skew).
+- `src/ui/findables.ts` — one element per lane, driven by a single `tick(now)`
+  from the game loop. `__spawnCommon()` / `__spawnGolden()` / `__spawnAirdrop()`
+  in the dev console force one to appear (dev builds only).
+- `src/ui/dumpling.ts` — the squish and the idle life (breathing, blinking,
+  glances), all composed into one transform written by its own private rAF loop.
+- `src/ui/spring.ts` — the squish curve as a pure function: an instant dent, a
+  fast recovery, then the slow puff-back the real toy is named for.
 - `src/ui/avatar.ts` — the layered-SVG squishy renderer (body/eyes/mouth/
   accessory). New parts = a new case here + a `parts.ts` entry.
 - `src/audio/sound.ts` — synthesized audio. Rapid squishing climbs a pitch
