@@ -1,16 +1,30 @@
 // The single rAF game loop: production accrual, HUD every frame, shop at 4Hz,
-// autosave every 10s and on hide. Gaps while the page stays open (throttled
-// tab) settle at full rate up to the offline cap; true offline progress is
-// handled once at boot.
+// autosave every 10s and on hide.
+//
+// PRODUCTION IS LIVE-ONLY. Nothing here pays for time the window was not open —
+// see creditableGapMs.
 import { accrue } from './actions';
-import { dpsOf } from './economy';
-import {
-  AUTOSAVE_INTERVAL_MS,
-  MAX_TICK_DT_MS,
-  OFFLINE_CAP_MS,
-} from './config/balance';
+import { AUTOSAVE_INTERVAL_MS, MAX_TICK_DT_MS } from './config/balance';
 import { saveToStorage } from './save';
 import type { GameState } from './state';
+
+/**
+ * How much of a frame gap actually earns, in ms. A gap longer than one tick
+ * earns NOTHING.
+ *
+ * Dor, 2026-08-21: "if the game is in the background, you dont passively get
+ * stuff — the window must be open." rAF stops firing on a hidden tab, so the
+ * first frame after a backgrounded PWA resumes carries the whole absence in its
+ * `dt`. This used to settle that gap at full production rate up to an eight
+ * hour cap, which is precisely the away-time income he asked to remove.
+ *
+ * Pure and exported so the rule is testable — it used to be an if/else inside
+ * the rAF callback, where nothing could reach it.
+ */
+export function creditableGapMs(dtMs: number): number {
+  if (!Number.isFinite(dtMs) || dtMs <= 0) return 0;
+  return dtMs <= MAX_TICK_DT_MS ? dtMs : 0;
+}
 
 /**
  * `getState` is a getter, not the state object, on purpose. "Start over"
@@ -38,18 +52,10 @@ export function startLoop(
     // rAF's `now` is a page-relative timestamp; frenzy and spawn timers are
     // wall-clock, so they get Date.now() rather than the frame time.
     const wall = Date.now();
-    if (dt <= MAX_TICK_DT_MS) {
-      accrue(state, dt, wall);
-    } else {
-      // the tab was throttled/hidden but never unloaded — settle in one step.
-      // No frenzy multiplier here: a buff must not pay out for time away.
-      // Also not runEarned: a throttled tab is time away, and the rebirth gate
-      // measures active play. Same rule as main.ts's offline credit.
-      const settled = Math.min(dt, OFFLINE_CAP_MS);
-      const earned = dpsOf(state) * (settled / 1000);
-      state.dumplings += earned;
-      state.totalEarned += earned;
-    }
+    // A throttled or hidden tab produces nothing. There is deliberately no
+    // catch-up branch here any more.
+    const credit = creditableGapMs(dt);
+    if (credit > 0) accrue(state, credit, wall);
     ui.tickGolden?.(wall);
     ui.updateHud();
     sinceShop += dt;

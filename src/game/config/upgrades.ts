@@ -15,10 +15,18 @@
 //
 // Three tiers, because one effect cannot carry the whole cost curve:
 //   flat (<=15k)   raise the per-tap base, the only thing that matters before
-//                  producers exist. Never priced above 15k — above that a flat
-//                  multiplier is worth a fraction of just buying a building,
-//                  which is what made grandma-hands and quantum-squish traps.
+//                  producers exist. Never priced above 15k AS THE ONLY EFFECT —
+//                  above that a flat multiplier alone is worth a fraction of
+//                  just buying a building, which is what made grandma-hands and
+//                  quantum-squish traps.
 //   share (>15k)   raise the cut of production each tap pays, so they never die.
+//                  They ALSO carry a flat multiplier, as a floor. A share
+//                  upgrade is worth `share * producerDps`, so bought with no
+//                  producers owned it buys literally nothing: Dor hit exactly
+//                  that on 2026-08-21 and the shop previewed it as "384 <- 384".
+//                  Reproduced at prestige 9 with an empty producer table. The
+//                  shelf sells one upgrade at a time in cost order, so a player
+//                  cannot route around a dud — it has to not be one.
 //   crit (>5M)     a random chance for a tap to pay several times over.
 //
 // The crit tier exists because continuing with share multipliers past 5M means
@@ -35,6 +43,19 @@ export interface UpgradeDef {
   shareMultiplier?: number; // multiplies CLICK_DPS_SHARE, the production cut
   critChance?: number; // 0..1 chance a tap pays critMult times over
   critMult?: number; // how much a critical squish pays
+  /**
+   * Survives a rebirth. TRUE for the flat tier only.
+   *
+   * Dor at rebirth 18 was re-buying the same five cheap upgrades at the top of
+   * every run before the ladder he was actually there for even started — grind,
+   * not progression. The share and crit tiers ARE the ladder, so they are
+   * re-climbed; keeping them would make that whole progression one-and-done.
+   *
+   * An explicit flag rather than a rule derived from the effect shape, because
+   * the share upgrades also carry a flat `multiplier` now (so they can never be
+   * a dud) and any such derivation would misclassify them.
+   */
+  keepOnRebirth?: boolean;
   unlockAtClicks: number;
 }
 
@@ -45,6 +66,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'כל מעיכה שווה כפול 2',
     cost: 100,
     multiplier: 2,
+    keepOnRebirth: true,
     unlockAtClicks: 10,
   },
   {
@@ -53,6 +75,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'הבצק רך יותר ככה. כפול 2.',
     cost: 400,
     multiplier: 2,
+    keepOnRebirth: true,
     unlockAtClicks: 20,
   },
   {
@@ -61,6 +84,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'הסקווישי נהנה מזה. כפול 2.',
     cost: 1_000,
     multiplier: 2,
+    keepOnRebirth: true,
     unlockAtClicks: 25,
   },
   {
@@ -69,6 +93,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'למה למעוך עם אחד? כפול 2.',
     cost: 4_000,
     multiplier: 2,
+    keepOnRebirth: true,
     unlockAtClicks: 40,
   },
   {
@@ -77,6 +102,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'עברה במשפחה שלוש דורות. כפול 3.',
     cost: 15_000,
     multiplier: 3,
+    keepOnRebirth: true,
     unlockAtClicks: 60,
   },
   {
@@ -84,6 +110,7 @@ export const UPGRADES: UpgradeDef[] = [
     nameHe: 'רוח צוות',
     descHe: 'כל הצוות מועך איתכם. החלק מהייצור שבכל מעיכה — כפול 1.5.',
     cost: 60_000,
+    multiplier: 1.5, // floor: never a dud with no production owned
     shareMultiplier: 1.5,
     unlockAtClicks: 110,
   },
@@ -92,6 +119,7 @@ export const UPGRADES: UpgradeDef[] = [
     nameHe: 'ידיים של סבתא',
     descHe: 'אין מעיכה כמו של סבתא. החלק מהייצור שבכל מעיכה — כפול 2.',
     cost: 200_000,
+    multiplier: 2, // floor: never a dud with no production owned
     shareMultiplier: 2,
     unlockAtClicks: 120,
   },
@@ -100,6 +128,7 @@ export const UPGRADES: UpgradeDef[] = [
     nameHe: 'פס ייצור',
     descHe: 'מעיכה אחת מזיזה את כל הקו. החלק מהייצור — כפול 1.4.',
     cost: 800_000,
+    multiplier: 1.5, // floor: never a dud with no production owned
     shareMultiplier: 1.4,
     unlockAtClicks: 175,
   },
@@ -108,6 +137,7 @@ export const UPGRADES: UpgradeDef[] = [
     nameHe: 'מעיכה קוונטית',
     descHe: 'מועך בכל היקומים במקביל. החלק מהייצור שבכל מעיכה — כפול 2.5.',
     cost: 5_000_000,
+    multiplier: 2, // floor: never a dud with no production owned
     shareMultiplier: 2.5,
     unlockAtClicks: 250,
   },

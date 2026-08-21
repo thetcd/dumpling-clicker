@@ -2,14 +2,10 @@
 // derived via economy.ts. Keeping mutation in one narrow module is also what a
 // future leaderboard server would validate against.
 import { clickValue, costOf, critParams, dpsOf, incomeMultiplier } from './economy';
-import {
-  FRENZY_DURATION_MS,
-  MAX_TICK_DT_MS,
-  REBIRTH_KEEP_FRACTION,
-} from './config/balance';
+import { FRENZY_DURATION_MS, MAX_TICK_DT_MS } from './config/balance';
 import { PRODUCER_BY_ID } from './config/producers';
 import { UPGRADE_BY_ID } from './config/upgrades';
-import { canRebirth } from './rebirth';
+import { canRebirth, keptProducers, keptUpgrades } from './rebirth';
 import { createInitialState, type GameState } from './state';
 
 /**
@@ -120,14 +116,14 @@ export function rebirth(state: GameState, now: number): GameState {
   fresh.totalEarned = state.totalEarned;
   fresh.prestige = state.prestige + 1;
   fresh.runEarned = 0;
-  // A quarter of the team stays on. Losing everything made each rebirth a cold
-  // restart; keeping a slice means the next run visibly begins further along
-  // than the last one did. Floored, and a count that floors to 0 is DROPPED
-  // rather than stored — a zero would render an "own 0" row and hand dpsOf a
-  // dead entry. Click upgrades are deliberately not kept (see the constant).
-  for (const [id, count] of Object.entries(state.producers)) {
-    const keep = Math.floor((Number.isFinite(count) ? count : 0) * REBIRTH_KEEP_FRACTION);
-    if (keep > 0) fresh.producers[id] = keep;
-  }
+  // An active frenzy carries across. It is wall-clock and belongs to the
+  // PLAYER, not the run: catching a golden dumpling and then hitting the
+  // rebirth you had already earned used to throw the reward away, which taught
+  // players to sit on a rebirth rather than take it.
+  fresh.frenzyUntil = state.frenzyUntil;
+  // The keep rule itself lives in rebirth.ts, because the confirm modal states
+  // it to the player before they commit and the two must never disagree.
+  fresh.producers = keptProducers(state.producers);
+  fresh.upgrades = keptUpgrades(state.upgrades);
   return fresh;
 }

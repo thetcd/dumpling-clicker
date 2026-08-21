@@ -137,3 +137,40 @@ describe('crit label edge case', () => {
     expect(label).toContain('12');
   });
 });
+
+describe('a click upgrade never previews as doing nothing', () => {
+  // Dor, 2026-08-21: "sometimes i got stuck when upgrading clicks, it upgraded
+  // to the same amount (from 384 to 384)". Reproduced exactly at prestige 9
+  // with no production owned: every share upgrade rendered 384 <- 384, because
+  // its whole effect is `share * producerDps` and producerDps was 0.
+  test('a share upgrade with no production yet does not render an identical before and after', () => {
+    const s = createInitialState(0);
+    s.prestige = 9;
+    s.upgrades = ['fast-fingers', 'warm-hands', 'silk-gloves', 'two-thumbs', 'secret-technique'];
+    s.producers = {};
+    const label = upgradeGainLabel(byId('team-spirit'), s);
+    expect(label).not.toBe('מעיכה: 384 ← 384');
+    expect(label).not.toMatch(/^מעיכה: (\S+) ← \1$/);
+  });
+
+  // formatNumber floors below a million and carries one decimal above it, so
+  // two genuinely different values collide in the string long before they
+  // collide in the maths.
+  test('no upgrade, at any production level or prestige, previews as no change', () => {
+    for (const prestige of [0, 1, 5, 9, 12, 18, 25, 40]) {
+      for (const stalls of [0, 1, 10, 1_000, 100_000, 10_000_000]) {
+        const s = createInitialState(0);
+        s.prestige = prestige;
+        s.producers = stalls > 0 ? { stall: stalls } : {};
+        for (const def of UPGRADES) {
+          s.upgrades = UPGRADES.filter((u) => u.cost < def.cost).map((u) => u.id);
+          const label = upgradeGainLabel(def, s);
+          expect(
+            label,
+            `${def.id} at prestige ${prestige}, ${stalls} stalls`,
+          ).not.toMatch(/^מעיכה: (\S+) ← \1$/);
+        }
+      }
+    }
+  });
+});

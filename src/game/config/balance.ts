@@ -2,21 +2,31 @@
 export const COST_GROWTH = 1.15; // each unit of a producer costs 15% more
 // Every squish is also worth this fraction of one second of production, so
 // tapping stays relevant at every scale instead of being an early-game-only
-// trick. At ~5 taps/sec this adds ~5% on top of idle income, rising to ~25%
-// once both share-scaling upgrades are owned. Producers alone are untouched.
-export const CLICK_DPS_SHARE = 0.01;
+// trick. Producers alone are untouched.
+//
+// RAISED 0.01 -> 0.05 on 2026-08-21. Dor at rebirth 18 reported 1.2k per click
+// against 23k/sec passive and said it "makes it not worth it to click" — at
+// 0.01 with the two share upgrades a player actually owns mid-run, five taps a
+// second bought 15% of idle income, which is not a choice, it is a decoration.
+// At 0.05 the same five taps are worth ~75% of idle at ANY production level.
+//
+// This is the ONLY knob for that ratio: a flat multiplier lifts the click at
+// one scale and decays to nothing as production grows, so only the
+// share * producerDps term holds a ratio steady. tests/economy.test.ts pins it
+// across four decades of production.
+//
+// MEASURED, not reasoned about (tools/simulate.mjs): at 2 taps/sec it pulls
+// rebirth 50 from 26.8h to 17.5h against 31.0h for pure idle — so tapping is
+// 44% faster than not tapping, where it used to be 14%.
+export const CLICK_DPS_SHARE = 0.05;
 // A free trickle so the game is visibly alive from the very first second
 // instead of sitting at 0/sec until the first purchase. Deliberately NOT part
 // of the click share-term (see clickValue) — a starting squish should be worth
-// a clean 1, not 1.005. It does feed offline earnings, so a fresh save left
-// overnight banks ~7.2k: generous on purpose, tune here if it skips too much.
+// a clean 1, not 1.005.
 export const BASE_DPS = 0.5;
-export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000; // offline progress accrues up to 8h
-export const OFFLINE_RATE = 0.5; // offline earns 50% of live dps
-// "Welcome back" is a full-screen interruption, so it needs a real absence and
-// a haul worth naming. Anything smaller is credited silently.
-export const WELCOME_BACK_MIN_AWAY_MS = 2 * 60 * 1000;
-export const WELCOME_BACK_MIN_SECONDS = 60; // at least a minute of production
+// OFFLINE_CAP_MS / OFFLINE_RATE / WELCOME_BACK_* used to live here. Removed
+// 2026-08-21: nothing pays for time away any more, so there is no offline rate,
+// no cap, and no haul to announce on return. Dor: "the window must be open."
 export const AUTOSAVE_INTERVAL_MS = 10_000;
 // An upgrade appears once you have earned this fraction of its price. Cost is
 // the real gate (the tap gates are tiny on purpose), but without this ALL

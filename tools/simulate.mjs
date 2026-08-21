@@ -176,11 +176,15 @@ for (let n = 0; n < 60; n++) {
   next.runEarned = 0;
   // Mirror actions.rebirth()'s keep rule. Forgetting it here would model a
   // cold restart the real game no longer does, and every run length below
-  // would be too long.
+  // would be too long. ROUNDED, matching actions.rebirth() since 2026-08-21.
   for (const [id, count] of Object.entries(state.producers)) {
-    const keep = Math.floor(count * balance.REBIRTH_KEEP_FRACTION);
+    const keep = Math.round(count * balance.REBIRTH_KEEP_FRACTION);
     if (keep > 0) next.producers[id] = keep;
   }
+  // ...and the flat click upgrades are permanent, so the run does NOT start by
+  // re-buying them. Omitting this makes every measured run too long and models
+  // a grind the game no longer asks for.
+  next.upgrades = state.upgrades.filter((id) => upgrades.UPGRADE_BY_ID[id]?.keepOnRebirth);
   state = next;
 }
 

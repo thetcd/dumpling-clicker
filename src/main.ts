@@ -1,14 +1,15 @@
-// Boot: load save → offline progress → build UI → first-launch designer →
-// start the loop → register the service worker (via vite-plugin-pwa).
+// Boot: load save → build UI → first-launch designer → start the loop →
+// register the service worker (via vite-plugin-pwa).
+//
+// There is deliberately NO offline-progress step. Dor, 2026-08-21: "if the game
+// is in the background, you dont passively get stuff — the window must be
+// open." Production comes from live frames only (game/loop.ts), taps, and
+// catching findables, which never paid offline either.
 import { click, grant, rebirth, resetGame, startFrenzy } from './game/actions';
-import { clickValue, dpsOf, incomeMultiplier, offlineEarnings } from './game/economy';
+import { clickValue, dpsOf, incomeMultiplier } from './game/economy';
 import { startLoop } from './game/loop';
 import { frenzyRemainingMs } from './game/golden';
-import {
-  FRENZY_MULTIPLIER,
-  WELCOME_BACK_MIN_AWAY_MS,
-  WELCOME_BACK_MIN_SECONDS,
-} from './game/config/balance';
+import { FRENZY_MULTIPLIER } from './game/config/balance';
 import { clearStorage, loadFromStorage, saveToStorage } from './game/save';
 import { createInitialState, type GameState } from './game/state';
 import { STR } from './i18n/strings.he';
@@ -33,7 +34,7 @@ import { initDumpling } from './ui/dumpling';
 import { initFindables } from './ui/findables';
 import { initScene } from './ui/scene';
 import { initRebirth } from './ui/rebirth';
-import { canRebirth, rebirthMultiplier } from './game/rebirth';
+import { canRebirth, rebirthKeepSummary, rebirthMultiplier } from './game/rebirth';
 import { partsUnlockedAt } from './game/unlocks';
 import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
@@ -46,24 +47,6 @@ import { initShop } from './ui/shop';
 const now = Date.now();
 let state: GameState = loadFromStorage() ?? createInitialState(now);
 setMuted(!state.settings.sound);
-
-// --- offline progress (before anything renders) ---
-const awayMs = Math.max(0, now - state.savedAt);
-const away = offlineEarnings(dpsOf(state), state.savedAt, now);
-if (away > 0) {
-  // NOT grant(): time away deliberately does not advance the rebirth gate. The
-  // measured rebirth curve was tuned on active play only (simulate.mjs models
-  // neither offline nor findables), and away-time already pays at OFFLINE_RATE.
-  state.dumplings += away;
-  state.totalEarned += away;
-}
-// Credit small amounts silently. Gating the modal on "earned >= 1 dumpling"
-// meant a 1-second refresh at 400 dps threw a full-screen celebration for 0.01%
-// of the player's balance — and a PWA resuming from background does exactly
-// that. Only interrupt for a real absence AND a sum worth naming.
-const worthAnnouncing =
-  awayMs >= WELCOME_BACK_MIN_AWAY_MS &&
-  away >= Math.max(1, dpsOf(state) * WELCOME_BACK_MIN_SECONDS);
 
 // Browsers refuse to start audio outside a user gesture, so the context and the
 // music loop both come up on the player's first tap — whatever that tap was.
@@ -138,9 +121,20 @@ const rebirthBar = initRebirth(
   () => {
     const at = Date.now();
     if (!canRebirth(state)) return;
+    // State what the reset keeps, before it happens. Dor could not tell what
+    // survived a rebirth, and the numbers come straight from the function the
+    // reset itself uses, so the promise cannot outrun the outcome.
+    const kept = rebirthKeepSummary(state);
+    const keepLines = [
+      kept.tiers > 0 ? STR.rebirthKeepProducers(kept.units, kept.tiers) : '',
+      kept.upgrades > 0 ? STR.rebirthKeepUpgrades(kept.upgrades) : '',
+    ].filter(Boolean);
     showModal({
       title: STR.rebirthConfirmTitle,
-      bodyHTML: `<p>${STR.rebirthConfirmBody}</p>`,
+      bodyHTML: `<p>${STR.rebirthConfirmBody}</p>
+        <p class="keep-list"><strong>${STR.rebirthKeepTitle}</strong><br>${
+          keepLines.length ? keepLines.join('<br>') : STR.rebirthKeepNothing
+        }</p>`,
       buttons: [
         {
           label: STR.rebirthYes,
@@ -254,13 +248,6 @@ if (!state.designed) {
     state.designed = true;
     dumpling.setAvatar(avatarSVG(design, 'squishy-svg'));
     saveToStorage(state, Date.now());
-  });
-} else if (worthAnnouncing) {
-  showModal({
-    title: STR.welcomeBackTitle,
-    bodyHTML: `<p>${STR.welcomeBackBody}</p>
-      <p class="welcome-amount">🥟 ${formatNumber(away)}</p>`,
-    buttons: [{ label: STR.collect, primary: true }],
   });
 }
 

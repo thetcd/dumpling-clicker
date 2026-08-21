@@ -5,13 +5,26 @@
 // while the BUFF grows linearly. That combination is what keeps every rebirth a
 // real game — a compounding buff against an exponential requirement makes late
 // rebirths a formality, and a linear requirement makes them all identical.
-import { REBIRTH_BASE, REBIRTH_BUFF_TIERS, REBIRTH_GROWTH } from './config/balance';
+import {
+  REBIRTH_BASE,
+  REBIRTH_BUFF_TIERS,
+  REBIRTH_GROWTH,
+  REBIRTH_KEEP_FRACTION,
+} from './config/balance';
+import { UPGRADE_BY_ID } from './config/upgrades';
+import { roundToDisplay } from './quantize';
 import type { GameState } from './state';
 
-/** How much this run must earn before rebirth `n + 1` is available. */
+/**
+ * How much this run must earn before rebirth `n + 1` is available, rounded to
+ * the figure the rebirth bar prints (see game/quantize.ts) — a goal the player
+ * is shown as "5.1 מיליארד" has to actually BE 5.1 מיליארד. Growth is 50% per
+ * rank, far wider than any quantization step, so the curve stays strictly
+ * rising.
+ */
 export function rebirthRequirement(prestige: number): number {
   const n = Number.isFinite(prestige) && prestige > 0 ? Math.floor(prestige) : 0;
-  return REBIRTH_BASE * REBIRTH_GROWTH ** n;
+  return roundToDisplay(REBIRTH_BASE * REBIRTH_GROWTH ** n);
 }
 
 /**
@@ -46,4 +59,53 @@ export function rebirthProgress(state: GameState): number {
 
 export function canRebirth(state: GameState): boolean {
   return rebirthProgress(state) >= 1;
+}
+
+/**
+ * THE KEEP RULE, in one place — `actions.rebirth()` applies exactly this.
+ *
+ * A quarter of every producer, ROUNDED. Rounded rather than floored because
+ * under floor, owning 3 of a tier kept nothing while owning 4 kept one, so runs
+ * that looked identical kept wildly different amounts and small tiers vanished
+ * with no explanation. Dor reported the kept amounts as "not consistent" on
+ * 2026-08-21.
+ *
+ * A count that still rounds to 0 (you owned exactly one) is DROPPED rather than
+ * stored: a zero would render an "own 0" row and hand `dpsOf` a dead entry.
+ */
+export function keptProducers(producers: Record<string, number>): Record<string, number> {
+  const kept: Record<string, number> = {};
+  for (const [id, count] of Object.entries(producers)) {
+    const keep = Math.round((Number.isFinite(count) ? count : 0) * REBIRTH_KEEP_FRACTION);
+    if (keep > 0) kept[id] = keep;
+  }
+  return kept;
+}
+
+/**
+ * Which click upgrades survive: the flat tier only. The share and crit tiers
+ * are the ladder a run exists to climb. See `UpgradeDef.keepOnRebirth`.
+ */
+export function keptUpgrades(upgrades: string[]): string[] {
+  return upgrades.filter((id) => UPGRADE_BY_ID[id]?.keepOnRebirth);
+}
+
+/**
+ * What the player is about to keep, for the confirm modal to state before they
+ * commit. Half of "make the rules consistent" is the rule; the other half is
+ * being able to see it. Derived from the same two functions the reset uses, so
+ * the promise and the outcome cannot drift apart.
+ */
+export function rebirthKeepSummary(state: GameState): {
+  units: number;
+  tiers: number;
+  upgrades: number;
+} {
+  const producers = keptProducers(state.producers);
+  const counts = Object.values(producers);
+  return {
+    units: counts.reduce((a, b) => a + b, 0),
+    tiers: counts.length,
+    upgrades: keptUpgrades(state.upgrades).length,
+  };
 }

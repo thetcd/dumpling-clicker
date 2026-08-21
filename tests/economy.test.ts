@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { roundToDisplay } from '../src/game/quantize';
 import {
   isUpgradeRevealed,
   clickValue,
@@ -8,7 +9,6 @@ import {
   critParams,
   dpsOf,
   incomeMultiplier,
-  offlineEarnings,
   producerDps,
 } from '../src/game/economy';
 import { createInitialState } from '../src/game/state';
@@ -18,8 +18,6 @@ import {
   BASE_DPS,
   CLICK_DPS_SHARE,
   FRENZY_MULTIPLIER,
-  OFFLINE_CAP_MS,
-  OFFLINE_RATE,
 } from '../src/game/config/balance';
 
 const apprentice = PRODUCERS[0]; // baseCost 15
@@ -29,15 +27,19 @@ describe('costOf', () => {
     expect(costOf(apprentice, 0)).toBe(15);
   });
 
+  // Costs are rounded to the figure the shop prints (game/quantize.ts), so the
+  // curve is followed to display precision rather than to the last float digit.
   test('nth unit follows 1.15^owned growth', () => {
-    expect(costOf(apprentice, 1)).toBeCloseTo(15 * 1.15, 10);
-    expect(costOf(apprentice, 10)).toBeCloseTo(15 * 1.15 ** 10, 8);
+    expect(costOf(apprentice, 1)).toBe(roundToDisplay(15 * 1.15));
+    expect(costOf(apprentice, 10)).toBe(roundToDisplay(15 * 1.15 ** 10));
+    // still within a rounding step of the true curve
+    expect(costOf(apprentice, 10) / (15 * 1.15 ** 10)).toBeCloseTo(1, 1);
   });
 
   test('bulk buy of 10 equals the sum of the next 10 unit costs', () => {
     let sum = 0;
     for (let i = 3; i < 13; i++) sum += 15 * 1.15 ** i;
-    expect(costOf(apprentice, 3, 10)).toBeCloseTo(sum, 6);
+    expect(costOf(apprentice, 3, 10)).toBe(roundToDisplay(sum));
   });
 });
 
@@ -115,8 +117,10 @@ describe('clickValueWith', () => {
   test('previews a share multiplier against current production', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    const after = clickValueWith(s, 'grandma-hands'); // share x2
-    expect(after).toBeCloseTo(1 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    // grandma-hands is share x2 AND flat x2 — the flat part is the floor that
+    // stops it being a dud with no producers owned (see upgrades.ts)
+    const after = clickValueWith(s, 'grandma-hands');
+    expect(after).toBeCloseTo(2 + CLICK_DPS_SHARE * 2 * 1_000, 10);
     expect(after).toBeGreaterThan(clickValue(s));
   });
 });
@@ -144,31 +148,34 @@ describe('clickValue', () => {
     expect(clickValue(s)).toBeCloseTo(1 + CLICK_DPS_SHARE * 100, 10);
   });
 
-  test('share-scaling upgrades multiply the production share, not the flat base', () => {
+  test('share-scaling upgrades multiply the production share as well as the base', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 }; // 1000 dps
-    s.upgrades = ['grandma-hands']; // shareMultiplier 2
-    expect(clickValue(s)).toBeCloseTo(1 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    s.upgrades = ['grandma-hands']; // shareMultiplier 2, multiplier 2
+    expect(clickValue(s)).toBeCloseTo(2 + CLICK_DPS_SHARE * 2 * 1_000, 10);
   });
 
   test('share-scaling upgrades stack multiplicatively with each other', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    s.upgrades = ['grandma-hands', 'quantum-squish']; // x2 * x2.5 on the share
-    expect(clickValue(s)).toBeCloseTo(1 + CLICK_DPS_SHARE * 5 * 1_000, 10);
+    s.upgrades = ['grandma-hands', 'quantum-squish']; // share x2 * x2.5, flat x2 * x2
+    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 5 * 1_000, 10);
   });
 
   test('flat multipliers and share multipliers apply to their own term', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    s.upgrades = ['fast-fingers', 'grandma-hands']; // flat x2, share x2
-    expect(clickValue(s)).toBeCloseTo(2 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    // fast-fingers is flat x2; grandma-hands is flat x2 AND share x2
+    s.upgrades = ['fast-fingers', 'grandma-hands'];
+    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 2 * 1_000, 10);
   });
 
   test('with no producers the production share contributes nothing', () => {
     const s = createInitialState(0);
     s.upgrades = ['grandma-hands', 'quantum-squish'];
-    expect(clickValue(s)).toBe(1);
+    // ...but their flat floor still does, which is the whole point of it: this
+    // is the state that used to render "384 <- 384" on the shop chip
+    expect(clickValue(s)).toBe(4);
   });
 });
 
@@ -198,31 +205,10 @@ describe('incomeMultiplier', () => {
   });
 });
 
-describe('offlineEarnings', () => {
-  test('earns dps * elapsed * OFFLINE_RATE', () => {
-    const oneHour = 3_600_000;
-    expect(offlineEarnings(10, 0, oneHour)).toBeCloseTo(
-      10 * 3600 * OFFLINE_RATE,
-      6,
-    );
-  });
-
-  test('caps elapsed time at OFFLINE_CAP_MS', () => {
-    const tenHours = 10 * 3_600_000;
-    expect(offlineEarnings(10, 0, tenHours)).toBeCloseTo(
-      10 * (OFFLINE_CAP_MS / 1000) * OFFLINE_RATE,
-      6,
-    );
-  });
-
-  test('clock skew (savedAt in the future) earns 0, never negative', () => {
-    expect(offlineEarnings(10, 5_000, 1_000)).toBe(0);
-  });
-
-  test('zero dps earns 0', () => {
-    expect(offlineEarnings(0, 0, 3_600_000)).toBe(0);
-  });
-});
+// offlineEarnings' tests used to live here. Removed 2026-08-21 along with the
+// function: nothing in the game pays for time away, so there is no away-time
+// rate to test. The replacement guard is tests/loop.test.ts, which pins that a
+// frame gap longer than one tick earns exactly nothing.
 
 describe('click upgrade gates', () => {
   // Dor flagged 2026-08-20: the shop teases the next locked upgrade as
@@ -328,14 +314,14 @@ describe('critical squishes', () => {
     expect(clickValue(crit)).toBe(clickValue(plain));
   });
 
-  test('crit never pays for time away', () => {
+  test('crit stays out of production entirely', () => {
+    // a crit is a dice roll on a live tap, so it must not reach dpsOf — which
+    // is what the shop, the click share-term and every rate readout use
     const crit = withUpgrades('lucky-hands');
     crit.producers = { stall: 5 };
     const plain = createInitialState(0);
     plain.producers = { stall: 5 };
-    expect(offlineEarnings(dpsOf(crit), 0, 60_000)).toBe(
-      offlineEarnings(dpsOf(plain), 0, 60_000),
-    );
+    expect(dpsOf(crit)).toBe(dpsOf(plain));
   });
 });
 
@@ -347,11 +333,17 @@ describe('the upgrade ladder', () => {
     expect(Math.min(...crit)).toBeGreaterThan(Math.max(...share));
   });
 
-  test('no flat multiplier is priced above the point where dps takes over', () => {
-    // flat multipliers only matter while production is near zero; above this
-    // they are the traps grandma-hands and quantum-squish used to be
+  test('no upgrade above 15k relies on a flat multiplier ALONE', () => {
+    // A flat multiplier is worth a fraction of just buying a building once
+    // production is running, so above 15k it can only be a floor under a
+    // share or crit effect — never the whole upgrade. That is what made
+    // grandma-hands and quantum-squish traps when they were flat-only.
     for (const u of UPGRADES.filter((x) => x.multiplier)) {
-      expect(u.cost, `${u.id} is a flat multiplier priced too high`).toBeLessThanOrEqual(15_000);
+      if (u.cost <= 15_000) continue;
+      expect(
+        Boolean(u.shareMultiplier || u.critChance || u.critMult),
+        `${u.id} is a flat multiplier priced too high with nothing else on it`,
+      ).toBe(true);
     }
   });
 
@@ -363,10 +355,105 @@ describe('the upgrade ladder', () => {
     }
   });
 
-  test('each upgrade carries exactly one kind of effect', () => {
+  test('each upgrade carries exactly one HEADLINE effect', () => {
+    // A share upgrade may also carry a flat multiplier as its floor, but
+    // nothing may be both a share upgrade and a crit upgrade — the shop chip
+    // can only phrase one headline, and the two ladders are priced apart.
     for (const u of UPGRADES) {
-      const kinds = [u.multiplier, u.shareMultiplier, u.critChance ?? u.critMult].filter(Boolean);
-      expect(kinds.length, `${u.id} mixes effect types`).toBe(1);
+      const headline = [u.shareMultiplier, u.critChance ?? u.critMult].filter(Boolean);
+      expect(headline.length, `${u.id} mixes headline effect types`).toBeLessThanOrEqual(1);
+      expect(
+        Boolean(u.multiplier || headline.length),
+        `${u.id} has no effect at all`,
+      ).toBe(true);
+    }
+  });
+});
+
+describe('every click upgrade is worth buying', () => {
+  // The root of Dor's "384 -> 384": a shareMultiplier upgrade is worth
+  // `share * producerDps`, so with no producers owned it buys literally
+  // nothing. That is not a display bug, it is a dud on the shelf — and the
+  // shelf sells one upgrade at a time in cost order, so the player cannot
+  // route around it.
+  //
+  // Measured against the production a player could plausibly have WHEN THE
+  // SHOP OFFERS IT, which is the only state that matters: from nothing (just
+  // rebirthed, producers reset) up to a minute's worth of the price. The
+  // reverse case — a 100-dumpling flat upgrade against 100k dps — is not a
+  // real state, and it is why the share tier exists at all.
+  test('raises the value of a tap at every production level it can be offered at', () => {
+    for (const prestige of [0, 9, 18]) {
+      for (const def of UPGRADES) {
+        // 0 = a fresh run right after a rebirth; cost/60 = a minute of
+        // production banks the price
+        for (const dps of [0, def.cost / 600, def.cost / 60]) {
+          const s = createInitialState(0);
+          s.prestige = prestige;
+          // stall is 1 dps per unit, so the count IS the dps
+          if (dps >= 1) s.producers = { stall: Math.round(dps) };
+          s.upgrades = UPGRADES.filter((u) => u.cost < def.cost).map((u) => u.id);
+          // crit upgrades live outside clickValue on purpose — they raise the
+          // expected value of a tap, not its face value
+          const gain =
+            def.critChance || def.critMult
+              ? critEV([...s.upgrades, def.id]) / critEV(s.upgrades)
+              : clickValueWith(s, def.id) / clickValue(s);
+          expect(
+            gain,
+            `${def.id} at prestige ${prestige}, ${Math.round(dps)} dps`,
+          ).toBeGreaterThanOrEqual(1.2);
+        }
+      }
+    }
+  });
+});
+
+describe('tapping is worth doing mid-run', () => {
+  /**
+   * Dor, 2026-08-21, at rebirth 18: "I got 1.2k per click and 23k passively —
+   * it makes it not worth it to click".
+   *
+   * That state reproduced: prestige 18, ~1,950 raw production, and the two
+   * share upgrades a player has actually bought by that point (team-spirit and
+   * grandma-hands — assembly-line at 800k and quantum-squish at 5M are still
+   * ahead of them). The full share table only exists at the very end of a run,
+   * so pinning the balance to the endgame measured a state nobody is in.
+   */
+  const dorsState = (dps = 1_950) => {
+    const s = createInitialState(0);
+    s.prestige = 18;
+    s.producers = { stall: dps };
+    s.upgrades = [
+      'fast-fingers',
+      'warm-hands',
+      'silk-gloves',
+      'two-thumbs',
+      'secret-technique',
+      'team-spirit',
+      'grandma-hands',
+    ];
+    return s;
+  };
+
+  // AT EVERY SCALE, which is the load-bearing half. A flat multiplier can lift
+  // the ratio at one production level and then decay to nothing as the run
+  // grows — only the `share * producerDps` term holds a ratio steady, which is
+  // why CLICK_DPS_SHARE and not the flat ladder is the knob for this.
+  const scales = [1_950, 19_500, 195_000, 1_950_000];
+
+  test('five taps a second is worth at least half of idle income', () => {
+    for (const dps of scales) {
+      const s = dorsState(dps);
+      expect((clickValue(s) * 5) / dpsOf(s), `at ${dps} dps`).toBeGreaterThanOrEqual(0.5);
+    }
+  });
+
+  test('two taps a second is still a fifth of idle income', () => {
+    // the casual rate the rebirth curve is measured at
+    for (const dps of scales) {
+      const s = dorsState(dps);
+      expect((clickValue(s) * 2) / dpsOf(s), `at ${dps} dps`).toBeGreaterThanOrEqual(0.2);
     }
   });
 });

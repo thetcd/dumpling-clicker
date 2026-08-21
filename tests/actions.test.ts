@@ -55,9 +55,11 @@ describe('buyProducer', () => {
     const s = createInitialState(0);
     s.dumplings = 100;
     buyProducer(s, 'apprentice'); // 15
-    buyProducer(s, 'apprentice'); // 15 * 1.15
+    buyProducer(s, 'apprentice'); // 15 * 1.15, rounded to what the shop printed
     expect(s.producers.apprentice).toBe(2);
-    expect(s.dumplings).toBeCloseTo(100 - 15 - 15 * 1.15, 10);
+    // costOf rounds to the displayed figure (game/quantize.ts), so the charge is
+    // 17, not 17.25 — and it must be EXACTLY the printed price, not merely close
+    expect(s.dumplings).toBe(100 - 15 - 17);
   });
 
   test('unknown producer id is refused', () => {

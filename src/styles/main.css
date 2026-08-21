@@ -544,13 +544,6 @@ button {
   line-height: 1.5;
 }
 
-.welcome-amount {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--accent);
-  margin-top: 8px;
-}
-
 .modal-buttons {
   display: flex;
   gap: 10px;
@@ -1000,4 +993,15 @@ button {
   .dz-new {
     animation: none;
   }
+}
+
+/* the "what a rebirth keeps" block in the confirm modal — a quiet list, not a
+   second headline: the decision is the headline */
+.keep-list {
+  margin-top: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.7rem;
+  background: rgb(0 0 0 / 18%);
+  font-size: 0.9rem;
+  line-height: 1.6;
 }

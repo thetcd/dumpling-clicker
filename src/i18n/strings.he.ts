@@ -11,9 +11,8 @@ export const STR = {
   shopUpgrades: 'שדרוגים',
   owned: 'ברשותך',
   locked: '???',
-  welcomeBackTitle: 'ברוך שובך! 🥟',
-  welcomeBackBody: 'בזמן שלא היית, הסקווישים המשיכו לעבוד ואספו בשבילך',
-  collect: 'איזה כיף, קח לי הכל',
+  // welcomeBackTitle/welcomeBackBody removed 2026-08-21 — nothing accrues while
+  // the window is closed, so there is no haul to greet the player with.
   designTitle: 'עצבו את הסקווישי שלכם',
   designSubtitle: 'ככה הוא ייראה כשתמעכו אותו',
   designColor: 'צבע',
@@ -39,6 +38,20 @@ export const STR = {
   rebirthConfirmTitle: 'להיוולד מחדש?',
   rebirthConfirmBody:
     'הכופתאות והצוות שלכם יתאפסו. הסקווישי, הלידות מחדש והבונוס הקבוע נשארים — ואקססוריז חדשים ייפתחו.',
+  // Spelled out because Dor could not tell what a rebirth kept ("the saved
+  // items in each rebirth are not consistent"). Fed by rebirthKeepSummary, so
+  // it always matches what the reset actually does.
+  rebirthKeepTitle: 'מה נשאר לכם:',
+  // Hebrew takes no numeral for one — "ב־1 מקומות" is wrong the way
+  // "in 1 places" is wrong, and this is the line that explains the game's own
+  // rules, so it cannot read as machine output.
+  rebirthKeepProducers: (units: number, tiers: number) =>
+    `רביע מהצוות — ${units === 1 ? 'סקווישי אחד' : `${units} סקווישים`} ${
+      tiers === 1 ? 'במקום אחד' : `ב־${tiers} מקומות`
+    }`,
+  rebirthKeepUpgrades: (n: number) =>
+    n === 1 ? 'שדרוג מעיכה קבוע אחד' : `${n} שדרוגי מעיכה קבועים`,
+  rebirthKeepNothing: 'הפעם אין צוות לשמור — הכל מתחיל מחדש',
   rebirthYes: 'קדימה!',
   rebirthDone: (n: number) => `לידה מחדש ${n}! 🎉`,
   rebirthCelebrateTitle: (n: number) => `🎉 לידה מחדש ${n}!`,

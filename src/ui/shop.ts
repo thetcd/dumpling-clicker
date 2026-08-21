@@ -70,7 +70,6 @@ export function upgradeShelf(state: GameState): {
 }
 
 export function upgradeGainLabel(def: UpgradeDef, state: GameState): string {
-  if (def.multiplier) return STR.gainMult(def.multiplier);
   if (def.critChance || def.critMult) {
     const now = critParams(state.upgrades);
     const after = critParams([...state.upgrades, def.id]);
@@ -82,6 +81,24 @@ export function upgradeGainLabel(def: UpgradeDef, state: GameState): string {
       ? STR.gainCritChance(Math.round(after.chance * 100), mult)
       : STR.gainCritMult(mult);
   }
+  // A share upgrade is checked BEFORE the flat one because it now carries both
+  // (see upgrades.ts): the before/after is the honest total of the two effects,
+  // where `x1.5` would report only half of what the player is buying.
+  if (def.shareMultiplier) {
+    const before = clickValue(state);
+    const after = clickValueWith(state, def.id);
+    const from = formatNumber(before);
+    const to = formatNumber(after);
+    if (from !== to) return STR.gainClick(from, to);
+    // The two rendered identically, which reads as "this upgrade does nothing".
+    // formatNumber is lossy on purpose — it floors below a million and carries
+    // one decimal above it — so two genuinely different values collide in the
+    // string long before they collide in the maths. Fall back to the relative
+    // multiplier, which is always true and can never read as no change.
+    const ratio = before > 0 && Number.isFinite(after / before) ? after / before : 0;
+    return STR.gainMult(ratio > 1 ? Math.round(ratio * 10) / 10 : def.shareMultiplier);
+  }
+  if (def.multiplier) return STR.gainMult(def.multiplier);
   return STR.gainClick(
     formatNumber(clickValue(state)),
     formatNumber(clickValueWith(state, def.id)),

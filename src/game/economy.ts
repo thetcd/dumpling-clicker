@@ -6,19 +6,24 @@ import {
   CLICK_DPS_SHARE,
   COST_GROWTH,
   FRENZY_MULTIPLIER,
-  OFFLINE_CAP_MS,
-  OFFLINE_RATE,
 } from './config/balance';
 import { isFrenzyActive } from './golden';
+import { roundToDisplay } from './quantize';
 import { rebirthMultiplier } from './rebirth';
 import { PRODUCER_BY_ID, type ProducerDef } from './config/producers';
 import { CRIT_BASE_MULT, UPGRADE_BY_ID } from './config/upgrades';
 import type { GameState } from './state';
 
-/** Cost of buying `count` units when you already own `owned` (geometric series). */
+/**
+ * Cost of buying `count` units when you already own `owned` (geometric series),
+ * rounded to the figure the shop prints. Without the rounding the row said
+ * "5.1 מיליארד" and charged 5,143,556,201 — see game/quantize.ts. Safe against
+ * the cost curve: a quantization step is at most 10% of the value and each unit
+ * costs 15% more than the last, so prices can never tie or invert.
+ */
 export function costOf(def: ProducerDef, owned: number, count = 1): number {
   const g = COST_GROWTH;
-  return def.baseCost * g ** owned * ((g ** count - 1) / (g - 1));
+  return roundToDisplay(def.baseCost * g ** owned * ((g ** count - 1) / (g - 1)));
 }
 
 /** Dumplings-per-second from producers the player actually bought. */
@@ -124,15 +129,8 @@ export function incomeMultiplier(state: GameState, now: number): number {
   return isFrenzyActive(state.frenzyUntil, now) ? FRENZY_MULTIPLIER : 1;
 }
 
-/** Dumplings accrued while away: capped elapsed time at a reduced rate. */
-export function offlineEarnings(
-  dps: number,
-  savedAt: number,
-  now: number,
-): number {
-  const elapsedMs = Math.min(Math.max(now - savedAt, 0), OFFLINE_CAP_MS);
-  return dps * (elapsedMs / 1000) * OFFLINE_RATE;
-}
+// offlineEarnings() used to live here. Deleted 2026-08-21: the game pays for
+// live frames only, so there is no away-time rate to compute. See game/loop.ts.
 
 /**
  * Should this upgrade be on the shop shelf yet?
