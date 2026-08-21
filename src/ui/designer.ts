@@ -42,10 +42,23 @@ export function openDesigner(
   // Available first, locked after. In registry order the two interleave and the
   // first screen a new player sees is a checkerboard of greys — it has to read
   // as "here are your choices" with the ladder below, not "mostly locked".
+  /**
+   * Just earned by the rebirth the player is standing on. The whole point of
+   * gating a part is the moment you get it, and until now the designer gave no
+   * hint which of 49 tiles was the new one.
+   */
+  const isNew = (o: PartOption) => state.prestige > 0 && unlockLevel(o) === state.prestige;
+
   const byAvailability = <T extends PartOption>(list: T[], worn: string): T[] => {
-    const open = list.filter((o) => isPartUnlocked(o, state.prestige, worn));
-    const shut = list.filter((o) => !isPartUnlocked(o, state.prestige, worn));
-    return [...open, ...shut];
+    // newest first, then the rest of what is open, then the locked ladder
+    const fresh = list.filter((o) => isNew(o));
+    const open = list.filter(
+      (o) => !isNew(o) && isPartUnlocked(o, state.prestige, worn),
+    );
+    const shut = list.filter(
+      (o) => !isNew(o) && !isPartUnlocked(o, state.prestige, worn),
+    );
+    return [...fresh, ...open, ...shut];
   };
 
   for (const c of byAvailability(BODY_COLORS, state.avatar.color)) {
@@ -58,6 +71,7 @@ export function openDesigner(
     // separately — easy to miss and the reason this comment exists.
     const colorOpen = isPartUnlocked(c, state.prestige, state.avatar.color);
     b.title = colorOpen ? c.nameHe : STR.partLocked(unlockLevel(c));
+    if (isNew(c)) b.classList.add('dz-new');
     if (!colorOpen) {
       b.classList.add('locked');
       b.disabled = true;
@@ -114,6 +128,7 @@ export function openDesigner(
       b.dataset.id = opt.id;
       const unlocked = isPartUnlocked(opt, state.prestige, state.avatar[key]);
       b.title = unlocked ? opt.nameHe : STR.partLocked(unlockLevel(opt));
+      if (isNew(opt)) b.classList.add('dz-new');
       if (!unlocked) {
         b.classList.add('locked');
         b.disabled = true;
