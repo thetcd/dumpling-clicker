@@ -32,6 +32,28 @@ function bodyLayer(fill: string): string {
   </g>`;
 }
 
+/**
+ * Tag a layer's outer `<g>` so the idle loop can find it. The layers are
+ * anonymous groups otherwise, and addressing the eyes positionally
+ * (`svg > g:nth-of-type(2)`) breaks the moment a layer is reordered.
+ */
+function classed(layer: string, cls: string): string {
+  return layer.replace('<g', `<g class="${cls}"`);
+}
+
+/**
+ * A pre-rendered closed-eye group, hidden, shipped alongside whatever eyes the
+ * player chose. Blinking then costs one `style.display` flip instead of
+ * rebuilding and re-parsing the whole avatar several times a minute.
+ *
+ * Omitted for eyes that are already shut: blinking `closed` eyes shows nothing,
+ * and blinking `dizzy` ones reads as a rendering bug rather than a blink.
+ */
+function blinkLayer(eyesId: string): string {
+  if (eyesId === 'closed' || eyesId === 'dizzy') return '';
+  return eyesLayer('closed').replace('<g', '<g class="eyes-blink" style="display:none"');
+}
+
 function eyesLayer(id: string): string {
   switch (id) {
     case 'happy':
@@ -213,7 +235,8 @@ export function avatarSVG(
     BODY_COLORS.find((c) => c.id === design.color) ?? BODY_COLORS[0];
   return `<svg class="${cssClass}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     ${bodyLayer(fillOverride ?? color.fill)}
-    ${eyesLayer(design.eyes)}
+    ${classed(eyesLayer(design.eyes), 'eyes')}
+    ${blinkLayer(design.eyes)}
     ${mouthLayer(design.mouth)}
     ${accessoryLayer(design.accessory)}
   </svg>`;

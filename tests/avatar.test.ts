@@ -78,3 +78,35 @@ describe('avatar part coverage', () => {
         }
   });
 });
+
+describe('blink layer', () => {
+  const design = (eyes: string) => ({
+    color: 'classic',
+    eyes,
+    mouth: 'smile',
+    accessory: 'none',
+  });
+
+  test('ships a hidden closed-eye group the idle loop can swap in', () => {
+    const svg = avatarSVG(design('big'));
+    expect(svg).toContain('class="eyes"');
+    expect(svg).toContain('class="eyes-blink"');
+    // hidden until the loop shows it, so it never renders on top of the open eyes
+    expect(svg).toMatch(/class="eyes-blink"[^>]*display:\s*none/);
+  });
+
+  for (const eyes of ['closed', 'dizzy']) {
+    test(`omits the blink group for '${eyes}' eyes — a blink there reads as broken`, () => {
+      const svg = avatarSVG(design(eyes));
+      expect(svg).toContain('class="eyes"');
+      expect(svg).not.toContain('eyes-blink');
+    });
+  }
+
+  test('the blink group is still balanced markup', () => {
+    const svg = avatarSVG(design('star'));
+    expect((svg.match(/<g/g) ?? []).length).toBe((svg.match(/<\/g>/g) ?? []).length);
+    expect(svg).not.toContain('undefined');
+    expect(svg).not.toContain('NaN');
+  });
+});
