@@ -82,3 +82,10 @@ export const REBIRTH_GROWTH = 1.5;
 export const REBIRTH_BUFF = 0.05;
 
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s
+
+// How many upgrade chips may sit on the shop shelf at once, cheapest first.
+// The chips are tall cards that wrap one per row: at twelve upgrades the shelf
+// measured 270% of the shop's height on a 430px phone and pushed every producer
+// row out of view. Three plus the teaser keeps the producer list — the core
+// purchase loop — on screen at every bank level.
+export const MAX_UPGRADE_CHIPS = 3;

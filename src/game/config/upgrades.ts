@@ -12,6 +12,20 @@
 // upgrades raise `flat`, which is what carries the game before you own any
 // producers. The two expensive ones raise `share`, so they keep paying forever
 // instead of becoming dead weight the moment production takes over.
+//
+// Three tiers, because one effect cannot carry the whole cost curve:
+//   flat (<=15k)   raise the per-tap base, the only thing that matters before
+//                  producers exist. Never priced above 15k — above that a flat
+//                  multiplier is worth a fraction of just buying a building,
+//                  which is what made grandma-hands and quantum-squish traps.
+//   share (>15k)   raise the cut of production each tap pays, so they never die.
+//   crit (>5M)     a random chance for a tap to pay several times over.
+//
+// The crit tier exists because continuing with share multipliers past 5M means
+// numbers like x1.12 to stop tapping swamping idle play — a reward that reads
+// as nothing. Variable reward is the strongest pull in the genre (DESIGN-NOTES;
+// it is why the golden dumpling works), and its contribution is a tunable
+// expected value rather than another compounding multiplier.
 export interface UpgradeDef {
   id: string;
   nameHe: string;
@@ -19,6 +33,8 @@ export interface UpgradeDef {
   cost: number;
   multiplier?: number; // multiplies the flat per-click base
   shareMultiplier?: number; // multiplies CLICK_DPS_SHARE, the production cut
+  critChance?: number; // 0..1 chance a tap pays critMult times over
+  critMult?: number; // how much a critical squish pays
   unlockAtClicks: number;
 }
 
@@ -32,12 +48,28 @@ export const UPGRADES: UpgradeDef[] = [
     unlockAtClicks: 10,
   },
   {
+    id: 'warm-hands',
+    nameHe: 'ידיים חמות',
+    descHe: 'הבצק רך יותר ככה. כפול 2.',
+    cost: 400,
+    multiplier: 2,
+    unlockAtClicks: 20,
+  },
+  {
     id: 'silk-gloves',
     nameHe: 'כפפות משי',
     descHe: 'הסקווישי נהנה מזה. כפול 2.',
     cost: 1_000,
     multiplier: 2,
     unlockAtClicks: 25,
+  },
+  {
+    id: 'two-thumbs',
+    nameHe: 'שני אגודלים',
+    descHe: 'למה למעוך עם אחד? כפול 2.',
+    cost: 4_000,
+    multiplier: 2,
+    unlockAtClicks: 40,
   },
   {
     id: 'secret-technique',
@@ -48,12 +80,28 @@ export const UPGRADES: UpgradeDef[] = [
     unlockAtClicks: 60,
   },
   {
+    id: 'team-spirit',
+    nameHe: 'רוח צוות',
+    descHe: 'כל הצוות מועך איתכם. החלק מהייצור שבכל מעיכה — כפול 1.5.',
+    cost: 60_000,
+    shareMultiplier: 1.5,
+    unlockAtClicks: 110,
+  },
+  {
     id: 'grandma-hands',
     nameHe: 'ידיים של סבתא',
     descHe: 'אין מעיכה כמו של סבתא. החלק מהייצור שבכל מעיכה — כפול 2.',
     cost: 200_000,
     shareMultiplier: 2,
     unlockAtClicks: 120,
+  },
+  {
+    id: 'assembly-line',
+    nameHe: 'פס ייצור',
+    descHe: 'מעיכה אחת מזיזה את כל הקו. החלק מהייצור — כפול 1.4.',
+    cost: 800_000,
+    shareMultiplier: 1.4,
+    unlockAtClicks: 175,
   },
   {
     id: 'quantum-squish',
@@ -63,7 +111,42 @@ export const UPGRADES: UpgradeDef[] = [
     shareMultiplier: 2.5,
     unlockAtClicks: 250,
   },
+  {
+    id: 'lucky-hands',
+    nameHe: 'ידיים של מזל',
+    descHe: 'מדי פעם יוצאת מעיכה מושלמת — פי 7!',
+    cost: 40_000_000,
+    critChance: 0.05,
+    unlockAtClicks: 260,
+  },
+  {
+    id: 'four-leaf-dough',
+    nameHe: 'בצק תלתן',
+    descHe: 'המזל מגיע כפול. הסיכוי למעיכה מושלמת — 10%.',
+    cost: 400_000_000,
+    critChance: 0.1,
+    unlockAtClicks: 280,
+  },
+  {
+    id: 'jackpot-squish',
+    nameHe: 'מעיכת ג׳קפוט',
+    descHe: 'כשזה קורה, זה קורה בגדול. מעיכה מושלמת — פי 12!',
+    cost: 4_000_000_000,
+    critMult: 12,
+    unlockAtClicks: 300,
+  },
 ];
+
+/** The payoff of a critical squish before any upgrade raises it. */
+export const CRIT_BASE_MULT = 7;
+
+// MEASURED 2026-08-21 on an endgame board, not reasoned about:
+//   2 taps/sec — tapping adds 21% over idle without crit, 44% with the tier.
+//   5 taps/sec — 53% without, 110% with. Crit EV with all three owned is x2.10.
+// Rewarding tapping harder is exactly what Gal asked for, and the pacing cost
+// is small: `node tools/simulate.mjs 5 3000 1.5` reaches rebirth 30 in 26.3h
+// against 32.2h at 2 taps/sec. If that ever needs pulling back, move critChance
+// or critMult — NOT the share table, which is what keeps taps alive at all.
 
 export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(
   UPGRADES.map((u) => [u.id, u]),

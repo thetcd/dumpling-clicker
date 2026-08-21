@@ -4,6 +4,7 @@ import { buyProducer, buyUpgrade } from '../game/actions';
 import { isUpgradeRevealed, clickValue, clickValueWith, costOf } from '../game/economy';
 import { PRODUCERS } from '../game/config/producers';
 import { UPGRADES } from '../game/config/upgrades';
+import { MAX_UPGRADE_CHIPS } from '../game/config/balance';
 import type { GameState } from '../game/state';
 import { STR } from '../i18n/strings.he';
 import { formatNumber, formatRate } from './format';
@@ -74,9 +75,15 @@ export function initShop(
     const clicks = getState().stats.totalClicks;
     const earned = getState().totalEarned;
     const owned = (u: { id: string }) => getState().upgrades.includes(u.id);
-    const unlocked = UPGRADES.filter(
-      (u) => !owned(u) && isUpgradeRevealed(u, clicks, earned),
-    );
+    // Cheapest first, and only a few at a time. A chip is a tall card and they
+    // wrap one per row, so at twelve upgrades the shelf measured 270% of the
+    // shop's height and buried every producer row — the core purchase loop —
+    // below the fold. UPGRADE_REVEAL_FRACTION staggers WHEN they appear; this
+    // bounds HOW MANY are on screen at once. Buying one immediately promotes
+    // the next, so the shelf is a steady drip rather than a wall.
+    const unlocked = UPGRADES.filter((u) => !owned(u) && isUpgradeRevealed(u, clicks, earned))
+      .sort((a, b) => a.cost - b.cost)
+      .slice(0, MAX_UPGRADE_CHIPS);
     // tease the next locked upgrade so the player always sees that squishing
     // itself unlocks stronger squishes
     const nextLocked = UPGRADES.filter((u) => !owned(u) && !isUpgradeRevealed(u, clicks, earned))

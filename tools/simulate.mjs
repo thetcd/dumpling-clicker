@@ -41,6 +41,13 @@ const requirementFor = (n) => BASE * GROWTH ** n;
 const STEP_MS = 1000;
 const MAX_SECONDS = 60 * 60 * 400; // give up after 400 simulated hours
 
+// Deterministic LCG for the crit roll, so a sweep is reproducible.
+let seed = 12345;
+const nextRandom = () => {
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  return seed / 2147483648;
+};
+
 /** Greedy shopper: always buy the best dumplings-per-second per dumpling spent. */
 function shop(state) {
   for (;;) {
@@ -56,8 +63,14 @@ function shop(state) {
       if (state.upgrades.includes(u.id)) continue;
       if (u.cost > state.dumplings) continue;
       if (state.stats.totalClicks < u.unlockAtClicks) continue;
-      // value a click upgrade by the dps it adds at the assumed tap rate
-      const gain = (economy.clickValueWith(state, u.id) - economy.clickValue(state)) * TAPS;
+      // Value a click upgrade by the dps it adds at the assumed tap rate.
+      // The crit term is essential, not a refinement: crit lives OUTSIDE
+      // clickValue by design, so without it every crit upgrade prices at
+      // exactly 0, the shopper never buys one, and the sweep silently reports
+      // a curve for a game the player is not playing.
+      const withEV = economy.clickValueWith(state, u.id) * economy.critEV([...state.upgrades, u.id]);
+      const nowEV = economy.clickValue(state) * economy.critEV(state.upgrades);
+      const gain = (withEV - nowEV) * TAPS;
       const value = gain / u.cost;
       if (!best || value > best.value) best = { kind: 'upgrade', id: u.id, value };
     }
@@ -73,7 +86,9 @@ function timeToRebirth(state, clock) {
   while (state.runEarned < need && seconds < MAX_SECONDS) {
     clock.now += STEP_MS;
     actions.accrue(state, STEP_MS, clock.now);
-    for (let i = 0; i < TAPS; i++) actions.click(state, clock.now);
+    // A seeded roll, not Math.random: two runs of the same sweep must agree, or
+    // "measured, never reasoned about" is not true of the numbers it prints.
+    for (let i = 0; i < TAPS; i++) actions.click(state, clock.now, nextRandom);
     shop(state);
     seconds += 1;
   }

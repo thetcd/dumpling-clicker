@@ -402,11 +402,22 @@ button {
   margin-bottom: 2px;
 }
 
+/* One line per chip, not a four-line card. Stacked, the chips are ~90px each
+   and three of them plus the teaser filled the entire shop on a 430px phone,
+   pushing every producer row — the core purchase loop — below the fold. The
+   flavour text is the part that goes: the gain ("32 -> 64") is the number the
+   player actually decides on, and the producer rows still carry descriptions. */
+.upgrade-chip .u-desc {
+  display: none;
+}
+
 .upgrade-chip {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  width: 100%;
   background: linear-gradient(180deg, rgba(240, 178, 94, 0.22), rgba(240, 178, 94, 0.1));
   border: 1px solid rgba(240, 178, 94, 0.5);
   border-radius: 12px;
@@ -436,6 +447,11 @@ button {
   color: var(--text-dim);
 }
 
+/* pushes the price to the far edge of the one-line chip */
+.upgrade-chip .u-cost {
+  margin-inline-start: auto;
+}
+
 .u-cost {
   font-size: 0.8rem;
   font-weight: 700;
@@ -448,6 +464,16 @@ button {
   inset: 0;
   pointer-events: none;
   z-index: 20;
+}
+
+/* a critical squish has to read as an event from across the room */
+.floater-crit {
+  font-size: 1.85rem !important;
+  white-space: nowrap;
+  color: #ffd75e !important;
+  text-shadow:
+    0 2px 10px rgba(255, 190, 60, 0.85),
+    0 0 26px rgba(255, 190, 60, 0.55) !important;
 }
 
 .floater {
@@ -464,14 +490,16 @@ button {
   animation: float-up 0.9s ease-out forwards;
 }
 
+/* translateX(-50%) centres the floater on the tap instead of growing rightward
+   from it — a big crit number at 2rem otherwise runs off the screen edge. */
 @keyframes float-up {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, 0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-90px) scale(1.25);
+    transform: translate(-50%, -90px) scale(1.25);
   }
 }
 

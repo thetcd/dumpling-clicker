@@ -16,10 +16,11 @@ export function initPopups(): void {
   });
 }
 
-export function spawnFloater(x: number, y: number, text: string): void {
+export function spawnFloater(x: number, y: number, text: string, crit = false): void {
   const el = pool[next];
   next = (next + 1) % POOL_SIZE;
   el.textContent = text;
+  el.classList.toggle('floater-crit', crit);
   const jx = (Math.random() - 0.5) * 30;
   el.style.left = `${x + jx}px`;
   el.style.top = `${y - 20}px`;

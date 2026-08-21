@@ -4,6 +4,8 @@ import {
   clickValue,
   clickValueWith,
   costOf,
+  critEV,
+  critParams,
   dpsOf,
   incomeMultiplier,
   offlineEarnings,
@@ -11,6 +13,7 @@ import {
 } from '../src/game/economy';
 import { createInitialState } from '../src/game/state';
 import { PRODUCERS } from '../src/game/config/producers';
+import { UPGRADES } from '../src/game/config/upgrades';
 import {
   BASE_DPS,
   CLICK_DPS_SHARE,
@@ -18,7 +21,6 @@ import {
   OFFLINE_CAP_MS,
   OFFLINE_RATE,
 } from '../src/game/config/balance';
-import { UPGRADES } from '../src/game/config/upgrades';
 
 const apprentice = PRODUCERS[0]; // baseCost 15
 
@@ -277,5 +279,94 @@ describe('isUpgradeRevealed', () => {
     const earnedSoFar = 400;
     expect(isUpgradeRevealed(cheap, 257, earnedSoFar)).toBe(true);
     expect(isUpgradeRevealed(cheap, 257, earnedSoFar + 1)).toBe(true);
+  });
+});
+
+describe('critical squishes', () => {
+  const withUpgrades = (...ids: string[]) => {
+    const s = createInitialState(0);
+    s.upgrades = ids;
+    return s;
+  };
+
+  test('no crit upgrades means no crit at all', () => {
+    const p = critParams([]);
+    expect(p.chance).toBe(0);
+    expect(critEV([])).toBe(1);
+  });
+
+  test('a crit upgrade sets the chance and the multiplier', () => {
+    const p = critParams(['lucky-hands']);
+    expect(p.chance).toBeGreaterThan(0);
+    expect(p.mult).toBeGreaterThan(1);
+  });
+
+  test('later crit upgrades take the best of each, never multiply them', () => {
+    // stacking would compound into a runaway; the ladder RAISES chance and mult
+    const all = UPGRADES.filter((u) => u.critChance || u.critMult).map((u) => u.id);
+    const p = critParams(all);
+    const best = {
+      chance: Math.max(...UPGRADES.map((u) => u.critChance ?? 0)),
+      mult: Math.max(...UPGRADES.map((u) => u.critMult ?? 0)),
+    };
+    expect(p.chance).toBe(best.chance);
+    expect(p.mult).toBe(best.mult);
+  });
+
+  test('expected value is chance-weighted, so the simulator can price it', () => {
+    const p = critParams(['lucky-hands']);
+    expect(critEV(['lucky-hands'])).toBeCloseTo(1 + p.chance * (p.mult - 1), 10);
+  });
+
+  test('crit never touches production, only taps', () => {
+    const plain = createInitialState(0);
+    const crit = withUpgrades('lucky-hands');
+    plain.producers = { stall: 5 };
+    crit.producers = { stall: 5 };
+    expect(dpsOf(crit)).toBe(dpsOf(plain));
+    // and the shop's before/after must not silently include a random roll
+    expect(clickValue(crit)).toBe(clickValue(plain));
+  });
+
+  test('crit never pays for time away', () => {
+    const crit = withUpgrades('lucky-hands');
+    crit.producers = { stall: 5 };
+    const plain = createInitialState(0);
+    plain.producers = { stall: 5 };
+    expect(offlineEarnings(dpsOf(crit), 0, 60_000)).toBe(
+      offlineEarnings(dpsOf(plain), 0, 60_000),
+    );
+  });
+});
+
+describe('the upgrade ladder', () => {
+  test('every crit upgrade costs more than every share upgrade', () => {
+    // crit is the endgame tier; a cheap crit would swamp early idle play
+    const share = UPGRADES.filter((u) => u.shareMultiplier).map((u) => u.cost);
+    const crit = UPGRADES.filter((u) => u.critChance || u.critMult).map((u) => u.cost);
+    expect(Math.min(...crit)).toBeGreaterThan(Math.max(...share));
+  });
+
+  test('no flat multiplier is priced above the point where dps takes over', () => {
+    // flat multipliers only matter while production is near zero; above this
+    // they are the traps grandma-hands and quantum-squish used to be
+    for (const u of UPGRADES.filter((x) => x.multiplier)) {
+      expect(u.cost, `${u.id} is a flat multiplier priced too high`).toBeLessThanOrEqual(15_000);
+    }
+  });
+
+  test('the ladder hands out something roughly every step of the cost curve', () => {
+    const costs = UPGRADES.map((u) => u.cost).sort((a, b) => a - b);
+    for (let i = 1; i < costs.length; i++) {
+      // no gap wider than 10x, or the shop goes quiet for hours
+      expect(costs[i] / costs[i - 1], `gap above ${costs[i - 1]}`).toBeLessThanOrEqual(10);
+    }
+  });
+
+  test('each upgrade carries exactly one kind of effect', () => {
+    for (const u of UPGRADES) {
+      const kinds = [u.multiplier, u.shareMultiplier, u.critChance ?? u.critMult].filter(Boolean);
+      expect(kinds.length, `${u.id} mixes effect types`).toBe(1);
+    }
   });
 });

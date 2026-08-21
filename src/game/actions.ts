@@ -1,21 +1,34 @@
 // The ONLY place game state is mutated. UI calls these; everything else is
 // derived via economy.ts. Keeping mutation in one narrow module is also what a
 // future leaderboard server would validate against.
-import { clickValue, costOf, dpsOf, incomeMultiplier } from './economy';
+import { clickValue, costOf, critParams, dpsOf, incomeMultiplier } from './economy';
 import { FRENZY_DURATION_MS, MAX_TICK_DT_MS } from './config/balance';
 import { PRODUCER_BY_ID } from './config/producers';
 import { UPGRADE_BY_ID } from './config/upgrades';
 import { canRebirth } from './rebirth';
 import { createInitialState, type GameState } from './state';
 
-/** One squish. Returns the amount earned (for the +N popup). */
-export function click(state: GameState, now: number): number {
-  const earned = clickValue(state) * incomeMultiplier(state, now);
+/**
+ * One squish. Returns what it earned and whether it was a critical squish, so
+ * the UI can make a crit look like one — a 5% roll nobody can see is wasted.
+ *
+ * `rand` is injectable because the balance simulator plays thousands of taps
+ * headlessly and has to be reproducible; "MEASURED, never reasoned about" only
+ * holds if two runs of the same sweep agree.
+ */
+export function click(
+  state: GameState,
+  now: number,
+  rand: () => number = Math.random,
+): { earned: number; crit: boolean } {
+  const { chance, mult } = critParams(state.upgrades);
+  const crit = chance > 0 && rand() < chance;
+  const earned = clickValue(state) * incomeMultiplier(state, now) * (crit ? mult : 1);
   state.dumplings += earned;
   state.totalEarned += earned;
   state.runEarned += earned;
   state.stats.totalClicks += 1;
-  return earned;
+  return { earned, crit };
 }
 
 /**

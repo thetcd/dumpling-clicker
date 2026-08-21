@@ -82,8 +82,14 @@ const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {
   ensureAudio();
   playSquish();
   navigator.vibrate?.(8); // subtle haptic tick (Android; iOS ignores it)
-  const earned = click(state, Date.now());
-  spawnFloater(x, y, `+${formatNumber(earned)}`);
+  const { earned, crit } = click(state, Date.now());
+  // a crit has to LOOK like one, or a 5% roll is invisible and the whole tier
+  // is wasted code: bigger gold floater, the jackpot run, a longer buzz
+  spawnFloater(x, y, crit ? STR.critFloater(formatNumber(earned)) : `+${formatNumber(earned)}`, crit);
+  if (crit) {
+    playPurchase(6, true);
+    navigator.vibrate?.([14, 30, 14]);
+  }
 });
 dumpling.setAvatar(avatarSVG(state.avatar, 'squishy-svg'));
 

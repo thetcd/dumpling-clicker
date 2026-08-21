@@ -12,7 +12,7 @@ import {
 import { isFrenzyActive } from './golden';
 import { rebirthMultiplier } from './rebirth';
 import { PRODUCER_BY_ID, type ProducerDef } from './config/producers';
-import { UPGRADE_BY_ID } from './config/upgrades';
+import { CRIT_BASE_MULT, UPGRADE_BY_ID } from './config/upgrades';
 import type { GameState } from './state';
 
 /** Cost of buying `count` units when you already own `owned` (geometric series). */
@@ -76,6 +76,42 @@ function clickValueFrom(upgradeIds: string[], state: GameState): number {
   }
   // producerDps, not dpsOf: the free BASE_DPS trickle must not inflate clicks.
   return flat + share * producerDps(state);
+}
+
+/**
+ * The critical-squish roll a set of upgrades buys.
+ *
+ * The best of each is taken, never the product: three crit upgrades that each
+ * multiplied would compound into a runaway, and the ladder is designed to RAISE
+ * the chance and then RAISE the payoff, not to stack three separate rolls.
+ *
+ * Deliberately outside clickValue(): a crit is a random event on a live tap, so
+ * folding it in would put a dice roll into the shop's "before -> after" preview,
+ * into dpsOf() and into offline earnings. Same rule as the frenzy.
+ */
+export function critParams(upgradeIds: string[]): { chance: number; mult: number } {
+  let chance = 0;
+  let mult = 0;
+  for (const id of upgradeIds) {
+    const def = UPGRADE_BY_ID[id];
+    if (!def) continue;
+    if (def.critChance) chance = Math.max(chance, def.critChance);
+    if (def.critMult) mult = Math.max(mult, def.critMult);
+  }
+  if (chance === 0) return { chance: 0, mult: 0 };
+  return { chance, mult: Math.max(mult, CRIT_BASE_MULT) };
+}
+
+/**
+ * What a tap is worth ON AVERAGE once crits are counted, as a multiplier on
+ * clickValue(). The simulator needs this: its shopper prices upgrades by the
+ * change in clickValue(), and crit is deliberately absent from that, so without
+ * an expected-value term it would value every crit upgrade at exactly zero and
+ * silently never buy or measure them.
+ */
+export function critEV(upgradeIds: string[]): number {
+  const { chance, mult } = critParams(upgradeIds);
+  return 1 + chance * (mult - 1);
 }
 
 /**

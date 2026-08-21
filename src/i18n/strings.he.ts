@@ -68,6 +68,7 @@ export const STR = {
   airdropLabel: 'חבילת כופתאות!',
   commonLabel: 'משהו נוצץ!',
   rewardCaught: (amount: string) => `‎+${amount}`,
+  critFloater: (amount: string) => `‎+${amount} 💥`,
   frenzyBadge: (mult: number, secs: number) => `🔥 טירוף ×${mult} — ${secs} שנ׳`,
   frenzyStart: (mult: number) => `×${mult} טירוף!`,
 } as const;
