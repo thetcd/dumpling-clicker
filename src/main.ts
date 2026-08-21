@@ -126,7 +126,10 @@ const findables = initFindables(
   },
   // a spawn has no user gesture behind it, so this is silent until the first
   // tap unlocks the audio context — which is fine, that tap always comes first
-  (kind) => playAppear(kind !== 'common'),
+  // Only the golden dumpling gets the bright "something rare arrived" chime.
+  // Airdrops now land every 30s, and that chime three times a minute stops
+  // being an event and starts being a nag.
+  (kind) => playAppear(kind === 'golden'),
 );
 
 const rebirthBar = initRebirth(

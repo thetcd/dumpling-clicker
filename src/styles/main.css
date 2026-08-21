@@ -174,10 +174,19 @@ body {
   }
 }
 
-/* The rare lane's airdrop: a cooler glow so it reads as a different thing
-   from the golden dumpling without needing a second size or animation. */
+/* The airdrop: a cooler glow so it reads as a different thing from the golden
+   dumpling. Sized down to the common lane's footprint because ten of them can
+   be on screen at once — at the old 96px, ten parcels want 960px of a 430px
+   stage and there is nowhere to put them that is not on top of each other. */
 .findable.airdrop {
-  filter: drop-shadow(0 0 14px rgba(120, 200, 255, 0.75));
+  width: 14%;
+  max-width: 62px;
+  min-width: 46px; /* still a real tap target */
+  filter: drop-shadow(0 0 12px rgba(120, 200, 255, 0.75));
+}
+
+.findable.airdrop .findable-icon {
+  font-size: 1.8rem;
 }
 
 /* The common lane is small and quiet on purpose. It appears every 10-25s, so

@@ -10,7 +10,7 @@ import { clickValue, dpsOf } from '../src/game/economy';
 import { createInitialState } from '../src/game/state';
 import {
   REBIRTH_BASE,
-  REBIRTH_BUFF,
+
   REBIRTH_GROWTH,
 } from '../src/game/config/balance';
 
@@ -42,15 +42,40 @@ describe('rebirthMultiplier', () => {
     expect(rebirthMultiplier(0)).toBe(1);
   });
 
-  test('is LINEAR, never compounding', () => {
-    // the whole point of "not exponentially easy": 20 rebirths is x2, not x2^20
-    expect(rebirthMultiplier(20)).toBeCloseTo(1 + REBIRTH_BUFF * 20);
-    expect(rebirthMultiplier(20)).toBeLessThan(3);
+  test('the first rebirths each double you', () => {
+    // Gal: the early ones have to feel enormous, like a Roblox simulator
+    expect(rebirthMultiplier(1)).toBeCloseTo(2);
+    expect(rebirthMultiplier(5)).toBeCloseTo(6);
+  });
+
+  test('the step down the tiers, exactly where the ladder says', () => {
+    expect(rebirthMultiplier(15)).toBeCloseTo(11); // 6 + 10 x 0.5
+    expect(rebirthMultiplier(30)).toBeCloseTo(14.75); // 11 + 15 x 0.25
+  });
+
+  test('each rebirth is worth no more than the one before it', () => {
+    for (let n = 1; n < 60; n++) {
+      const step = rebirthMultiplier(n) - rebirthMultiplier(n - 1);
+      const prev = rebirthMultiplier(n - 1) - rebirthMultiplier(Math.max(0, n - 2));
+      if (n > 1) expect(step, `rebirth ${n} pays more than ${n - 1}`).toBeLessThanOrEqual(prev + 1e-9);
+    }
+  });
+
+  test('never compounds — it is a sum of steps, not a product', () => {
+    // x2 per rebirth compounding would be x2^30; the tail is deliberately flat
+    expect(rebirthMultiplier(30)).toBeLessThan(20);
+    expect(rebirthMultiplier(60)).toBeLessThan(30);
+  });
+
+  test('keeps growing forever, so there is always a reason to rebirth again', () => {
+    expect(rebirthMultiplier(100)).toBeGreaterThan(rebirthMultiplier(60));
   });
 
   test('grows slower than the requirement, so runs never trivialise', () => {
-    const reqGrowth = rebirthRequirement(10) / rebirthRequirement(0);
-    const buffGrowth = rebirthMultiplier(10) / rebirthMultiplier(0);
+    // only true from the point the buff tiers flatten — the first few rebirths
+    // are deliberately generous enough to outpace it
+    const reqGrowth = rebirthRequirement(30) / rebirthRequirement(20);
+    const buffGrowth = rebirthMultiplier(30) / rebirthMultiplier(20);
     expect(reqGrowth).toBeGreaterThan(buffGrowth);
   });
 });
@@ -77,15 +102,49 @@ describe('the rebirth action', () => {
 
   test('spends the run and banks a permanent level', () => {
     const s = at(0, REBIRTH_BASE);
-    s.producers = { stall: 4 };
     s.upgrades = ['fast-fingers'];
     s.dumplings = 9999;
     const after = rebirth(s, 0);
     expect(after.prestige).toBe(1);
-    expect(after.producers).toEqual({});
     expect(after.upgrades).toEqual([]);
     expect(after.dumplings).toBe(0);
     expect(after.runEarned).toBe(0);
+  });
+
+  test('you keep a quarter of every producer', () => {
+    // Gal: a reset that takes everything is punishing. Keeping a slice means
+    // each rebirth visibly starts you further along than the last one did.
+    const s = at(0, REBIRTH_BASE);
+    s.producers = { apprentice: 40, stall: 8, factory: 3 };
+    const after = rebirth(s, 0);
+    expect(after.producers.apprentice).toBe(10);
+    expect(after.producers.stall).toBe(2);
+    expect(after.producers.factory).toBeUndefined(); // floor(0.75) is nothing kept
+  });
+
+  test('a single unit of something is not kept, and leaves no zero behind', () => {
+    const s = at(0, REBIRTH_BASE);
+    s.producers = { boss: 1 };
+    const after = rebirth(s, 0);
+    // a 0 count would render a "you own 0" row and feed dpsOf a dead entry
+    expect(after.producers.boss).toBeUndefined();
+  });
+
+  test('click upgrades are never kept', () => {
+    // they are one-time buys: keeping them makes that ladder one-and-done
+    const s = at(0, REBIRTH_BASE);
+    s.upgrades = ['fast-fingers', 'warm-hands', 'silk-gloves'];
+    expect(rebirth(s, 0).upgrades).toEqual([]);
+  });
+
+  test('what you keep compounds across rebirths without ever reaching zero-sum', () => {
+    let s = at(0, REBIRTH_BASE);
+    s.producers = { stall: 100 };
+    s = rebirth(s, 0);
+    expect(s.producers.stall).toBe(25);
+    s.runEarned = rebirthRequirement(s.prestige);
+    s = rebirth(s, 0);
+    expect(s.producers.stall).toBe(6); // floor(25 * 0.25)
   });
 
   test('keeps the squishy, the settings and the lifetime record', () => {

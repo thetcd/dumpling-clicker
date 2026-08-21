@@ -31,6 +31,9 @@ const state0 = await load('src/game/state.ts');
 const rebirthMod = await load('src/game/rebirth.ts');
 const producers = await load('src/game/config/producers.ts');
 const upgrades = await load('src/game/config/upgrades.ts');
+const balance = await load('src/game/config/balance.ts');
+const rewards = await load('src/game/rewards.ts');
+const findableCfg = await load('src/game/config/findables.ts');
 
 const TAPS = Number(process.argv[2] ?? 2); // casual player, taps per second
 // Swept from the CLI so the curve can be explored without a rebuild. The
@@ -40,6 +43,46 @@ const GROWTH = Number(process.argv[4] ?? 2.6);
 const requirementFor = (n) => BASE * GROWTH ** n;
 const STEP_MS = 1000;
 const MAX_SECONDS = 60 * 60 * 400; // give up after 400 simulated hours
+
+// What share of findables the player actually catches. 1 = a player watching
+// the screen the whole time, which is the upper bound on how fast the game can
+// be played; pass a lower number to model someone half paying attention.
+const CATCH_RATE = Number(process.argv[5] ?? 1);
+
+/**
+ * Findables were NOT modelled here until 2026-08-21, and the balance comments
+ * said so ("an estimate, not a measurement"). That was tolerable while they
+ * added ~65% on the margins. It stopped being tolerable when the airdrop lane
+ * went to one every 30 seconds: findables are now a first-class income source,
+ * and a sweep that ignores them measures a game nobody plays.
+ *
+ * Modelled as an average rate rather than by simulating spawn timers: over the
+ * hours these runs cover, the mean is what moves the curve, and it keeps the
+ * simulation a closed-form second-by-second loop.
+ */
+const payoutLanes = findableCfg.LANES.flatMap((lane) =>
+  lane.kinds
+    .filter((k) => k.payoutSeconds)
+    .map((k) => ({
+      kind: k.id,
+      // one spawn per mean interval, shared across the kinds in the lane
+      perSecond:
+        (1 / ((lane.minMs + lane.maxMs) / 2 / 1000)) *
+        (k.weight / lane.kinds.reduce((sum, other) => sum + other.weight, 0)),
+    })),
+);
+
+/** Average dumplings per second from catching findables at the current state. */
+function findableIncome(state) {
+  if (CATCH_RATE <= 0) return 0;
+  const dps = economy.dpsOf(state);
+  const click = economy.clickValue(state);
+  let total = 0;
+  for (const lane of payoutLanes) {
+    total += rewards.rewardFor(lane.kind, dps, click) * lane.perSecond;
+  }
+  return total * CATCH_RATE;
+}
 
 // Deterministic LCG for the crit roll, so a sweep is reproducible.
 let seed = 12345;
@@ -86,6 +129,9 @@ function timeToRebirth(state, clock) {
   while (state.runEarned < need && seconds < MAX_SECONDS) {
     clock.now += STEP_MS;
     actions.accrue(state, STEP_MS, clock.now);
+    // grant(), not accrue(): a findable pays raw production with no frenzy
+    // multiplier, exactly as main.ts credits a real catch
+    actions.grant(state, findableIncome(state) * (STEP_MS / 1000));
     // A seeded roll, not Math.random: two runs of the same sweep must agree, or
     // "measured, never reasoned about" is not true of the numbers it prints.
     for (let i = 0; i < TAPS; i++) actions.click(state, clock.now, nextRandom);
@@ -128,6 +174,13 @@ for (let n = 0; n < 60; n++) {
   next.totalEarned = state.totalEarned;
   next.prestige = state.prestige + 1;
   next.runEarned = 0;
+  // Mirror actions.rebirth()'s keep rule. Forgetting it here would model a
+  // cold restart the real game no longer does, and every run length below
+  // would be too long.
+  for (const [id, count] of Object.entries(state.producers)) {
+    const keep = Math.floor(count * balance.REBIRTH_KEEP_FRACTION);
+    if (keep > 0) next.producers[id] = keep;
+  }
   state = next;
 }
 

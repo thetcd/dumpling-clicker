@@ -38,21 +38,46 @@ export const UPGRADE_REVEAL_FRACTION = 0.4;
 // effectively never appear.
 //
 // The common lane exists because kids disengage when nothing happens for
-// minutes at a time. Catching every one is worth roughly +29% income, and with
-// the rare lane on top the total is near +65%, which pulls a 25.5h first run
-// toward ~15h. That is an estimate, not a measurement — retune here.
+// minutes at a time. Catching every one is worth roughly +29% income.
+//
+// These are no longer estimates: tools/simulate.mjs models findable income as
+// of 2026-08-21, and takes a catch rate as its 4th argument
+// (`node tools/simulate.mjs 2 3000 1.5 1` = a player catching everything).
+// It had to — with the airdrop lane at one every 30s, findables are a
+// first-class income source and a sweep that ignored them measured a game
+// nobody plays.
 export const COMMON_SPAWN_MIN_MS = 10_000;
 export const COMMON_SPAWN_MAX_MS = 25_000;
 export const COMMON_LIFETIME_MS = 7_000;
 export const COMMON_SECONDS = 5; // a common findable is worth 5s of production
 export const COMMON_FLOOR_CLICKS = 3; // ...but never less than 3 taps' worth
 
+// The golden dumpling keeps its own rare lane and its own slot. It grants the
+// frenzy rather than a payout, and it only works as a variable reward if it
+// stays scarce — moving it in with the airdrop drip would spend it.
 export const RARE_SPAWN_MIN_MS = 3 * 60 * 1000;
 export const RARE_SPAWN_MAX_MS = 8 * 60 * 1000;
 export const GOLDEN_LIFETIME_MS = 13_000;
-export const AIRDROP_LIFETIME_MS = 11_000;
-export const AIRDROP_SECONDS = 90;
+
+// Airdrops: Gal's "keep the phone open" lane. One every 30s, and up to ten may
+// wait on screen at once, so coming back to a screen full of parcels is the
+// reward for leaving the app up.
+//
+// The payout had to come down with the frequency. At the old 90 seconds of
+// production every 30s, airdrops alone would have paid 3x idle income (+300%)
+// and made tapping parcels the entire game. At 20s they add roughly +65%, in
+// the same range the two lanes were already tuned to.
+//
+// The lifetime has to exceed capacity x interval or the cap never binds and
+// the pile-up Gal asked for cannot happen: at a 3 minute life and a 30s
+// cadence the lane settles at 6 parcels and never reaches ten. Six minutes
+// makes CAPACITY the limit, so ten really do wait for a player who steps away.
+export const AIRDROP_SPAWN_MIN_MS = 25_000;
+export const AIRDROP_SPAWN_MAX_MS = 35_000;
+export const AIRDROP_LIFETIME_MS = 360_000;
+export const AIRDROP_SECONDS = 20;
 export const AIRDROP_FLOOR_CLICKS = 25;
+export const AIRDROP_MAX_ON_SCREEN = 10;
 export const FRENZY_MULTIPLIER = 7;
 export const FRENZY_DURATION_MS = 30_000;
 // --- rebirth ---
@@ -79,7 +104,30 @@ export const REBIRTH_GROWTH = 1.5;
 // LINEAR and small, deliberately: multiplier = 1 + BUFF * n, never compounding.
 // A compounding buff against an exponential requirement makes late rebirths a
 // formality, which is exactly what "not exponentially easy" rules out.
-export const REBIRTH_BUFF = 0.05;
+/**
+ * What each rebirth adds to the permanent income scalar, in tiers that thin
+ * out. Gal's note: the early ones have to feel enormous — a Roblox simulator
+ * doubles you and says so — and the tail then flattens so the multiplier is a
+ * SUM of steps, never a product. x2 compounding would be x2^30 by rebirth 30.
+ *
+ * Rebirths 1-5 double you each time (x6 by five), 6-15 add half each (x11 by
+ * fifteen), and everything after adds a quarter, forever and unbounded.
+ * Replaced a flat +0.05 per rebirth, which reached only x2.45 by rebirth 30.
+ */
+export const REBIRTH_BUFF_TIERS: { through: number; buff: number }[] = [
+  { through: 5, buff: 1 },
+  { through: 15, buff: 0.5 },
+  { through: Infinity, buff: 0.25 },
+];
+
+/**
+ * What survives a rebirth, as a fraction of each producer count (floored).
+ * Gal: a reset that takes everything is punishing; keeping a quarter means each
+ * rebirth visibly starts you further along without skipping the early shop.
+ * Click upgrades are NOT kept — they are one-time buys, so keeping them would
+ * make that whole ladder one-and-done instead of something to re-climb.
+ */
+export const REBIRTH_KEEP_FRACTION = 0.25;
 
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s
 
