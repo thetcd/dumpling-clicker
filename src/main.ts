@@ -1,6 +1,6 @@
 // Boot: load save → offline progress → build UI → first-launch designer →
 // start the loop → register the service worker (via vite-plugin-pwa).
-import { click, rebirth, resetGame, startFrenzy } from './game/actions';
+import { click, grant, rebirth, resetGame, startFrenzy } from './game/actions';
 import { clickValue, dpsOf, incomeMultiplier, offlineEarnings } from './game/economy';
 import { startLoop } from './game/loop';
 import { frenzyRemainingMs } from './game/golden';
@@ -16,6 +16,8 @@ import {
   playFanfare,
   playAppear,
   playCatch,
+  playGolden,
+  playPop,
   playRebirth,
   playPurchase,
   playSquish,
@@ -31,7 +33,8 @@ import { initDumpling } from './ui/dumpling';
 import { initFindables } from './ui/findables';
 import { initScene } from './ui/scene';
 import { initRebirth } from './ui/rebirth';
-import { canRebirth } from './game/rebirth';
+import { canRebirth, rebirthMultiplier } from './game/rebirth';
+import { partsUnlockedAt } from './game/unlocks';
 import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
@@ -48,6 +51,9 @@ setMuted(!state.settings.sound);
 const awayMs = Math.max(0, now - state.savedAt);
 const away = offlineEarnings(dpsOf(state), state.savedAt, now);
 if (away > 0) {
+  // NOT grant(): time away deliberately does not advance the rebirth gate. The
+  // measured rebirth curve was tuned on active play only (simulate.mjs models
+  // neither offline nor findables), and away-time already pays at OFFLINE_RATE.
   state.dumplings += away;
   state.totalEarned += away;
 }
@@ -92,7 +98,11 @@ const findables = initFindables(
   (kind, x, y, icon) => {
     const at = Date.now();
     ensureAudio();
-    playCatch();
+    // The golden squishy gets its own sparkle. Coin and airdrop stay on
+    // playCatch(), which owns the catch-streak pitch ladder — routing the
+    // golden through it would advance that streak on a different kind of event.
+    if (kind === 'golden') playGolden();
+    else playCatch();
     navigator.vibrate?.([12, 40, 12]);
     // every catch throws what you caught across the background
     scene.burst(icon, x, y);
@@ -103,8 +113,7 @@ const findables = initFindables(
     } else {
       // raw dps on purpose: a frenzy must not multiply a findable payout
       const amount = rewardFor(kind, dpsOf(state), clickValue(state));
-      state.dumplings += amount;
-      state.totalEarned += amount;
+      grant(state, amount); // counts toward the rebirth gate — catches are active play
       spawnFloater(x, y, STR.rewardCaught(formatNumber(amount)));
     }
     saveToStorage(state, at);
@@ -140,7 +149,28 @@ const rebirthBar = initRebirth(
             dumpling.setAvatar(avatarSVG(state.avatar, 'squishy-svg'));
             rebirthBar.update();
             paintHud();
-            toast(STR.rebirthDone(state.prestige));
+            // The biggest moment in the game used to get a 1.8s toast while a
+            // producer purchase got a full modal. 28 of 49 designer parts are
+            // prestige-gated, so new parts ARE the payoff for rebirthing —
+            // nothing told the player it had happened.
+            const opened = partsUnlockedAt(state.prestige);
+            showModal({
+              title: STR.rebirthCelebrateTitle(state.prestige),
+              celebration: true,
+              // toFixed(2), matching the rebirth bar: formatNumber rounds the
+              // x1.10 bonus to a flat "1", which reads as "no bonus".
+              bodyHTML: `<p>${STR.rebirthCelebrateBody(
+                rebirthMultiplier(state.prestige).toFixed(2),
+              )}</p>
+                <p>${opened.length ? STR.rebirthNewParts(opened.length) : STR.rebirthNoParts}</p>`,
+              buttons: [
+                ...(opened.length
+                  ? [{ label: STR.rebirthDesignNow, primary: true, onClick: editSquishy }]
+                  : []),
+                { label: STR.bossShare, onClick: () => void shareGame(state) },
+                { label: STR.close, primary: !opened.length },
+              ],
+            });
           },
         },
         { label: STR.cancel },
@@ -156,7 +186,15 @@ const shop = initShop(document.getElementById('shop')!, () => state, (kind, id) 
   ensureAudio();
   if (kind === 'producer') {
     const tierIndex = PRODUCERS.findIndex((p) => p.id === id);
-    playPurchase(tierIndex, (state.producers[id] ?? 0) <= 1);
+    const first = (state.producers[id] ?? 0) <= 1;
+    playPurchase(tierIndex, first);
+    // Nine of the ten tiers used to pass in silence — only the boss got a
+    // modal. A toast, never showModal(): modals are one-at-a-time, so one here
+    // would clobber the boss celebration and interrupt the purchase-mash loop.
+    if (first && id !== 'boss') {
+      playPop();
+      toast(STR.firstOfTier(PRODUCERS[tierIndex].nameHe));
+    }
   } else {
     // upgrades are rare and permanent — always the full jackpot treatment
     playPurchase(6, true);
@@ -178,14 +216,20 @@ const shop = initShop(document.getElementById('shop')!, () => state, (kind, id) 
   maybeShowInstallHint();
 });
 
+// One designer entry point for every caller (settings sheet, rebirth
+// celebration). Forgetting findables.setAvatar here leaves an on-screen golden
+// dumpling wearing the old look.
+function editSquishy(): void {
+  openDesigner(state, (design) => {
+    state.avatar = design;
+    dumpling.setAvatar(avatarSVG(design, 'squishy-svg'));
+    findables.setAvatar(design);
+    saveToStorage(state, Date.now());
+  });
+}
+
 initSettings(document.getElementById('settings-btn')!, () => state, {
-  onEditSquishy: () =>
-    openDesigner(state, (design) => {
-      state.avatar = design;
-      dumpling.setAvatar(avatarSVG(design, 'squishy-svg'));
-      findables.setAvatar(design); // keep an on-screen golden one in sync
-      saveToStorage(state, Date.now());
-    }),
+  onEditSquishy: editSquishy,
   onReset: () => {
     state = resetGame(state, Date.now());
     clearStorage();

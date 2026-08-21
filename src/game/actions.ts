@@ -19,6 +19,22 @@ export function click(state: GameState, now: number): number {
 }
 
 /**
+ * Credit a payout that is neither a squish nor production — today, catching a
+ * findable. The three counters move together on purpose: `runEarned` is what
+ * the rebirth gate measures, and crediting the balance without it meant
+ * catching an airdrop worth 90 seconds of production left the rebirth bar
+ * frozen, teaching the player that the exciting thing does not count.
+ *
+ * No `incomeMultiplier` here, deliberately: a frenzy must never multiply a
+ * findable payout (rewards.ts computes it off raw dps for the same reason).
+ */
+export function grant(state: GameState, amount: number): void {
+  state.dumplings += amount;
+  state.totalEarned += amount;
+  state.runEarned += amount;
+}
+
+/**
  * Tap of a golden dumpling. Restarts the frenzy window rather than extending
  * it, so two goldens in quick succession can't stack into a runaway multiplier.
  */

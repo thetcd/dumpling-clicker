@@ -43,6 +43,8 @@ export function startLoop(
     } else {
       // the tab was throttled/hidden but never unloaded — settle in one step.
       // No frenzy multiplier here: a buff must not pay out for time away.
+      // Also not runEarned: a throttled tab is time away, and the rebirth gate
+      // measures active play. Same rule as main.ts's offline credit.
       const settled = Math.min(dt, OFFLINE_CAP_MS);
       const earned = dpsOf(state) * (settled / 1000);
       state.dumplings += earned;

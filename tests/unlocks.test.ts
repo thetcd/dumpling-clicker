@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { isPartUnlocked, unlockLevel, unlockedCount } from '../src/game/unlocks';
+import {
+  isPartUnlocked,
+  partsUnlockedAt,
+  unlockLevel,
+  unlockedCount,
+} from '../src/game/unlocks';
 import { ACCESSORIES, BODY_COLORS, EYES, MOUTHS } from '../src/game/config/parts';
 
 describe('isPartUnlocked', () => {
@@ -87,5 +92,33 @@ describe('the accessory ladder', () => {
   test('the whole wardrobe is open by rank 40', () => {
     const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
     expect(all.every((p) => unlockLevel(p) <= 40)).toBe(true);
+  });
+});
+
+describe('partsUnlockedAt', () => {
+  test('returns the parts whose gate is exactly this rank', () => {
+    // peach is the rank-2 colour in the shipped ladder
+    const opened = partsUnlockedAt(2);
+    expect(opened.map((p) => p.id)).toContain('peach');
+    expect(opened.every((p) => unlockLevel(p) === 2)).toBe(true);
+  });
+
+  test('a rank that opens nothing returns an empty list', () => {
+    const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+    const gated = new Set(all.map(unlockLevel));
+    const quiet = [21, 23, 25].find((n) => !gated.has(n))!;
+    expect(partsUnlockedAt(quiet)).toEqual([]);
+  });
+
+  test('rank 0 is not a reward — free parts are not "newly unlocked"', () => {
+    expect(partsUnlockedAt(0)).toEqual([]);
+  });
+
+  test('every gated part is announced at exactly one rank', () => {
+    const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+    const gatedCount = all.filter((p) => unlockLevel(p) > 0).length;
+    let announced = 0;
+    for (let rank = 1; rank <= 40; rank++) announced += partsUnlockedAt(rank).length;
+    expect(announced).toBe(gatedCount);
   });
 });

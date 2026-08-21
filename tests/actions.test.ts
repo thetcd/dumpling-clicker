@@ -4,6 +4,7 @@ import {
   buyProducer,
   buyUpgrade,
   click,
+  grant,
   resetGame,
   startFrenzy,
 } from '../src/game/actions';
@@ -164,6 +165,30 @@ describe('frenzy', () => {
     accrue(s, 500, 10);
     expect(s.stats.totalClicks).toBe(1);
     expect(s.stats.playtimeMs).toBe(500);
+  });
+});
+
+describe('grant', () => {
+  test('advances the rebirth gate as well as the balance', () => {
+    const s = createInitialState(0);
+    grant(s, 500);
+    expect(s.dumplings).toBe(500);
+    expect(s.totalEarned).toBe(500);
+    expect(s.runEarned).toBe(500);
+  });
+
+  test('a frenzy does not multiply a granted payout', () => {
+    const s = createInitialState(0);
+    startFrenzy(s, 0);
+    grant(s, 100);
+    expect(s.dumplings).toBe(100);
+    expect(s.runEarned).toBe(100);
+  });
+
+  test('is not a squish, so it never moves the click count', () => {
+    const s = createInitialState(0);
+    grant(s, 42);
+    expect(s.stats.totalClicks).toBe(0);
   });
 });
 

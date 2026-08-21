@@ -1,6 +1,12 @@
 // Which designer parts a player may choose at their current prestige level.
 // Pure over (part, prestige, wornId) so the rule is tested without a DOM.
-import type { PartOption } from './config/parts';
+import {
+  ACCESSORIES,
+  BODY_COLORS,
+  EYES,
+  MOUTHS,
+  type PartOption,
+} from './config/parts';
 
 /**
  * May this part be CHOSEN right now?
@@ -20,6 +26,17 @@ export function isPartUnlocked(part: PartOption, prestige: number, worn?: string
 /** The prestige level that opens this part, or 0 when it was never gated. */
 export function unlockLevel(part: PartOption): number {
   return part.unlockAtPrestige ?? 0;
+}
+
+/**
+ * Every part whose gate is exactly `prestige` — what the rebirth celebration
+ * announces. Rank 0 returns nothing: ungated parts were always available, so
+ * they are not a reward for anything.
+ */
+export function partsUnlockedAt(prestige: number): PartOption[] {
+  if (!Number.isFinite(prestige) || prestige < 1) return [];
+  const all = [...BODY_COLORS, ...EYES, ...MOUTHS, ...ACCESSORIES];
+  return all.filter((p) => unlockLevel(p) === prestige);
 }
 
 /** How many of `parts` are choosable at `prestige` — for "3/11" style copy. */
