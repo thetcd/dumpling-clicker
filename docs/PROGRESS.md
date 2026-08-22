@@ -4,10 +4,18 @@ Last updated **2026-08-22**. This is the handover document: everything you need
 to pick the project up on a different machine, without the chat history that
 produced it.
 
-Companion docs:
-- **`docs/DOMAIN-AND-ADS.md`** — the step-by-step runbook for the domain move.
-- **`CLAUDE.md`** — the invariants and traps an AI agent must not break. Read
-  that before changing game logic.
+Companion docs, all in the repo — a clone is everything you need:
+- **`CLAUDE.md`** — the invariants and the traps that are expensive to
+  rediscover. Read it before changing game logic; Claude Code loads it
+  automatically.
+- **`docs/DOMAIN-AND-ADS.md`** — step-by-step runbook for the domain move.
+- **`docs/DECISIONS.md`** — why the game is the way it is. Every balance choice
+  with the measurement behind it, and the things that were tried and rejected.
+- **`docs/superpowers/specs/`** and **`docs/superpowers/plans/`** — the original
+  design specs and implementation plans, kept as written including their known
+  errors (noted in DECISIONS.md).
+- **`DESIGN-NOTES.md`** — real squishy-toy trait research and the v2 backlog.
+- **`art-prompts-gemini.txt`** — the prompt playbook for generating real art.
 
 ---
 
@@ -103,9 +111,16 @@ visibility test; it only looked like one.
 
 ## 5 · Measured pacing — don't re-derive this
 
-From `node tools/simulate.mjs [tapsPerSec] [base] [growth] [catchRate]`, which
-plays the game headlessly. **These constants are measured, never reasoned
-about** — the first guess at the rebirth curve was wrong by orders of magnitude.
+Three headless tools, all reading the shipped constants so they re-measure
+themselves after any balance change. **These constants are measured, never
+reasoned about** — the first guess at the rebirth curve was wrong by orders of
+magnitude.
+
+| tool | answers |
+|---|---|
+| `tools/simulate.mjs [taps] [base] [growth] [catch]` | how long does each rebirth take |
+| `tools/milestones.mjs [taps] [catch]` | when does the player stop being given anything new |
+| `tools/release-policy.mjs [taps] [shipped\|repriced]` | does a weekly +5-ranks cadence stay playable |
 
 At 5 taps/sec, catching everything:
 
@@ -115,33 +130,63 @@ At 5 taps/sec, catching everything:
 | Rank 20 — half the cosmetics | 27m |
 | **Rank 40 — every cosmetic unlocked** | **3.4h** |
 | All 12 click upgrades | 6.4h |
-| Rank 50 — max rank | 10.1h |
-| Gal joins your team (still ungated) | 16.3h |
+| Rank 50 — max rank | 10.2h |
+| Gal joins your team (still ungated) | 12.1h |
 
 At 2 taps/sec the same run is ~16.6h to rank 50; pure idle is ~29.5h. So tapping
 is about 44% faster than not tapping.
 
-**The known problem:** every cosmetic is spent by 3.4h but the cap is at 10h, so
-the last ~7 hours of the game hand out nothing.
+**The known problem:** every cosmetic is spent by 3.4h but the cap is at 10.2h,
+so **6.8 hours of play hand out nothing new.** Re-measure any time with
+`node tools/milestones.mjs 5 1`, which prints that gap explicitly.
+
+(Gal arriving at 12.1h rather than the 16.3h measured before the cap shipped is
+a side effect of the cap itself: once you can no longer rebirth, all income goes
+into the shop instead of being reset, so the top tier arrives sooner.)
 
 ## 6 · Backlog, in the order it should be done
 
-### 1. Flatten the requirement curve past rank 50
+### 1. Gate the boss behind rank 50 and reprice him to ₪1B
+Moved to the top on 2026-08-22, because it turns out to be a **prerequisite for
+the whole release cadence** and not an independent improvement — see item 2.
+
+Decided and measured, not built. It moves the headline reward off the curve that
+stalls (producer costs) onto the ladder that keeps going. With the cap at 50 this
+makes reaching max rank and meeting Gal the same moment.
+
+Three findings that shaped it: gating him *without* the price cut is a literal
+no-op (you reach ₪75B at 12.1h, already past rank 50 at 10.2h, so the rank never
+binds); gating at rank 60 is three times *worse* than doing nothing; and below
+₪10B the price stops affecting when he arrives and starts compressing what comes
+after.
+
+`ProducerDef` has no rank gate today — only `parts.ts` does — so this needs a new
+field, a shop-reveal branch showing the required rank the way locked designer
+tiles do, and a mirror in `tools/release-policy.mjs`.
+
+### 2. Flatten the requirement curve past rank 50
 **Nothing about a weekly release cadence works until this lands.** The plan is
 +5 ranks per release, but `REBIRTH_GROWTH = 1.5` was tuned for a game that ends
-at 50, and each release multiplies the requirement by `1.5⁵ ≈ 7.6×`. Measured
-cost of each weekly batch of 5 ranks at 5 taps/sec:
+at 50, and each release multiplies the requirement by `1.5⁵ ≈ 7.6×`.
+
+Re-measure with `node tools/release-policy.mjs 5 repriced`. Play cost of each
+batch of 5 ranks at 5 taps/sec, **with the boss repriced** (item 1 done):
 
 | policy | 41-45 | 46-50 | 51-55 | 56-60 | 61-65 | 66-70 | 71-75 |
 |---|---|---|---|---|---|---|---|
-| cap +5 only (today) | 2.3h | 4.4h | 69m | 5.0h | **27.1h** | **158.7h** | **697.9h** |
-| + flatten curve to ~1.2 | 2.3h | 4.4h | 48m | 82m | 2.7h | 5.6h | 11.8h |
-| + one new ~6× income source per release | 2.3h | 4.4h | 69m | 3.8h | 10.8h | 25.0h | 52.2h |
-| **both** | 2.3h | 4.4h | 48m | 68m | **2.0h** | **3.2h** | **5.4h** |
+| A · cap +5 only | 2.3h | 4.4h | 68m | 5.0h | **26.6h** | **154.5h** | **702.8h** |
+| B · + flatten curve to ~1.2 | 2.3h | 4.4h | 48m | 81m | 2.7h | 5.5h | 11.4h |
+| C · + one ~6× income source per release | 2.3h | 4.4h | 68m | 3.0h | 6.9h | 14.0h | 27.6h |
+| **D · both** | 2.3h | 4.4h | 48m | 57m | **1.6h** | **2.3h** | **3.5h** |
 
 A kid playing ~45 min/day gets ~5h a week. So doing nothing works for four
-releases and then asks for 27 hours. Doing both holds every batch at 1–5h
-indefinitely.
+releases and then asks for 26 hours; doing both holds every batch at 1–4h.
+
+**Why item 1 has to come first:** run the same tool with the boss as *shipped*
+(`node tools/release-policy.mjs 5 shipped`) and even policy D drifts to 26.7h by
+the last batch. A "new tier per release" costs 15× of ₪75B and up, which nobody
+ever reaches, so the new income source does nothing. **The reprice is what makes
+the post-cap ladder affordable at all.**
 
 Two conclusions worth keeping: the "one new thing to buy" per release is
 **arithmetic, not decoration** — income has to grow ~7.6× per release or every
@@ -149,7 +194,7 @@ batch takes longer than the last. And **Gal can stay top of the shop at zero
 pacing cost**, because the maths only cares that income grows, not whether it
 comes from a new producer tier or a rank-gated permanent multiplier.
 
-### 2. Backfill ranks 41–50 with rewards
+### 3. Backfill ranks 41–50 with rewards
 The empty stretch above. This is also the only situation where the `🆕` badge
 problem bites: it keys on the *exact* current rank, so a part added at rank 43
 gives no badge at all to anyone already past 43. Needs either a "highest rank
@@ -158,19 +203,6 @@ policy of only ever shipping ahead of everyone.
 
 Also: `tests/unlocks.test.ts` pins "everything open by rank 40". That has to
 become a bound derived from the data or every release breaks the suite.
-
-### 3. Gate the boss behind rank 50 and reprice him to ₪1B
-Decided and measured, not built. Moves the headline reward off the curve that
-stalls (producer costs) onto the ladder that keeps going. With the cap at 50 this
-makes reaching max rank and meeting Gal the same moment.
-
-Three findings that shaped it: gating him *without* the price cut is a literal
-no-op (you reach ₪75B at 16.3h, already past rank 50 at 10.1h, so the rank never
-binds); gating at rank 60 is three times *worse* than doing nothing; and below
-₪10B the price stops affecting when he arrives and starts compressing what comes
-after. `ProducerDef` has no prestige gate today — only `parts.ts` does — so this
-needs a new field, a shop-reveal branch showing the required rank the way locked
-designer tiles do, and a mirror in `simulate.mjs`.
 
 ### 4. A "what's new" surface
 `registerType: 'autoUpdate'` delivers new code but silently, and can reload the

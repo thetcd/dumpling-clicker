@@ -1,9 +1,16 @@
 # Dumpling Clicker — context for AI agents
 
 Hebrew-first RTL, installable PWA clicker game. Vanilla TypeScript + Vite, no
-framework, no backend, free. **Read `docs/PROGRESS.md` for where the project
-stands and what is next; this file is only the rules that are expensive to
-rediscover.**
+framework, no backend, free.
+
+**This file is only the rules that are expensive to rediscover.** For anything
+else:
+- `docs/PROGRESS.md` — where the project stands, the backlog in order, and the
+  integrations still to connect.
+- `docs/DECISIONS.md` — **why** the game is the way it is, and what was tried and
+  rejected. Read it before "fixing" something that looks wrong; several odd
+  choices are odd because the obvious version was measured and failed.
+- `docs/DOMAIN-AND-ADS.md` — the domain-move runbook.
 
 ```bash
 npm test        # 315 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
@@ -47,9 +54,11 @@ git push        # this IS the deploy: Actions runs tests, then publishes to Page
   Bumping `SAVE_VERSION` *without* registering `migrations[next]` in the same
   edit makes `deserialize()` return null for every existing save, which the
   loader treats as corrupt and starts the player from zero.
-- **Balance constants are MEASURED, never reasoned about.**
-  `node tools/simulate.mjs [taps] [base] [growth] [catchRate]` plays the game
-  headlessly. The first guess at the rebirth curve was wrong by orders of
+- **Balance constants are MEASURED, never reasoned about.** Three headless
+  tools, all reading the shipped constants: `tools/simulate.mjs` (how long each
+  rebirth takes), `tools/milestones.mjs` (when the player stops being given
+  anything new), `tools/release-policy.mjs` (whether a weekly +5-ranks cadence
+  stays playable). The first guess at the rebirth curve was wrong by orders of
   magnitude. If you change a rate, a payout, a cost or the click share, re-run
   it — and check the simulator still mirrors the rebirth keep rule and the kept
   upgrades, or every number it prints is too long.
