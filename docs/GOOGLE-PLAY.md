@@ -21,11 +21,12 @@ work, ~4–6 weeks calendar, dominated by Google's closed-testing rule (below).
 
 ## The two hard prerequisites
 
-1. **The custom domain** (`docs/DOMAIN-AND-ADS.md` Phases 0–3). TWA verifies
-   app↔site trust via `https://<origin>/.well-known/assetlinks.json` at the
-   **origin root** — impossible on `thetcd.github.io` (the root belongs to the
-   user site, and the game lives at a sub-path). The domain is a Play
-   prerequisite, not just an ads one.
+1. ~~**The custom domain**~~ — **DONE 2026-08-22.** The game is live at
+   **https://dumplingclicker.com/**, and
+   `https://dumplingclicker.com/.well-known/assetlinks.json` already returns the
+   placeholder JSON as `application/json`. That is the exact URL Play's TWA
+   check hits in Phase C, so the only thing left there is replacing the
+   fingerprints. See `docs/DOMAIN-AND-ADS.md`.
 2. **A Play developer account** (Dor has none). Personal account: $25 one-time
    + ID verification (can take days). **New personal accounts must run a closed
    test with 12 testers opted in continuously for 14 days** before Google
@@ -54,16 +55,19 @@ work, ~4–6 weeks calendar, dominated by Google's closed-testing rule (below).
 
 ## Phase B — Dor, off-repo
 
-- [ ] Domain + Vercel move (`docs/DOMAIN-AND-ADS.md`, other computer).
-- [ ] Play developer account + start recruiting testers. Do both early; they
-      parallelize with everything.
+- [x] Domain + Vercel move (`docs/DOMAIN-AND-ADS.md`). Done 2026-08-22.
+- [ ] Play developer account + start recruiting testers. **This is now the only
+      thing blocking the app** — Phase C can start immediately, but nothing
+      reaches a phone-installable track without the account, and the 14-day
+      12-tester clock is the long pole. Start it first.
 
-## Phase C — package the TWA (after the domain is live)
+## Phase C — package the TWA (the domain is live; this is unblocked)
 
-1. `npx @bubblewrap/cli init --manifest https://<domain>/manifest.webmanifest`
+1. `npx @bubblewrap/cli init --manifest https://dumplingclicker.com/manifest.webmanifest`
    — reads name/colors/icons from the live manifest.
-   **Choose the applicationId carefully** (reverse-DNS of the new domain) —
-   it can never change after the first Play upload.
+   **Choose the applicationId carefully** — reverse-DNS of the domain, so
+   `com.dumplingclicker.twa` or similar. It can never change after the first
+   Play upload.
 2. `bubblewrap build` → `.aab` for Play, `.apk` for local phone testing. Commit
    `twa-manifest.json` under `android/`; the keystore itself stays out of git.
 3. **The assetlinks trap:** enroll in Play App Signing, then copy the SHA-256
@@ -81,7 +85,7 @@ work, ~4–6 weeks calendar, dominated by Google's closed-testing rule (below).
   430×900 Playwright drive).
 - **Target audience = children → Families policy applies** (the game is
   marketed to kids via Gal):
-  - Privacy policy URL: `https://<domain>/privacy.html`.
+  - Privacy policy URL: `https://dumplingclicker.com/privacy.html` (live).
   - Data safety form: "no data collected" — truthful, nothing leaves the device.
   - **Ads: launch with none.** Families apps may only use self-certified ads
     SDKs; H5 Games Ads is a *web* product and may not be Families-compliant

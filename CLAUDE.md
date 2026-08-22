@@ -134,11 +134,24 @@ project. Context `{viewport:{width:430,height:900}, hasTouch:true, isMobile:true
 
 ## Deploy
 
-Repo `thetcd/dumpling-clicker`, live at
-https://thetcd.github.io/dumpling-clicker/. Pushing to `main` runs
-`.github/workflows/deploy.yml`: `npm ci` → `npm test` → `npm run build` →
-publish. A failing test blocks the deploy. `thetcd` is the personal GitHub
+Repo `thetcd/dumpling-clicker`. **Live at https://dumplingclicker.com/** —
+Vercel, building from `main` on every push. `thetcd` is the personal GitHub
 account, not `DorFordefi`.
 
-A move to a custom domain on Vercel is planned — see `docs/DOMAIN-AND-ADS.md`.
-Note that moving origin wipes every `localStorage` save.
+**There are two deploys off the same `main`, and they build differently:**
+
+- **Vercel** (canonical). No `VITE_BASE`, so `base` is `/` and `src/main.ts`
+  boots the game. This is the only URL to give anyone.
+- **GitHub Pages** (retired, still deploying). `.github/workflows/deploy.yml`
+  sets `VITE_BASE=/dumpling-clicker/`, and `src/main.ts` treats any non-`/`
+  base as "this is the old origin" and renders the static "we moved" screen
+  instead of importing `./boot`. Kept alive on purpose so old home-screen
+  installs get a tap-through rather than an abandoned game. A failing test
+  still blocks that deploy.
+
+So `src/main.ts` is a dispatcher, not the game — **the game's entry point is
+`src/boot.ts`.** Anything that used to go "at the top of main" goes in `boot`.
+
+The origin move happened 2026-08-22 and **wiped every `localStorage` save**, as
+planned — saves are per-origin and the player base was about three people.
+Don't build an import bridge; that was decided against.

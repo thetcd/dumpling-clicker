@@ -35,10 +35,12 @@ Currency is **shekels (₪)**. The single meta-loop is **rebirth**
 | | |
 |---|---|
 | Repo | `thetcd/dumpling-clicker` (public) |
-| Live | https://thetcd.github.io/dumpling-clicker/ |
-| Deploy | Every push to `main` → GitHub Actions → Pages. A failing test blocks it. |
+| **Live** | **https://dumplingclicker.com/** (Vercel) |
+| Deploy | Every push to `main` → Vercel builds and publishes. |
+| Old URL | https://thetcd.github.io/dumpling-clicker/ — still deploys, but serves a "we moved" screen, not the game. |
+| DNS | Cloudflare Registrar; records **DNS-only / grey cloud** (see below). |
 | Identity | `thetcd` is the personal GitHub account, **not** `DorFordefi`. `gh auth switch -u thetcd`. |
-| Tests | 315, in 19 files |
+| Tests | 316, in 19 files |
 
 ```bash
 cd dumpling-clicker
@@ -102,6 +104,13 @@ to round and the flat upgrades became permanent. `CLICK_DPS_SHARE` raised 0.01 �
 **2026-08-22 — four more.** Currency renamed to shekels. The visibility guard
 (see below — this was a real leak). The exp meter under the rebirth bar. The
 rebirth cap at 50. Plus Hebrew singular/plural fixes and a `VITE_BASE` footgun.
+
+**2026-08-22, later — the origin move.** The game left
+`thetcd.github.io/dumpling-clicker/` for **https://dumplingclicker.com/** on
+Vercel. Every save was wiped, as planned. `src/main.ts` became a two-line
+dispatcher and the game's real entry point is now **`src/boot.ts`** — the Pages
+build renders a "we moved" screen instead of importing it. Details in section
+7A.
 
 **The visibility leak is worth understanding**, because it was invisible: a
 backgrounded window kept earning the *full* rate. Browsers throttle a background
@@ -217,39 +226,42 @@ See §7 and `docs/DOMAIN-AND-ADS.md`.
 
 ## 7 · Integrations still to connect
 
-### A · Domain on Vercel + Cloudflare — **do this first, and soon**
+### A · Domain on Vercel + Cloudflare — **DONE 2026-08-22**
 
-Full steps in **`docs/DOMAIN-AND-ADS.md`**. Since 2026-08-22 the domain is also
-a hard prerequisite for **Google Play** (see `docs/GOOGLE-PLAY.md`) — the TWA
-trust file must live at the origin root, which `github.io` cannot do. The short
-version:
+The game is live at **https://dumplingclicker.com/**. Full record of what
+happened, including the two ways reality differed from the plan, is in
+**`docs/DOMAIN-AND-ADS.md` § "Phases 0–3: what actually happened"**. Summary:
 
-- [ ] Register a domain at Cloudflare Registrar (at-cost; note `.co.il` is not
-      available there — a `.com` avoids that detour).
-- [ ] Import the repo into Vercel. Framework preset **Vite**, build
-      `npm run build`, output `dist`. **Do not create a `VITE_BASE` variable** —
-      GitHub Actions sets it for Pages; Vercel must leave it absent.
-- [ ] Add the apex and `www` domains in Vercel, read the DNS records **off
-      Vercel** (the apex IP has changed before).
-- [ ] Add them in Cloudflare with proxy status **"DNS only" — the grey cloud.**
-      With the orange cloud on, Cloudflare terminates TLS itself and Vercel can
-      never issue its certificate. This is the step that eats an evening.
-- [ ] Wait for Vercel to report *Valid Configuration*. Only then consider
-      re-enabling the proxy, and if you do, set Cloudflare SSL/TLS to
-      **Full (strict)**.
+- Domain `dumplingclicker.com` at Cloudflare Registrar (~$11/yr).
+- Vercel project `dumpling-clicker`, team "DC's projects", linked to the repo,
+  production branch `main`, Vite auto-detected, **no `VITE_BASE` variable**.
+- Apex + `www` both on Vercel, `www` 307s to the apex. Cloudflare records are
+  **DNS-only / grey cloud** — the orange cloud would have blocked the cert.
+- Verified on the new origin: game plays, privacy/about render as pages,
+  `/.well-known/assetlinks.json` serves the placeholder, service worker active
+  and the game still boots with the network cut.
 
-**The cost of moving, decide before you start:** `localStorage` is scoped per
-origin, so every existing save is lost, and anyone who installed the PWA keeps
-launching the old `github.io` URL forever. That is an argument for moving **now**
-— the cost grows with every player, so at a handful of players it is nearly
-free and after a promotion it is not. Keep the Pages deploy alive serving a
-"we moved" screen rather than the game.
+**Two things worth carrying forward:**
+
+1. **The apex IP had drifted again.** Vercel asked for `216.198.79.1` +
+   `64.29.17.1` and a *per-project* `www` CNAME, not the `76.76.21.21` /
+   `cname.vercel-dns.com` this doc used to name. Always read the live screen.
+2. **The connected Cloudflare MCP cannot touch DNS.** It is the Developer
+   Platform server (D1/KV/R2/Workers); there are no zone or record tools, and
+   `wrangler` has none either. The Vercel MCP can buy a domain but not attach
+   one to a project. Both steps were done in the browser.
+
+**The save wipe happened, as decided.** Every player starts from zero and no
+import bridge was built. The old Pages URL still deploys but now shows a Hebrew
+"we moved" screen linking to the new domain — see the Deploy section of
+`CLAUDE.md` for how one env var splits the two builds off the same `main`.
 
 ### B · AdSense and H5 Games Ads — slower, parallel track
 
-- [ ] **AdSense can never serve from `thetcd.github.io`.** Google approves the
+- [x] **AdSense can never serve from `thetcd.github.io`.** Google approves the
       *parent* domain and lets subdomains inherit; nobody can get `github.io`
-      approved. The custom domain is a hard prerequisite.
+      approved. The custom domain is a hard prerequisite — **now satisfied**
+      (section A).
 - [x] Write a **privacy policy** page, Hebrew and English. Shipped 2026-08-22
       as `public/privacy.html`. It honestly says: no accounts, no analytics, no
       backend, one `localStorage` key that never leaves the device.
@@ -274,10 +286,14 @@ Full runbook in **`docs/GOOGLE-PLAY.md`**. Approach: a **Trusted Web Activity
 via Bubblewrap** — a thin signed wrapper over the live site, so `git push`
 stays the only deploy and the browser save and app save are the same
 localStorage. Repo prep is DONE (manifest `id`, real maskable icon,
-privacy/about pages, assetlinks placeholder, SW denylist). Blocked on: the
-domain (section A) and a Play developer account + **12 testers opted in for 14
-unbroken days** (new-personal-account rule). Kids app → Families policy →
-launches with **no ads**.
+privacy/about pages, assetlinks placeholder, SW denylist), and **the domain
+prerequisite is now DONE too** — Phase C (Bubblewrap packaging) is unblocked and
+can start today.
+
+**The only remaining blocker is a Play developer account** ($25 + ID
+verification) and **12 testers opted in for 14 unbroken days** — the
+new-personal-account rule, and by far the longest pole. Start that clock before
+touching Bubblewrap. Kids app → Families policy → launches with **no ads**.
 
 **No backend.** Both planned ad rewards are client-side state changes. There is
 no leaderboard and nothing to purchase, so a faked reward only affects the
@@ -329,6 +345,10 @@ complexity and the child-privacy exposure.
 
 ## 9 · One stale string
 
-`vite.config.ts` still describes the game in its install manifest as
-`מעצבים סקווישי, מועכים אותו, ובונים אימפריית כופתאות` — a dumpling empire. The
-currency is shekels now.
+~~`vite.config.ts` still describes the game in its install manifest as a
+dumpling empire.~~ **Fixed** — the live manifest reads
+`מעצבים סקווישי, מועכים אותו, ובונים אימפריה של שקלים`.
+
+One left, cosmetic: `index.html`'s `<meta name="description">` still says
+`אימפריית כופתאות`. It is not the install manifest, so it only shows in search
+and link previews.

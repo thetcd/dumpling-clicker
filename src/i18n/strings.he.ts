@@ -102,4 +102,9 @@ export const STR = {
   critFloater: (amount: string) => `‎+${amount} 💥`,
   frenzyBadge: (mult: number, secs: number) => `🔥 טירוף ×${mult} — ${secs} שנ׳`,
   frenzyStart: (mult: number) => `×${mult} טירוף!`,
+  // The GitHub Pages build (VITE_BASE set) is retired to this screen after the
+  // domain move — old home-screen installs land here instead of a dead game.
+  movedTitle: 'עברנו לבית חדש! 🥟',
+  movedBody: 'המשחק עבר לכתובת חדשה. ההתקדמות הישנה לא עוברת איתו, אבל מכאן ממשיכים.',
+  movedCta: 'המשיכו למשחק ←',
 } as const;

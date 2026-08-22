@@ -1027,3 +1027,35 @@ button {
 #rebirth.maxed .rb-fill {
   background: linear-gradient(90deg, #f0b429, #f7d97a);
 }
+
+/* ---------- moved screen (retired GitHub Pages build) ---------- */
+.moved-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100dvh;
+  padding: 24px;
+  gap: 14px;
+}
+.moved-emoji {
+  font-size: 3.5rem;
+}
+.moved-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.moved-body {
+  color: var(--text-dim);
+  max-width: 32ch;
+}
+.moved-cta {
+  margin-top: 10px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #4a2f05;
+  background: linear-gradient(180deg, #ffd766, #f0a92e);
+  text-decoration: none;
+}

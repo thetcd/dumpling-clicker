@@ -9,7 +9,7 @@ Hebrew-first RTL, installable PWA, fully offline after first load, no backend.
 
 ## Play it
 
-**https://thetcd.github.io/dumpling-clicker/**
+**https://dumplingclicker.com/**
 
 Works in any phone browser. On iPhone: Share → "הוסף למסך הבית" to install it as
 an app. Progress is saved in the browser, so it survives closing the tab.
@@ -48,16 +48,22 @@ npm run preview      # serve the production build locally
 
 ## Deploy
 
-**GitHub Pages, automatic.** Every push to `main` runs
-`.github/workflows/deploy.yml`: `npm ci` → `npm test` → `npm run build` →
-publish `dist/`. A red test turns into a failed deploy, not a broken live site.
+**Vercel, automatic.** Every push to `main` builds and publishes to
+**https://dumplingclicker.com/**. Never commit `dist/`; the host builds it.
 
-Pages serves a project repo from a sub-path, so the workflow builds with
-`VITE_BASE=/dumpling-clicker/`. `vite.config.ts` reads that one env var and
-feeds it to `base`, the manifest `start_url`/`scope`/icon paths and the service
-worker's `navigateFallback`. Unset — local `dev`, local `build`, `preview`, or
-any root-domain host — it falls back to `/`, so Vercel (`npx vercel --prod`)
-still works with no changes. Never commit `dist/`; the host builds it.
+The old **GitHub Pages** deploy is still running off the same `main`
+(`.github/workflows/deploy.yml`: `npm ci` → `npm test` → `npm run build` →
+publish `dist/`; a red test turns into a failed deploy, not a broken live site).
+It no longer serves the game — it serves a "we moved" screen pointing here, so
+anyone who installed the old URL to their home screen gets a way across.
+
+The difference between the two is one env var. Pages serves a project repo from
+a sub-path, so that workflow builds with `VITE_BASE=/dumpling-clicker/`;
+`vite.config.ts` feeds it to `base`, the manifest `start_url`/`scope`/icon paths
+and the service worker's `navigateFallback`. Unset — local `dev`, `build`,
+`preview`, or Vercel — it falls back to `/`. `src/main.ts` keys off exactly
+that: a non-`/` base renders the moved screen, `/` imports `./boot` and starts
+the game.
 
 ## Where things live
 
@@ -108,6 +114,6 @@ still works with no changes. Never commit `dist/`; the host builds it.
 ## Before public launch (not code)
 
 - Written OK from Gal for the name/likeness in the boss tier.
-- OG/social preview image + custom domain.
+- OG/social preview image. (Custom domain: done, 2026-08-22.)
 - Privacy-friendly analytics (Plausible/GoatCounter) to measure D1 return,
   session length, share taps.
