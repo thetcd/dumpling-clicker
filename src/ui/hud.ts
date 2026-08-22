@@ -14,17 +14,20 @@ export interface HudApi {
 export function initHud(host: HTMLElement): HudApi {
   host.innerHTML = `
     <h1 class="hud-title">${STR.title}</h1>
-    <div class="hud-count"><span id="hud-num">0</span> ${STR.dumplings}</div>
+    <div class="hud-count"><span id="hud-num">0</span> <span id="hud-unit">${STR.dumplings}</span></div>
     <div class="hud-stats">
       <span class="hud-stat" id="hud-click"></span>
       <span class="hud-stat" id="hud-dps" hidden></span>
     </div>
     <div class="hud-frenzy" id="hud-frenzy" hidden></div>`;
   const num = host.querySelector<HTMLElement>('#hud-num')!;
+  // the unit has to move with the number — it is singular at exactly one
+  const unit = host.querySelector<HTMLElement>('#hud-unit')!;
   const clickEl = host.querySelector<HTMLElement>('#hud-click')!;
   const dpsEl = host.querySelector<HTMLElement>('#hud-dps')!;
   const frenzyEl = host.querySelector<HTMLElement>('#hud-frenzy')!;
   let lastNum = '';
+  let lastUnit = '';
   let lastClick = '';
   let lastDps = '';
   let lastFrenzy = '';
@@ -41,6 +44,11 @@ export function initHud(host: HTMLElement): HudApi {
       if (n !== lastNum) {
         num.textContent = n;
         lastNum = n;
+      }
+      const unitText = STR.currencyUnit(dumplings);
+      if (unitText !== lastUnit) {
+        unit.textContent = unitText;
+        lastUnit = unitText;
       }
       const clickText = `👆 ${formatNumber(perClick)} ${STR.perClick}`;
       if (clickText !== lastClick) {

@@ -6,6 +6,12 @@ export const STR = {
   // (Dor, 2026-08-22).
   dumplings: 'שקלים',
   currency: '₪',
+  /**
+   * The unit, agreeing with its number. Hebrew takes the singular at one, so
+   * "1 שקלים" is wrong the way "1 shekels" is — and that shipped to the live
+   * site, on the first screen, one tap in. Floors first because the HUD does.
+   */
+  currencyUnit: (n: number) => (Number.isFinite(n) && Math.floor(n) === 1 ? 'שקל' : 'שקלים'),
   perSecond: 'לשנייה',
   perClick: 'למעיכה',
   upgradeTeaser: (n: string) => `ייפתח אחרי עוד ${n} מעיכות`,
