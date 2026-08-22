@@ -9,7 +9,9 @@ dist-ssr/
 # editor / OS
 .vscode/*
 !.vscode/extensions.json
-.claude/
+# Local machine settings only. .claude/skills/ IS committed — those are
+# project knowledge and belong with the repo.
+.claude/settings.local.json
 .idea/
 .DS_Store
 *.suo
