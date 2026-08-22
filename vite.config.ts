@@ -5,7 +5,13 @@ import { VitePWA } from 'vite-plugin-pwa';
 // every absolute URL — assets, manifest icons, service-worker scope — has to be
 // prefixed. The CI workflow sets VITE_BASE; local dev, local preview and any
 // root-domain host (Vercel) leave it unset and keep serving from '/'.
-const base = process.env.VITE_BASE ?? '/';
+//
+// `||` and not `??` on purpose. `??` only catches undefined, so an env var that
+// EXISTS but is BLANK — which is one accidental keystroke in the Vercel or
+// Cloudflare dashboard — yielded base '', and that builds `start_url: ""`, a
+// scope of "" and `./assets/...` relative paths. Verified: unset gives '/',
+// blank gave a broken manifest.
+const base = process.env.VITE_BASE || '/';
 
 export default defineConfig({
   base,
