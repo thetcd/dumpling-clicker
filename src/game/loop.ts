@@ -9,19 +9,28 @@ import { saveToStorage } from './save';
 import type { GameState } from './state';
 
 /**
- * How much of a frame gap actually earns, in ms. A gap longer than one tick
- * earns NOTHING.
+ * How much of a frame gap actually earns, in ms. Two conditions, and they do
+ * different jobs — conflating them is what caused the bug below.
  *
- * Dor, 2026-08-21: "if the game is in the background, you dont passively get
- * stuff — the window must be open." rAF stops firing on a hidden tab, so the
- * first frame after a backgrounded PWA resumes carries the whole absence in its
- * `dt`. This used to settle that gap at full production rate up to an eight
- * hour cap, which is precisely the away-time income he asked to remove.
+ * `visible` is the real rule. Dor, 2026-08-21: "the window must be open", and
+ * 2026-08-22: "not only closing the app, but also minimizing should not give
+ * you passive income."
  *
- * Pure and exported so the rule is testable — it used to be an if/else inside
- * the rAF callback, where nothing could reach it.
+ * `MAX_TICK_DT_MS` is only a STUTTER guard: a phone that drops a frame for
+ * 400ms should still be paid, a page resumed after an hour should not.
+ *
+ * The clamp alone was not enough, and it measurably was not: a backgrounded
+ * window kept earning the full production rate. Browsers throttle a background
+ * tab's requestAnimationFrame to roughly 1Hz rather than stopping it, so every
+ * throttled frame arrived with `dt` around 1000ms, passed `dt <=
+ * MAX_TICK_DT_MS`, and paid out a whole second of production. Measured at
+ * 1,400/sec on a 1,400/sec board — no reduction at all.
+ *
+ * Pure and exported so the rule is testable; it used to be an if/else inside
+ * the rAF callback where nothing could reach it.
  */
-export function creditableGapMs(dtMs: number): number {
+export function creditableGapMs(dtMs: number, visible: boolean): number {
+  if (!visible) return 0;
   if (!Number.isFinite(dtMs) || dtMs <= 0) return 0;
   return dtMs <= MAX_TICK_DT_MS ? dtMs : 0;
 }
@@ -54,7 +63,7 @@ export function startLoop(
     const wall = Date.now();
     // A throttled or hidden tab produces nothing. There is deliberately no
     // catch-up branch here any more.
-    const credit = creditableGapMs(dt);
+    const credit = creditableGapMs(dt, document.visibilityState === 'visible');
     if (credit > 0) accrue(state, credit, wall);
     ui.tickGolden?.(wall);
     ui.updateHud();
@@ -74,7 +83,15 @@ export function startLoop(
 
   // the reliable mobile "user is leaving" signals
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveToStorage(getState(), Date.now());
+    if (document.visibilityState === 'hidden') {
+      saveToStorage(getState(), Date.now());
+    } else {
+      // Restart the frame clock on the way back in. creditableGapMs would
+      // already refuse the huge dt this frame carries, but resetting it here
+      // means the first visible frame is a real frame rather than one the
+      // guard has to throw away.
+      last = performance.now();
+    }
   });
   window.addEventListener('pagehide', () => saveToStorage(getState(), Date.now()));
 }

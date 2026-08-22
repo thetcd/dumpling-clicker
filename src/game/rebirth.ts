@@ -10,10 +10,26 @@ import {
   REBIRTH_BUFF_TIERS,
   REBIRTH_GROWTH,
   REBIRTH_KEEP_FRACTION,
+  REBIRTH_MAX,
 } from './config/balance';
 import { UPGRADE_BY_ID } from './config/upgrades';
 import { roundToDisplay } from './quantize';
 import type { GameState } from './state';
+
+/** Prestige as a usable rank: floored, never negative, never NaN. */
+function rankOf(prestige: number): number {
+  return Number.isFinite(prestige) && prestige > 0 ? Math.floor(prestige) : 0;
+}
+
+/**
+ * Has the player reached the last rank the game currently offers?
+ *
+ * The single place the cap is decided — `rebirthProgress`, `canRebirth` and the
+ * bar all ask this rather than comparing against REBIRTH_MAX themselves.
+ */
+export function isRebirthMaxed(prestige: number): boolean {
+  return rankOf(prestige) >= REBIRTH_MAX;
+}
 
 /**
  * How much this run must earn before rebirth `n + 1` is available, rounded to
@@ -23,8 +39,7 @@ import type { GameState } from './state';
  * rising.
  */
 export function rebirthRequirement(prestige: number): number {
-  const n = Number.isFinite(prestige) && prestige > 0 ? Math.floor(prestige) : 0;
-  return roundToDisplay(REBIRTH_BASE * REBIRTH_GROWTH ** n);
+  return roundToDisplay(REBIRTH_BASE * REBIRTH_GROWTH ** rankOf(prestige));
 }
 
 /**
@@ -37,7 +52,10 @@ export function rebirthRequirement(prestige: number): number {
  * `producerDps` — doing both would square it.
  */
 export function rebirthMultiplier(prestige: number): number {
-  const n = Number.isFinite(prestige) && prestige > 0 ? Math.floor(prestige) : 0;
+  // Clamped to the cap: the ladder stops at REBIRTH_MAX, so the scalar has to
+  // as well, or editing localStorage to rank 999 hands out a multiplier the
+  // game can never legitimately give.
+  const n = Math.min(rankOf(prestige), REBIRTH_MAX);
   let total = 1;
   let counted = 0;
   for (const tier of REBIRTH_BUFF_TIERS) {
@@ -51,6 +69,9 @@ export function rebirthMultiplier(prestige: number): number {
 
 /** Progress toward the next rebirth, 0..1, for the button's fill. */
 export function rebirthProgress(state: GameState): number {
+  // At the cap the bar reads full whatever the run has earned. A full bar with
+  // no button is the "MAX" state, the same shape Roblox uses.
+  if (isRebirthMaxed(state.prestige)) return 1;
   const need = rebirthRequirement(state.prestige);
   if (!(need > 0)) return 1;
   const have = Number.isFinite(state.runEarned) ? Math.max(0, state.runEarned) : 0;
@@ -58,6 +79,9 @@ export function rebirthProgress(state: GameState): number {
 }
 
 export function canRebirth(state: GameState): boolean {
+  // isMaxed first: at the cap rebirthProgress is 1 by definition, so asking it
+  // alone would report the button as available forever.
+  if (isRebirthMaxed(state.prestige)) return false;
   return rebirthProgress(state) >= 1;
 }
 

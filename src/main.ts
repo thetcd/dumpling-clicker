@@ -286,7 +286,7 @@ const paintHud = () => {
   );
 };
 // Paint once before the first frame: the HUD ships with a hardcoded "0", and a
-// returning player with millions banked would otherwise read "0 כופתאות" until
+// returning player with millions banked would otherwise read "0 שקלים" until
 // rAF fires — which on a backgrounded PWA resume can be a visible beat.
 paintHud();
 

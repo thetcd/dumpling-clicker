@@ -1,7 +1,11 @@
 // Every user-facing string. The M5 content pass edits this file + config/ only.
 export const STR = {
   title: 'דאמפלינג קליקר',
-  dumplings: 'כופתאות',
+  // The currency is SHEKELS. One place, so a re-theme is one edit. Note the
+  // rebirth meter deliberately does NOT use this — that bar is exp, not money
+  // (Dor, 2026-08-22).
+  dumplings: 'שקלים',
+  currency: '₪',
   perSecond: 'לשנייה',
   perClick: 'למעיכה',
   upgradeTeaser: (n: string) => `ייפתח אחרי עוד ${n} מעיכות`,
@@ -27,17 +31,21 @@ export const STR = {
   editSquishy: 'עיצוב הסקווישי מחדש',
   share: 'שתפו את הסקווישי שלכם',
   shareText: (count: string) =>
-    `הסקווישי שלי כבר ייצר ${count} כופתאות בדאמפלינג קליקר! 🥟 בואו תמעכו גם`,
+    `הסקווישי שלי כבר הרוויח ${count} שקלים בדאמפלינג קליקר! 🥟 בואו תמעכו גם`,
   // Deliberately NOT worded like `reset` below, which DESTROYS the save. These
   // two must never look alike in the UI.
   rebirthTitle: 'לידה מחדש',
-  rebirthLevel: (n: number) => `לידה מחדש ${n}`,
+  rebirthLevel: (n: number, max: number) => `לידה מחדש ${n}/${max}`,
+  // The max state: a full bar, no button, and a reason to come back. This line
+  // is the hook every weekly release pulls on.
+  rebirthMaxed: 'הגעתם למקסימום! 🎉',
+  rebirthMaxedNext: 'עוד לידות מחדש בעדכון הבא',
   rebirthReady: 'להיוולד מחדש!',
   rebirthBonus: (mult: string) => `בונוס קבוע ×${mult}`,
   rebirthNext: (mult: string) => `אחרי הלידה מחדש: ×${mult} לתמיד`,
   rebirthConfirmTitle: 'להיוולד מחדש?',
   rebirthConfirmBody:
-    'הכופתאות והצוות שלכם יתאפסו. הסקווישי, הלידות מחדש והבונוס הקבוע נשארים — ואקססוריז חדשים ייפתחו.',
+    'השקלים והצוות שלכם יתאפסו. הסקווישי, הלידות מחדש והבונוס הקבוע נשארים — ואקססוריז חדשים ייפתחו.',
   // Spelled out because Dor could not tell what a rebirth kept ("the saved
   // items in each rebirth are not consistent"). Fed by rebirthKeepSummary, so
   // it always matches what the reset actually does.
@@ -61,7 +69,7 @@ export const STR = {
   rebirthNoParts: 'הפריט הבא לעיצוב מחכה לכם בלידה מחדש הבאה.',
   rebirthDesignNow: '🎨 לעצב עכשיו',
   reset: 'מחיקת הכל',
-  resetConfirm: 'בטוחים? הכל יימחק — כופתאות, צוות ולידות מחדש. אין דרך לחזור.',
+  resetConfirm: 'בטוחים? הכל יימחק — שקלים, צוות ולידות מחדש. אין דרך לחזור.',
   resetYes: 'כן, למחוק הכל',
   cancel: 'ביטול',
   close: 'סגירה',
@@ -82,7 +90,7 @@ export const STR = {
   producesNow: (amount: string) => `מייצרים ${amount} לשנייה`,
   firstOfTier: (name: string) => `${name} הצטרפו לצוות! 🎉`,
   goldenLabel: 'כופתאה מוזהבת!',
-  airdropLabel: 'חבילת כופתאות!',
+  airdropLabel: 'חבילת שקלים!',
   commonLabel: 'משהו נוצץ!',
   rewardCaught: (amount: string) => `‎+${amount}`,
   critFloater: (amount: string) => `‎+${amount} 💥`,

@@ -109,6 +109,24 @@ export const FRENZY_DURATION_MS = 30_000;
 // owned, extra income costs 1.15x more per unit for flat dps, so growth turns
 // logarithmic. Extending the game past 40 needs more tiers, not a smaller
 // growth constant.
+/**
+ * The last rebirth rank the game currently offers.
+ *
+ * Dor, 2026-08-22: "we need to limit the rebirth amounts, like they do in some
+ * roblox games." The cap is the CONTENT BOUNDARY, not a balance knob — a
+ * release raises it, and that is the whole shape of the weekly-update model:
+ * hitting 50/50 is finishing the game as it currently exists, and the next
+ * update is a reason to come back rather than an unbounded grind.
+ *
+ * 50 for two reasons. It is where the boss tier unlocks, so reaching max rank
+ * and meeting Gal are the same moment. And it deletes the worst-paced stretch
+ * of the game: rank 60 measured at 33.8h and rank 70 at 308h at 5 taps/sec,
+ * and neither is reachable now.
+ *
+ * Must stay >= 40, the last designer part's rank, or parts are stranded
+ * permanently unreachable. tests/rebirth.test.ts pins that.
+ */
+export const REBIRTH_MAX = 50;
 export const REBIRTH_BASE = 3_000;
 export const REBIRTH_GROWTH = 1.5;
 // LINEAR and small, deliberately: multiplier = 1 + BUFF * n, never compounding.

@@ -186,7 +186,7 @@ export function initShop(
         <span class="u-name">${def.nameHe}</span>
         <span class="u-desc">${def.descHe}</span>
         <span class="u-gain" data-upgrade-gain="${def.id}"></span>
-        <span class="u-cost">🥟 ${formatNumber(def.cost)}</span>`;
+        <span class="u-cost">${STR.currency} ${formatNumber(def.cost)}</span>`;
       chip.addEventListener('click', () => {
         if (buyUpgrade(getState(), def.id)) {
           onPurchase('upgrade', def.id);
@@ -273,7 +273,7 @@ export function initShop(
       // A teased row hid the icon, name and description and then printed the
       // exact price beside them, so the tier was trivially identifiable. Hide
       // the cost too, or there is nothing left to be curious about.
-      r.cost.textContent = known ? `🥟 ${formatNumber(cost)}` : '🥟 ???';
+      r.cost.textContent = known ? `${STR.currency} ${formatNumber(cost)}` : `${STR.currency} ???`;
       r.ownedEl.textContent = owned > 0 ? String(owned) : '';
       (r.row as HTMLButtonElement).disabled = getState().dumplings < cost || !known;
     }

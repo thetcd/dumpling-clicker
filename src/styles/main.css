@@ -1005,3 +1005,25 @@ button {
   font-size: 0.9rem;
   line-height: 1.6;
 }
+
+/* The exp readout under the rebirth track: earned out of needed. Tabular so the
+   digits do not jitter as they climb, and deliberately unmarked — this is exp,
+   not shekels (see ui/rebirth.ts). */
+.rb-exp {
+  display: block;
+  text-align: center;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+  margin-top: 0.2rem;
+}
+
+/* Max rank: the bar stays full and the button is gone, so the exp line carries
+   the celebration instead of a target that no longer exists. */
+#rebirth.maxed .rb-exp {
+  opacity: 1;
+  font-weight: 600;
+}
+#rebirth.maxed .rb-fill {
+  background: linear-gradient(90deg, #f0b429, #f7d97a);
+}

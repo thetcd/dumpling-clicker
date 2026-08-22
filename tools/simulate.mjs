@@ -153,7 +153,11 @@ let state = state0.createInitialState(0);
 const rows = [];
 let cumulative = 0;
 
-for (let n = 0; n < 60; n++) {
+// Stops at REBIRTH_MAX. The ladder is capped now (Dor, 2026-08-22), so
+// measuring rank 60 or 70 would describe a game nobody can reach — and those
+// were exactly the ranks whose 34h and 308h run lengths the cap exists to
+// delete. Raise the cap in balance.ts and this follows automatically.
+for (let n = 0; n < balance.REBIRTH_MAX; n++) {
   const secs = timeToRebirth(state, clock);
   cumulative += secs;
   rows.push({
@@ -188,10 +192,14 @@ for (let n = 0; n < 60; n++) {
   state = next;
 }
 
-console.log(`taps/sec: ${TAPS}  base: ${BASE}  growth: ${GROWTH}`);
+console.log(
+  `taps/sec: ${TAPS}  base: ${BASE}  growth: ${GROWTH}  cap: ${balance.REBIRTH_MAX}`,
+);
 console.log('rebirth | requirement | multiplier | this run | total so far');
 for (const r of rows) {
-  if (![1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 60].includes(r.rebirth)) continue;
+  const shown = [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 60];
+  // always print the final rank, whatever the cap is set to
+  if (!shown.includes(r.rebirth) && r.rebirth !== balance.REBIRTH_MAX) continue;
   console.log(
     `${String(r.rebirth).padStart(7)} | ${r.need.toExponential(2).padStart(11)} | ${('x' + r.mult.toFixed(2)).padStart(10)} | ${fmt(r.took).padStart(8)} | ${fmt(r.cumulative)}`,
   );

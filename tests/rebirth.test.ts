@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { STR } from '../src/i18n/strings.he';
+import { REBIRTH_MAX } from '../src/game/config/balance';
 import { isFrenzyActive } from '../src/game/golden';
 import { UPGRADES } from '../src/game/config/upgrades';
 import { roundToDisplay } from '../src/game/quantize';
 import {
   canRebirth,
+  isRebirthMaxed,
   rebirthMultiplier,
   rebirthProgress,
   rebirthKeepSummary,
@@ -73,8 +75,15 @@ describe('rebirthMultiplier', () => {
     expect(rebirthMultiplier(60)).toBeLessThan(30);
   });
 
-  test('keeps growing forever, so there is always a reason to rebirth again', () => {
-    expect(rebirthMultiplier(100)).toBeGreaterThan(rebirthMultiplier(60));
+  test('keeps growing right up to the cap', () => {
+    expect(rebirthMultiplier(REBIRTH_MAX)).toBeGreaterThan(rebirthMultiplier(REBIRTH_MAX - 1));
+  });
+
+  test('stops at the cap — a tampered save cannot buy a bigger bonus', () => {
+    // the ladder is capped, so the scalar has to be too, or editing localStorage
+    // to rank 999 hands out a multiplier the game can never legitimately give
+    expect(rebirthMultiplier(REBIRTH_MAX + 50)).toBe(rebirthMultiplier(REBIRTH_MAX));
+    expect(rebirthMultiplier(100_000)).toBe(rebirthMultiplier(REBIRTH_MAX));
   });
 
   test('grows slower than the requirement, so runs never trivialise', () => {
@@ -302,5 +311,64 @@ describe('the keep-list copy', () => {
   test('handles a single permanent upgrade', () => {
     expect(STR.rebirthKeepUpgrades(1)).toBe('שדרוג מעיכה קבוע אחד');
     expect(STR.rebirthKeepUpgrades(4)).toBe('4 שדרוגי מעיכה קבועים');
+  });
+});
+
+
+describe('the rebirth cap', () => {
+  /**
+   * Dor, 2026-08-22: "we need to limit the rebirth amounts, like they do in some
+   * roblox games." The cap is the content boundary — a release raises it, which
+   * is what makes the weekly-update model work. It also deletes the worst-paced
+   * stretch of the game: rank 60 measured at 33.8h and rank 70 at 308h, and
+   * neither is reachable any more.
+   */
+  test('is a real number, not unbounded', () => {
+    expect(Number.isFinite(REBIRTH_MAX)).toBe(true);
+    expect(REBIRTH_MAX).toBe(50);
+  });
+
+  test('the cap sits above the last designer part, so nothing is stranded', () => {
+    // every part unlocks by rank 40; a cap below that would make some
+    // permanently unreachable
+    expect(REBIRTH_MAX).toBeGreaterThanOrEqual(40);
+  });
+
+  test('isRebirthMaxed is false below the cap and true at or above it', () => {
+    expect(isRebirthMaxed(REBIRTH_MAX - 1)).toBe(false);
+    expect(isRebirthMaxed(REBIRTH_MAX)).toBe(true);
+    expect(isRebirthMaxed(REBIRTH_MAX + 10)).toBe(true);
+  });
+
+  test('junk prestige is not treated as maxed', () => {
+    expect(isRebirthMaxed(Number.NaN)).toBe(false);
+    expect(isRebirthMaxed(-5)).toBe(false);
+  });
+
+  test('the bar reads full at the cap, however little the run has earned', () => {
+    // a full bar with no button is the "MAX" state — the same shape Roblox uses
+    const s = at(REBIRTH_MAX, 0);
+    expect(rebirthProgress(s)).toBe(1);
+  });
+
+  test('you cannot rebirth at the cap, however much you earn', () => {
+    expect(canRebirth(at(REBIRTH_MAX, Number.MAX_SAFE_INTEGER))).toBe(false);
+    // ...but the rank right below it still works
+    expect(canRebirth(at(REBIRTH_MAX - 1, Number.MAX_SAFE_INTEGER))).toBe(true);
+  });
+
+  test('the rebirth action refuses at the cap and leaves the run untouched', () => {
+    const s = at(REBIRTH_MAX, Number.MAX_SAFE_INTEGER);
+    s.producers = { stall: 40 };
+    s.dumplings = 12_345;
+    const after = rebirth(s, 0);
+    expect(after.prestige).toBe(REBIRTH_MAX);
+    expect(after.producers).toEqual({ stall: 40 });
+    expect(after.dumplings).toBe(12_345);
+  });
+
+  test('the last legitimate rebirth lands exactly on the cap', () => {
+    const s = at(REBIRTH_MAX - 1, Number.MAX_SAFE_INTEGER);
+    expect(rebirth(s, 0).prestige).toBe(REBIRTH_MAX);
   });
 });

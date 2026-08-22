@@ -31,7 +31,7 @@ export function formatRate(n: number): string {
 
 export function formatNumber(n: number): string {
   // Never let NaN/Infinity/negatives reach the screen. A single bad number
-  // upstream would otherwise paint "NaN כופתאות" across the whole HUD.
+  // upstream would otherwise paint "NaN שקלים" across the whole HUD.
   if (!Number.isFinite(n) || n < 0) return '0';
   const whole = Math.floor(n);
   if (whole < 1_000_000) return plain.format(whole);
