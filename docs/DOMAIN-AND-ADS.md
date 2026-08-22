@@ -6,6 +6,12 @@ approves the *parent* domain and lets subdomains inherit, and nobody can get
 `github.io` approved. A custom domain is the prerequisite for every ad idea, not
 an afterthought.
 
+**Update 2026-08-22: the domain is also a hard prerequisite for Google Play.**
+The Android app is a Trusted Web Activity, which verifies trust via
+`https://<origin>/.well-known/assetlinks.json` at the origin **root** — a spot
+`thetcd.github.io` can never give this game. See `docs/GOOGLE-PLAY.md`. One more
+reason to do these phases sooner rather than later.
+
 Do the phases in order. Phase 3 is the one with a cost attached; read it before
 you start Phase 1.
 

@@ -11,6 +11,8 @@ else:
   rejected. Read it before "fixing" something that looks wrong; several odd
   choices are odd because the obvious version was measured and failed.
 - `docs/DOMAIN-AND-ADS.md` — the domain-move runbook.
+- `docs/GOOGLE-PLAY.md` — the Android/Play runbook (TWA via Bubblewrap; the
+  domain move is a prerequisite).
 
 ```bash
 npm test        # 315 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
@@ -83,6 +85,14 @@ git push        # this IS the deploy: Actions runs tests, then publishes to Page
   serves from a sub-path so nothing may hardcode `/`; and a var that exists but
   is *blank* — one keystroke in a hosting dashboard — used to build
   `start_url: ""` and relative asset paths.
+- **Any standalone static page needs two things**: relative links only (Pages
+  serves from a sub-path) and an entry in `navigateFallbackDenylist` in
+  `vite.config.ts` — otherwise the service worker's SPA fallback serves the
+  game instead of the page. `privacy.html`/`about.html` are the pattern.
+- **The maskable icon is `icon-512-maskable.png`, a separate asset** (art at
+  74% in a full-bleed field, source `icon-maskable.svg`). Never point
+  `purpose: 'maskable'` at `icon-512.png` — Android's circular crop clips its
+  rounded corners and edge-to-edge art.
 - **`[hidden]{display:none!important}` must stay in `main.css`** —
   `.producer-row{display:flex}` overrides the UA hidden rule.
 - **`.squish-wrap`'s box is NOT the dumpling.** It spans the whole stage and its

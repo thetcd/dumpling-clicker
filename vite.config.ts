@@ -20,9 +20,13 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/icon-192.png'],
       manifest: {
+        // Fixed id: installs must survive a future start_url/scope change
+        // (e.g. the Pages sub-path → custom-domain move) without being
+        // treated as a different app by the browser or by a Play TWA.
+        id: '/',
         name: 'דאמפלינג קליקר',
         short_name: 'דאמפלינג',
-        description: 'מעצבים סקווישי, מועכים אותו, ובונים אימפריית כופתאות',
+        description: 'מעצבים סקווישי, מועכים אותו, ובונים אימפריה של שקלים',
         lang: 'he',
         dir: 'rtl',
         display: 'standalone',
@@ -35,7 +39,10 @@ export default defineConfig({
           { src: `${base}icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
           { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png' },
           {
-            src: `${base}icons/icon-512.png`,
+            // A REAL maskable asset: art at 74% inside a full-bleed field.
+            // icon-512.png has rounded corners and edge-to-edge art, so
+            // Android's circular crop clips it — never reuse it here.
+            src: `${base}icons/icon-512-maskable.png`,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -46,6 +53,9 @@ export default defineConfig({
         // the whole game is the app shell — precache everything, run offline
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: `${base}index.html`,
+        // The SPA fallback must not swallow the standalone static pages
+        // (privacy/about — required by Play and AdSense) or /.well-known/.
+        navigateFallbackDenylist: [/\/(privacy|about)\.html$/, /\/\.well-known\//],
       },
     }),
   ],

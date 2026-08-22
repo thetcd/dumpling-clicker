@@ -219,7 +219,10 @@ See §7 and `docs/DOMAIN-AND-ADS.md`.
 
 ### A · Domain on Vercel + Cloudflare — **do this first, and soon**
 
-Full steps in **`docs/DOMAIN-AND-ADS.md`**. The short version:
+Full steps in **`docs/DOMAIN-AND-ADS.md`**. Since 2026-08-22 the domain is also
+a hard prerequisite for **Google Play** (see `docs/GOOGLE-PLAY.md`) — the TWA
+trust file must live at the origin root, which `github.io` cannot do. The short
+version:
 
 - [ ] Register a domain at Cloudflare Registrar (at-cost; note `.co.il` is not
       available there — a `.com` avoids that detour).
@@ -247,12 +250,11 @@ free and after a promotion it is not. Keep the Pages deploy alive serving a
 - [ ] **AdSense can never serve from `thetcd.github.io`.** Google approves the
       *parent* domain and lets subdomains inherit; nobody can get `github.io`
       approved. The custom domain is a hard prerequisite.
-- [ ] Write a **privacy policy** page, Hebrew and English. Effectively required,
-      and not optional for a child-directed game. It can honestly say: no
-      accounts, no analytics, no backend, one `localStorage` key that never
-      leaves the device.
-- [ ] Add an **about page**. A single-page game is a common cause of AdSense
-      "thin content" rejection.
+- [x] Write a **privacy policy** page, Hebrew and English. Shipped 2026-08-22
+      as `public/privacy.html`. It honestly says: no accounts, no analytics, no
+      backend, one `localStorage` key that never leaves the device.
+- [x] Add an **about page** (`public/about.html`, same date). A single-page
+      game is a common cause of AdSense "thin content" rejection.
 - [ ] Apply for AdSense on the new domain. Then apply for **H5 Games Ads**
       separately — it is by-application on top of an approved AdSense account
       and access is not guaranteed.
@@ -266,7 +268,16 @@ For a Hebrew kids' game at one-YouTuber scale this is realistically tens of
 dollars a month. **Buy the domain for the URL and the cleaner PWA, not for the
 ad revenue.**
 
-### C · What needs **no** integration
+### B½ · Google Play (Android app) — planned 2026-08-22
+
+Full runbook in **`docs/GOOGLE-PLAY.md`**. Approach: a **Trusted Web Activity
+via Bubblewrap** — a thin signed wrapper over the live site, so `git push`
+stays the only deploy and the browser save and app save are the same
+localStorage. Repo prep is DONE (manifest `id`, real maskable icon,
+privacy/about pages, assetlinks placeholder, SW denylist). Blocked on: the
+domain (section A) and a Play developer account + **12 testers opted in for 14
+unbroken days** (new-personal-account rule). Kids app → Families policy →
+launches with **no ads**.
 
 **No backend.** Both planned ad rewards are client-side state changes. There is
 no leaderboard and nothing to purchase, so a faked reward only affects the
