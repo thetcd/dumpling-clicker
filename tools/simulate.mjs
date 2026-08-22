@@ -180,9 +180,10 @@ for (let n = 0; n < balance.REBIRTH_MAX; n++) {
   next.runEarned = 0;
   // Mirror actions.rebirth()'s keep rule. Forgetting it here would model a
   // cold restart the real game no longer does, and every run length below
-  // would be too long. ROUNDED, matching actions.rebirth() since 2026-08-21.
+  // would be too long. One per 4 owned, capped, matching since 2026-08-22.
   for (const [id, count] of Object.entries(state.producers)) {
-    const keep = Math.round(count * balance.REBIRTH_KEEP_FRACTION);
+    const keep =
+      count >= 1 ? Math.min(balance.REBIRTH_KEEP_MAX, Math.ceil(count / balance.REBIRTH_KEEP_PER)) : 0;
     if (keep > 0) next.producers[id] = keep;
   }
   // ...and the flat click upgrades are permanent, so the run does NOT start by

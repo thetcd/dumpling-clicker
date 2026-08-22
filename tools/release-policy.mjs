@@ -203,7 +203,8 @@ function measure({ tailGrowth, incomePerRelease, label }) {
       runEarned: 0,
     });
     for (const [id, count] of Object.entries(s.producers)) {
-      const keep = Math.round(count * balance.REBIRTH_KEEP_FRACTION);
+      const keep =
+        count >= 1 ? Math.min(balance.REBIRTH_KEEP_MAX, Math.ceil(count / balance.REBIRTH_KEEP_PER)) : 0;
       if (keep > 0) next.producers[id] = keep;
     }
     next.upgrades = s.upgrades.filter((id) => upgrades.UPGRADE_BY_ID[id]?.keepOnRebirth);

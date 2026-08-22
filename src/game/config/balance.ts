@@ -149,13 +149,17 @@ export const REBIRTH_BUFF_TIERS: { through: number; buff: number }[] = [
 ];
 
 /**
- * What survives a rebirth, as a fraction of each producer count (floored).
- * Gal: a reset that takes everything is punishing; keeping a quarter means each
- * rebirth visibly starts you further along without skipping the early shop.
- * Click upgrades are NOT kept — they are one-time buys, so keeping them would
- * make that whole ladder one-and-done instead of something to re-climb.
+ * What survives a rebirth: one squishy per every KEEP_PER owned of each tier
+ * (1-4 keeps 1, 5-8 keeps 2, 9-12 keeps 3, ...), capped at KEEP_MAX per tier.
+ *
+ * Dor's rule (2026-08-22), replacing the rounded quarter: under 25% a single
+ * unit rounded to zero and vanished — he owned 1 kindergarten, rebirthed, and
+ * reported it as a bug. Now owning ANYTHING keeps at least one, and the cap
+ * stops the late game from starting with a quarter of a huge board.
+ * Click upgrades: the flat tier is kept (keepOnRebirth), share/crit re-climbed.
  */
-export const REBIRTH_KEEP_FRACTION = 0.25;
+export const REBIRTH_KEEP_PER = 4;
+export const REBIRTH_KEEP_MAX = 10;
 
 export const MAX_TICK_DT_MS = 1_000; // clamp a single accrual step to 1s
 

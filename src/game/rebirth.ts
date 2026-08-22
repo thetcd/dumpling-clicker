@@ -9,7 +9,8 @@ import {
   REBIRTH_BASE,
   REBIRTH_BUFF_TIERS,
   REBIRTH_GROWTH,
-  REBIRTH_KEEP_FRACTION,
+  REBIRTH_KEEP_MAX,
+  REBIRTH_KEEP_PER,
   REBIRTH_MAX,
 } from './config/balance';
 import { UPGRADE_BY_ID } from './config/upgrades';
@@ -88,20 +89,17 @@ export function canRebirth(state: GameState): boolean {
 /**
  * THE KEEP RULE, in one place — `actions.rebirth()` applies exactly this.
  *
- * A quarter of every producer, ROUNDED. Rounded rather than floored because
- * under floor, owning 3 of a tier kept nothing while owning 4 kept one, so runs
- * that looked identical kept wildly different amounts and small tiers vanished
- * with no explanation. Dor reported the kept amounts as "not consistent" on
- * 2026-08-21.
- *
- * A count that still rounds to 0 (you owned exactly one) is DROPPED rather than
- * stored: a zero would render an "own 0" row and hand `dpsOf` a dead entry.
+ * One squishy per every REBIRTH_KEEP_PER owned of each tier (1-4 keeps 1,
+ * 5-8 keeps 2, 9-12 keeps 3, ...), capped at REBIRTH_KEEP_MAX. Dor's rule,
+ * 2026-08-22 — it replaced a rounded 25%, under which owning exactly one of a
+ * tier kept nothing and read as a bug (his single kindergarten vanished).
+ * Owning anything now keeps at least one, so no key is ever stored as zero.
  */
 export function keptProducers(producers: Record<string, number>): Record<string, number> {
   const kept: Record<string, number> = {};
   for (const [id, count] of Object.entries(producers)) {
-    const keep = Math.round((Number.isFinite(count) ? count : 0) * REBIRTH_KEEP_FRACTION);
-    if (keep > 0) kept[id] = keep;
+    const owned = Number.isFinite(count) ? Math.floor(count) : 0;
+    if (owned >= 1) kept[id] = Math.min(REBIRTH_KEEP_MAX, Math.ceil(owned / REBIRTH_KEEP_PER));
   }
   return kept;
 }

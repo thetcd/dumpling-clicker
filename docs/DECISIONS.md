@@ -119,11 +119,15 @@ squares it.
 `totalEarned` drives which upgrades are revealed, so a rebirthed player doesn't
 have to re-earn the right to see a shop they already know.
 
-**The keep rule rounds, and it used to floor.** Under floor, owning 3 of a tier
-kept nothing while owning 4 kept one — so runs that looked identical kept wildly
-different amounts and small tiers vanished with no explanation. Dor reported the
-kept amounts as "not consistent". Now `round`, the five flat click upgrades are
-permanent, and **the confirm modal states what survives before you commit** —
+**The keep rule is one-per-4 owned (capped at 10), and it used to be a fraction.**
+Under floor-25%, owning 3 of a tier kept nothing while owning 4 kept one — Dor
+reported the kept amounts as "not consistent". Rounding fixed most of it but a
+single unit still rounded to zero and vanished, which Dor hit with one kindergarten
+and reported as a bug (2026-08-22). Now `ceil(owned / 4)` capped at 10 per tier:
+owning anything keeps at least one, stateable in a sentence, and the cap keeps a
+huge late-game board from trivialising the next run (measured: cap timing moved
+10.1h -> 9.9h at 5 taps/sec, 16.6h -> 16.1h at 2). The five flat click upgrades
+are permanent, and **the confirm modal states what survives before you commit** —
 half of consistency is the rule, the other half is being able to see it. It reads
 from the same functions the reset uses, so the promise can't outrun the outcome.
 

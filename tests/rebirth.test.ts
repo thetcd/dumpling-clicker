@@ -124,31 +124,37 @@ describe('the rebirth action', () => {
     expect(after.runEarned).toBe(0);
   });
 
-  // THE KEEP RULE, in one place. Dor reported the kept amounts as
-  // "not consistent" and asked for a rule he could state, so this describes it
-  // exactly: a quarter of every producer, ROUNDED, plus the flat click
-  // upgrades permanently.
-  test('you keep a quarter of every producer, rounded', () => {
-    // Rounded, not floored. Under floor, owning 3 kept nothing while owning 4
-    // kept one, so two runs that looked the same kept wildly different amounts
-    // and small tiers silently vanished.
+  // THE KEEP RULE, in one place. Dor's rule (2026-08-22): one survivor per
+  // every 4 owned — 1-4 keeps 1, 5-8 keeps 2, 9-12 keeps 3 — all the way up,
+  // capped at 10 per tier. Plus the flat click upgrades permanently.
+  test('one survivor per every 4 owned: 1-4 keeps 1, 5-8 keeps 2, 9-12 keeps 3', () => {
     const s = at(0, REBIRTH_BASE);
-    s.producers = { apprentice: 40, stall: 8, factory: 3, army: 2 };
+    s.producers = { apprentice: 4, stall: 5, factory: 8, army: 9, school: 12, boss: 13 };
     const after = rebirth(s, 0);
-    expect(after.producers.apprentice).toBe(10);
+    expect(after.producers.apprentice).toBe(1);
     expect(after.producers.stall).toBe(2);
-    expect(after.producers.factory).toBe(1); // round(0.75) — floor kept nothing
-    expect(after.producers.army).toBe(1); // round(0.5)
+    expect(after.producers.factory).toBe(2);
+    expect(after.producers.army).toBe(3);
+    expect(after.producers.school).toBe(3);
+    expect(after.producers.boss).toBe(4);
   });
 
-  test('a single unit of something is not kept, and leaves no zero behind', () => {
+  test('even a single unit survives — no tier ever silently vanishes', () => {
+    // Dor hit this: 1 kindergarten kept nothing under the old rounded-quarter
+    // rule and read as a bug. Under "1-4 keeps 1" owning anything keeps one.
     const s = at(0, REBIRTH_BASE);
     s.producers = { boss: 1 };
     const after = rebirth(s, 0);
-    // round(0.25) is 0, and a 0 count would render a "you own 0" row and feed
-    // dpsOf a dead entry — so the key is dropped, never stored as zero
-    expect(after.producers.boss).toBeUndefined();
-    expect('boss' in after.producers).toBe(false);
+    expect(after.producers.boss).toBe(1);
+  });
+
+  test('the keep is capped at 10 per tier, however many you own', () => {
+    const s = at(0, REBIRTH_BASE);
+    s.producers = { apprentice: 37, stall: 40, factory: 400 };
+    const after = rebirth(s, 0);
+    expect(after.producers.apprentice).toBe(10); // ceil(37/4) = 10, first count to hit the cap
+    expect(after.producers.stall).toBe(10);
+    expect(after.producers.factory).toBe(10);
   });
 
   test('the flat click upgrades are kept forever', () => {
@@ -197,10 +203,10 @@ describe('the rebirth action', () => {
     let s = at(0, REBIRTH_BASE);
     s.producers = { stall: 100 };
     s = rebirth(s, 0);
-    expect(s.producers.stall).toBe(25);
+    expect(s.producers.stall).toBe(10); // capped
     s.runEarned = rebirthRequirement(s.prestige);
     s = rebirth(s, 0);
-    expect(s.producers.stall).toBe(6); // round(25 * 0.25)
+    expect(s.producers.stall).toBe(3); // ceil(10 / 4)
   });
 
   test('keeps the squishy, the settings and the lifetime record', () => {
@@ -259,16 +265,16 @@ describe('rebirthKeepSummary', () => {
     const s = at(0, REBIRTH_BASE);
     s.producers = { apprentice: 40, stall: 8, factory: 3 };
     const kept = rebirthKeepSummary(s);
-    expect(kept.units).toBe(13); // 10 + 2 + 1
+    expect(kept.units).toBe(13); // 10 (capped) + 2 + 1
     expect(kept.tiers).toBe(3);
   });
 
-  test('a tier that rounds away is not counted', () => {
+  test('every owned tier is counted — a single unit no longer rounds away', () => {
     const s = at(0, REBIRTH_BASE);
     s.producers = { boss: 1, stall: 8 };
     const kept = rebirthKeepSummary(s);
-    expect(kept.units).toBe(2);
-    expect(kept.tiers).toBe(1);
+    expect(kept.units).toBe(3); // 1 + 2
+    expect(kept.tiers).toBe(2);
   });
 
   test('counts the permanent upgrades', () => {
@@ -301,11 +307,11 @@ describe('the keep-list copy', () => {
   // "in 1 places" is wrong, and this line is the one place the game explains
   // its own rules — it cannot read as machine output.
   test('reads naturally for a single place and a single squishy', () => {
-    expect(STR.rebirthKeepProducers(1, 1)).toBe('רביע מהצוות — סקווישי אחד במקום אחד');
+    expect(STR.rebirthKeepProducers(1, 1)).toBe('אחד מכל 4 בצוות — סקווישי אחד במקום אחד');
   });
 
   test('takes the numeral for more than one', () => {
-    expect(STR.rebirthKeepProducers(10, 3)).toBe('רביע מהצוות — 10 סקווישים ב־3 מקומות');
+    expect(STR.rebirthKeepProducers(10, 3)).toBe('אחד מכל 4 בצוות — 10 סקווישים ב־3 מקומות');
   });
 
   test('handles a single permanent upgrade', () => {

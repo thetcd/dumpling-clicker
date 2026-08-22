@@ -69,9 +69,10 @@ income for 30 seconds.
 **Rebirth.** Requirement `3,000 × 1.5ⁿ` measured against what the run earned.
 Reward is a permanent multiplier on all income — the first five rebirths double
 you, the next ten add half each, then a quarter forever, as a *sum* of steps
-never a product. **Capped at rank 50.** You keep a quarter of every producer
-tier (rounded), the five flat click upgrades permanently, your squishy, your
-settings, your lifetime totals, and an active golden frenzy. The confirm screen
+never a product. **Capped at rank 50.** You keep one squishy per every 4
+owned of each tier (1-4 keeps 1, 5-8 keeps 2, ..., capped at 10), the five flat
+click upgrades permanently, your squishy, your settings, your lifetime totals,
+and an active golden frenzy. The confirm screen
 lists what survives before you commit.
 
 **Cosmetics.** 16 body colours, 11 eyes, 11 mouths, 11 accessories — 21,296

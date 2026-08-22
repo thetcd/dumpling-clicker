@@ -60,7 +60,7 @@ export const STR = {
   // "in 1 places" is wrong, and this is the line that explains the game's own
   // rules, so it cannot read as machine output.
   rebirthKeepProducers: (units: number, tiers: number) =>
-    `רביע מהצוות — ${units === 1 ? 'סקווישי אחד' : `${units} סקווישים`} ${
+    `אחד מכל 4 בצוות — ${units === 1 ? 'סקווישי אחד' : `${units} סקווישים`} ${
       tiers === 1 ? 'במקום אחד' : `ב־${tiers} מקומות`
     }`,
   rebirthKeepUpgrades: (n: number) =>
