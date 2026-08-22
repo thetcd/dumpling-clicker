@@ -104,7 +104,10 @@ export const STR = {
   frenzyStart: (mult: number) => `×${mult} טירוף!`,
   // The GitHub Pages build (VITE_BASE set) is retired to this screen after the
   // domain move — old home-screen installs land here instead of a dead game.
-  movedTitle: 'עברנו לבית חדש! 🥟',
+  // No emoji in the title — the screen already renders a large 🥟 right above
+  // it, and in RTL the trailing emoji lands at the far left, reading as a
+  // second stray dumpling rather than punctuation.
+  movedTitle: 'עברנו לבית חדש!',
   movedBody: 'המשחק עבר לכתובת חדשה. ההתקדמות הישנה לא עוברת איתו, אבל מכאן ממשיכים.',
   movedCta: 'המשיכו למשחק ←',
 } as const;
