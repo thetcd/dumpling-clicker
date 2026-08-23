@@ -108,10 +108,16 @@ rebirth cap at 50. Plus Hebrew singular/plural fixes and a `VITE_BASE` footgun.
 **2026-08-23 — the ambient backdrop.** A dusk landscape now sits behind
 everything: parallax hills, a village with lit windows, drifting clouds, stars
 and a slow aurora (`src/ui/backdrop.ts`, `src/styles/backdrop.css`). Drawn as
-animated SVG (~5KB) rather than the 2.61MB video it was based on — the reasoning
-and the two seam traps are in `DECISIONS.md`. All motion is CSS
-transform/opacity, so the single rAF loop is untouched, and it freezes under
+animated SVG (~5KB) rather than the 2.61MB video it was based on. All motion is
+CSS transform/opacity, so the single rAF loop is untouched, and it freezes under
 `prefers-reduced-motion`.
+
+Shipped twice the same day: the first cut sized tiles as a percentage of the
+viewport and **looked wrong on any non-phone screen**. Tiles are now a fixed
+pixel size that steps up at 900px and 1600px, so proportions hold from a 430px
+phone to a 1920px desktop — checked at four widths, with the loop differing by
+zero pixels at each. The reasoning, and the four traps this turned up, are in
+`DECISIONS.md` and `CLAUDE.md`.
 
 **2026-08-22, later — the origin move.** The game left
 `thetcd.github.io/dumpling-clicker/` for **https://dumplingclicker.com/** on

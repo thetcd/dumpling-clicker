@@ -278,8 +278,32 @@ tile width, so the last frame is the first frame.
 **Do not "upgrade" this back to video.** A prettier clip has the same three
 problems. If richer art is wanted, add layers to the SVG.
 
-**What the seam work actually taught** — both traps are in `CLAUDE.md`, and the
-second is the more general lesson:
+### The tile is fixed pixels, because percentages broke desktop
+
+2026-08-23, same day. The first version made each layer 200% of the viewport
+width holding two tiles. That looked right on the phone it was tuned on and
+**bad on any wide screen**: with `preserveAspectRatio="none"` the horizontal
+scale is a function of window width, so x scaled 0.36 on a 430px phone and 1.2
+on a 1440px laptop. The same art at roughly 3x different proportions — cottages
+became flat bunkers, stars became blobs, clouds became smears, and the hills
+flattened out.
+
+Now each layer is one tile wider than the window and repeats a **fixed-pixel**
+tile (`--bd-tile`, stepped up at 900px and 1600px so a desktop isn't a small
+pattern stamped across the screen). Horizontal scale no longer depends on window
+width at all; only height does, and that varies far less. A widescreen gets more
+tiles, not stretched ones. Verified at 430 / 834 / 1440 / 1920: sliding a layer
+by exactly one tile differs by **zero pixels**, while a deliberately wrong
+offset differs by 47k–217k.
+
+The cost: layers are now `background-image` data URIs, and **an SVG used as a
+background image is a static rendering context** — CSS animations inside it do
+not run. The flickering windows died there and are baked in at varying opacity
+instead; the star twinkle came back as two half-skies cross-fading their own
+element opacity, which does animate.
+
+**What the seam work actually taught** — the traps are in `CLAUDE.md`, and the
+last two are the general lessons:
 
 - Seamlessness is a property of the geometry. It holds only while every drawn
   element stays inside the tile; one village house at x=1070 spilled past the
@@ -293,6 +317,11 @@ second is the more general lesson:
   identical no matter what. It only surfaced because the test also checked that a
   deliberately *wrong* offset differs, and that check failed. **A verification
   that cannot fail is not a verification**; give every such test a control case.
+- **Comparing screenshots by hash reported seams that did not exist.** PNG
+  encoding is not deterministic, so byte-identical fails on pixel-identical
+  images — it claimed a seam at 430px and 1440px that a per-pixel decode showed
+  was zero pixels. Decode and count differing pixels with a small tolerance;
+  a single antialiased pixel is not a seam either.
 
 ## Things that were tried and rejected
 

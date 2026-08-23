@@ -119,23 +119,33 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
 - **`.squish-wrap`'s box is NOT the dumpling.** It spans the whole stage and its
   SVG box is 15% taller than the drawn body, so geometry checks against it are
   meaningless. Derive from viewBox fractions or `getBBox()`.
-- **The backdrop loops only while everything stays inside the tile.** Each layer
-  in `ui/backdrop.ts` holds two identical tiles and scrolls exactly one tile
-  width. Anything drawn past `VB_W` is clipped in the second copy but not the
-  first, so the whole background **jumps once per cycle** — a village house at
-  x=1070 did exactly that. Tangents must match across the join too (slope out of
-  x=0 = slope into x=VB_W) or the ridge corners and leaves a notch repeating the
-  length of the scroll. `tests/backdrop.test.ts` pins the bounds; the tangent
-  rule is only caught by eye.
-- **The backdrop layers render squashed** — `preserveAspectRatio="none"` maps
-  2400 units onto ~2 viewport widths but 1200 units onto the full height, so on
-  a phone x scales ~0.36 and y ~0.75. A square drawn there arrives as a tall
-  narrow tower; the houses are ~3× wider than tall for this reason. A viewBox
-  whose aspect is far from the rendered box turns gentle hills into spikes.
+- **The backdrop's tile is a FIXED PIXEL SIZE, never a percentage of the
+  viewport.** Each layer in `ui/backdrop.ts` is one tile wider than the window
+  and repeats its art every `--bd-tile` px, so sliding it exactly one tile is
+  invisible. Sizing the tile as a percentage instead ties the horizontal scale
+  to window width: with `preserveAspectRatio="none"` that was x×0.36 on a phone
+  and x×1.2 on a laptop, the same art at ~3× different proportions — houses
+  became flat bunkers and stars became blobs on desktop. Widescreens should get
+  *more tiles*, not *stretched* ones.
+- **Everything drawn must stay inside `[0, VB_W)`.** Anything past the tile edge
+  is cut off in every repeat, and under the old tile-pair scroll it made the
+  whole background jump once per cycle. Ridge tangents must match across the
+  join too (slope out of x=0 = slope into x=VB_W) or the horizon corners and
+  repeats a notch. `tests/backdrop.test.ts` pins the bounds; the tangent rule is
+  only catchable by eye.
+- **An SVG used as a `background-image` is a STATIC rendering context** — CSS
+  animations inside it never run. Anything in the backdrop that has to move must
+  be a property of the *element* (the star layers cross-fade their own opacity;
+  the layers translate), never of the art. Flickering windows were lost to this
+  and are now baked in at varying opacity instead.
 - **A CSS animation outranks an inline style**, so `el.style.transform` is
   silently ignored while an animation is running — even a paused one. Any test
   that pokes a transform must set `animation: none` first, or it passes
   vacuously. This burned a seam test that "proved" the loop was fine.
+- **Never compare screenshots by hash.** PNG bytes are not deterministic, so
+  byte-identical fails on images that are pixel-identical. Decode and count
+  differing pixels with a tolerance — and always include a control case that
+  *must* differ, or a broken comparison reads as a pass.
 
 ## Adding content
 
