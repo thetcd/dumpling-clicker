@@ -1,0 +1,164 @@
+/* The ambient dusk landscape. See ui/backdrop.ts for why this is drawn rather
+   than a video. Everything here is transform/opacity only — compositor work,
+   never the rAF loop — and every scroll animation travels exactly one tile
+   width so the loop has no seam. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1; /* behind #app's content, above body's gradient */
+  overflow: hidden;
+  pointer-events: none;
+  /* Palette derives from the game's own tokens so the UI keeps its contrast
+     instead of fighting the art. Dusk, not daylight: the HUD and shop are
+     light text and must stay readable on top. */
+  --bd-far: #43335a;
+  --bd-mid: #33264a;
+  --bd-near: #241a33;
+  --bd-roof: #5a3f63;
+  --bd-wall: #2e2340;
+  --bd-window: #f0b25e;
+  --bd-cloud: #6b5175;
+  --bd-star: #f5eee6;
+}
+
+/* --- sky --- */
+.bd-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #241a2e 0%, #2c2033 42%, #3a2a42 72%, #4a3350 100%);
+}
+
+/* the last of the sunset, sitting on the horizon behind the hills */
+.bd-glow {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: 18%;
+  height: 42%;
+  background: radial-gradient(
+    ellipse 60% 100% at 50% 100%,
+    rgba(240, 178, 94, 0.3),
+    rgba(217, 143, 58, 0.12) 45%,
+    transparent 72%
+  );
+  animation: bd-breathe 19s ease-in-out infinite;
+}
+
+/* replaces the video's rainbow: a slow band that drifts and fades */
+.bd-aurora {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  top: 4%;
+  height: 46%;
+  background: radial-gradient(
+    ellipse 42% 60% at 38% 60%,
+    rgba(126, 200, 176, 0.16),
+    transparent 68%
+  ),
+  radial-gradient(
+    ellipse 34% 52% at 66% 42%,
+    rgba(196, 150, 224, 0.14),
+    transparent 68%
+  );
+  animation: bd-aurora 34s ease-in-out infinite;
+}
+
+/* --- shared layer geometry ---
+   200% wide holding two identical tiles; sliding -50% moves exactly one tile,
+   so the end frame is pixel-identical to the start frame. */
+.bd-layer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  /* Full height, anchored bottom: the ridge's place on screen is set by where
+     it sits in the viewBox (see backdrop.ts), not by trimming the box. Keeps
+     the horizon stable across phone aspect ratios. */
+  height: 100%;
+  width: 200%;
+  will-change: transform;
+}
+.bd-layer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bd-stars {
+  width: 100%;
+  top: 0;
+  bottom: auto;
+  height: 44%;
+  will-change: auto;
+}
+.bd-clouds {
+  top: 3%;
+  bottom: auto;
+  height: 40%;
+  animation: bd-drift 150s linear infinite;
+}
+
+/* parallax: further away scrolls slower */
+.bd-far  { opacity: 0.9; animation: bd-drift 210s linear infinite; }
+.bd-mid  { animation: bd-drift 130s linear infinite; }
+.bd-near { animation: bd-drift 80s linear infinite; }
+
+/* --- lights and sparkle --- */
+.bd-win {
+  animation: bd-window 9s ease-in-out infinite;
+}
+.bd-star {
+  animation: bd-twinkle 6.5s ease-in-out infinite;
+}
+
+/* Keeps the bottom of the scene from competing with the shop panel, and lifts
+   overall contrast under the HUD. Without this the village lights sit right
+   where the producer rows are. */
+.bd-scrim {
+  position: absolute;
+  inset: 0;
+  /* Deliberately light. Only two bands need help: the HUD strip at the very
+     top, and the foot of the screen where the shop panel starts. The middle is
+     left alone so the landscape is actually visible behind the squishy. */
+  background:
+    linear-gradient(180deg, rgba(25, 18, 25, 0.5) 0%, rgba(25, 18, 25, 0.1) 18%,
+                    rgba(25, 18, 25, 0) 42%, rgba(25, 18, 25, 0.28) 78%,
+                    rgba(25, 18, 25, 0.6) 100%);
+}
+
+@keyframes bd-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes bd-twinkle {
+  0%, 100% { opacity: 0.22; }
+  50%      { opacity: 0.9; }
+}
+@keyframes bd-window {
+  0%, 100% { opacity: 0.55; }
+  45%      { opacity: 1; }
+}
+@keyframes bd-breathe {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
+}
+@keyframes bd-aurora {
+  0%, 100% { transform: translateX(-3%) scaleY(1); opacity: 0.75; }
+  50%      { transform: translateX(3%) scaleY(1.12); opacity: 1; }
+}
+
+/* Motion is decorative here — freeze all of it, but keep the scene visible.
+   Matches how scene.ts/.scene-sprite already behaves. */
+@media (prefers-reduced-motion: reduce) {
+  .bd-clouds,
+  .bd-far,
+  .bd-mid,
+  .bd-near,
+  .bd-win,
+  .bd-star,
+  .bd-glow,
+  .bd-aurora {
+    animation: none;
+  }
+}

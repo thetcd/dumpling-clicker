@@ -29,6 +29,7 @@ import {
 import { setMusicIntensity, startMusic } from './audio/music';
 import { PRODUCERS } from './game/config/producers';
 import { avatarSVG } from './ui/avatar';
+import { initBackdrop } from './ui/backdrop';
 import { openDesigner } from './ui/designer';
 import { initDumpling } from './ui/dumpling';
 import { initFindables } from './ui/findables';
@@ -59,6 +60,9 @@ function ensureAudio(): void {
 }
 
 // --- UI ---
+// Behind everything, including the producer crowd in scene.ts. Mounted on
+// <body> rather than #app so it is never affected by the app's flex layout.
+initBackdrop(document.body);
 initPopups();
 const hud = initHud(document.getElementById('hud')!);
 const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {
