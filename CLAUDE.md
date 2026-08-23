@@ -14,11 +14,32 @@ else:
 - `docs/GOOGLE-PLAY.md` — the Android/Play runbook (TWA via Bubblewrap; the
   domain move is a prerequisite).
 
+## Write it down, in the same commit — Dor's standing rule
+
+**Every change updates the doc that covers it.** There is no separate
+documentation pass and no "I'll note it later": the chat that made the change
+is gone next session, so anything not written down is lost. Before committing,
+ask which of these the change touches, and edit it:
+
+| what changed | where it goes |
+|---|---|
+| a rule or trap a future agent could trip on | `CLAUDE.md` (this file) |
+| status, what shipped, what's next | `docs/PROGRESS.md` |
+| a choice, and what was rejected and why | `docs/DECISIONS.md` |
+| domain / hosting / ads | `docs/DOMAIN-AND-ADS.md` |
+| the Play app | `docs/GOOGLE-PLAY.md` + `.claude/skills/google-play-twa/` |
+| the live URL, install steps, commands | `README.md` |
+
+Record the **reasoning and the rejected option**, not just the outcome — that is
+what `DECISIONS.md` exists for, and it is the part that stops the same idea
+being re-tried in six weeks.
+
 ```bash
-npm test        # 315 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
+npm test        # 320 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
 npm run dev     # the port drifts; read the printed URL
+npm run dev:phone  # LAN URL for real-phone testing
 npm run build   # tsc + vite + service worker
-git push        # this IS the deploy: Actions runs tests, then publishes to Pages
+git push        # this IS the deploy: Vercel publishes dumplingclicker.com
 ```
 
 ---
@@ -98,6 +119,23 @@ git push        # this IS the deploy: Actions runs tests, then publishes to Page
 - **`.squish-wrap`'s box is NOT the dumpling.** It spans the whole stage and its
   SVG box is 15% taller than the drawn body, so geometry checks against it are
   meaningless. Derive from viewBox fractions or `getBBox()`.
+- **The backdrop loops only while everything stays inside the tile.** Each layer
+  in `ui/backdrop.ts` holds two identical tiles and scrolls exactly one tile
+  width. Anything drawn past `VB_W` is clipped in the second copy but not the
+  first, so the whole background **jumps once per cycle** — a village house at
+  x=1070 did exactly that. Tangents must match across the join too (slope out of
+  x=0 = slope into x=VB_W) or the ridge corners and leaves a notch repeating the
+  length of the scroll. `tests/backdrop.test.ts` pins the bounds; the tangent
+  rule is only caught by eye.
+- **The backdrop layers render squashed** — `preserveAspectRatio="none"` maps
+  2400 units onto ~2 viewport widths but 1200 units onto the full height, so on
+  a phone x scales ~0.36 and y ~0.75. A square drawn there arrives as a tall
+  narrow tower; the houses are ~3× wider than tall for this reason. A viewBox
+  whose aspect is far from the rendered box turns gentle hills into spikes.
+- **A CSS animation outranks an inline style**, so `el.style.transform` is
+  silently ignored while an animation is running — even a paused one. Any test
+  that pokes a transform must set `animation: none` first, or it passes
+  vacuously. This burned a seam test that "proved" the loop was fine.
 
 ## Adding content
 

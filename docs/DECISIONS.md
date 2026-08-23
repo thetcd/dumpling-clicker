@@ -248,6 +248,52 @@ dented.
 breathing ~1%, a 120ms blink every 3–7s, a 2.5° glance. Blink swaps a
 pre-rendered hidden group, omitted for eyes that are already closed.
 
+## The backdrop is drawn, not filmed
+
+2026-08-23. Dor supplied a 10-second 720×1280 mp4 of a pastel low-poly
+landscape — rolling hills, villages, clouds, a rainbow — to use as the
+background, muted, keeping the game's own audio. It shipped as animated SVG
+instead (`ui/backdrop.ts` + `styles/backdrop.css`), same composition, ~5KB.
+
+**Why the video lost, all three measured before deciding:**
+
+1. **2.61MB against a 182KB precache.** The whole installable app was 182KB;
+   the video was 15× the entire game. Leaving it out of the precache instead
+   would mean the background is missing offline, in an app whose selling point
+   is that it works offline.
+2. **It made the UI unreadable.** The game is light text (`#f5eee6`) on a dark
+   ground by design. The footage is bright pastel daylight. Fixing that needs a
+   scrim heavy enough that little of the video survives it — at which point you
+   are paying 2.61MB for a texture.
+3. **Its loop popped.** Frame-checked: the clip opens pink with a strong rainbow
+   and ends orange with none, so `loop` jumps hard every 10 seconds. Nothing
+   short of re-encoding a crossfade fixes it, and there is no ffmpeg in this
+   environment.
+
+The drawn version answers all three: it uses the game's own palette tokens so
+contrast is preserved rather than fought, and it loops with **no seam by
+construction** — each layer holds two identical tiles and travels exactly one
+tile width, so the last frame is the first frame.
+
+**Do not "upgrade" this back to video.** A prettier clip has the same three
+problems. If richer art is wanted, add layers to the SVG.
+
+**What the seam work actually taught** — both traps are in `CLAUDE.md`, and the
+second is the more general lesson:
+
+- Seamlessness is a property of the geometry. It holds only while every drawn
+  element stays inside the tile; one village house at x=1070 spilled past the
+  edge, was clipped in the second copy but not the first, and made the entire
+  background jump once per cycle. Tangents must match across the join too, or
+  the ridge corners and repeats a notch. `tests/backdrop.test.ts` pins the
+  bounds.
+- **The first seam test passed while proving nothing.** It set
+  `el.style.transform` to sample the layer at loop start and loop end — but a
+  CSS animation outranks an inline style even when paused, so both samples were
+  identical no matter what. It only surfaced because the test also checked that a
+  deliberately *wrong* offset differs, and that check failed. **A verification
+  that cannot fail is not a verification**; give every such test a control case.
+
 ## Things that were tried and rejected
 
 - **Growth 2.6 for the rebirth curve** — 341 hours by rebirth 25.
@@ -271,6 +317,9 @@ pre-rendered hidden group, omitted for eyes that are already closed.
   nothing, because rank 60 is a 34-hour wall.
 - **Gating the boss without repricing him** — a literal no-op: you reach ₪75B
   after you reach rank 50, so the gate never binds.
+- **A video file as the background** — 2.61MB against a 182KB precache, bright
+  daylight footage under light-on-dark UI, and a 10s loop that popped. Redrawn
+  as ~5KB of SVG; see above.
 
 ## Known errors in the older spec files
 

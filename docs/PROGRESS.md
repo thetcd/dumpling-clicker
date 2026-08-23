@@ -40,7 +40,7 @@ Currency is **shekels (₪)**. The single meta-loop is **rebirth**
 | Old URL | https://thetcd.github.io/dumpling-clicker/ — still deploys, but serves a "we moved" screen, not the game. |
 | DNS | Cloudflare Registrar; records **DNS-only / grey cloud** (see below). |
 | Identity | `thetcd` is the personal GitHub account, **not** `DorFordefi`. `gh auth switch -u thetcd`. |
-| Tests | 316, in 19 files |
+| Tests | 320, in 20 files |
 
 ```bash
 cd dumpling-clicker
@@ -104,6 +104,14 @@ to round and the flat upgrades became permanent. `CLICK_DPS_SHARE` raised 0.01 �
 **2026-08-22 — four more.** Currency renamed to shekels. The visibility guard
 (see below — this was a real leak). The exp meter under the rebirth bar. The
 rebirth cap at 50. Plus Hebrew singular/plural fixes and a `VITE_BASE` footgun.
+
+**2026-08-23 — the ambient backdrop.** A dusk landscape now sits behind
+everything: parallax hills, a village with lit windows, drifting clouds, stars
+and a slow aurora (`src/ui/backdrop.ts`, `src/styles/backdrop.css`). Drawn as
+animated SVG (~5KB) rather than the 2.61MB video it was based on — the reasoning
+and the two seam traps are in `DECISIONS.md`. All motion is CSS
+transform/opacity, so the single rAF loop is untouched, and it freezes under
+`prefers-reduced-motion`.
 
 **2026-08-22, later — the origin move.** The game left
 `thetcd.github.io/dumpling-clicker/` for **https://dumplingclicker.com/** on
