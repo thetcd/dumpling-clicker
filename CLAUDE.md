@@ -28,6 +28,7 @@ ask which of these the change touches, and edit it:
 | a choice, and what was rejected and why | `docs/DECISIONS.md` |
 | domain / hosting / ads | `docs/DOMAIN-AND-ADS.md` |
 | the Play app | `docs/GOOGLE-PLAY.md` + `.claude/skills/google-play-twa/` |
+| analytics, or what may be measured | `.claude/skills/analytics/` + `docs/DECISIONS.md` |
 | the live URL, install steps, commands | `README.md` |
 
 Record the **reasoning and the rejected option**, not just the outcome — that is
@@ -78,7 +79,8 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   ourselves), no per-player profile, aggregate counts only. `sanitize()` in
   `src/analytics.ts` enforces it with an allowlist of six event names and two
   property keys and drops everything else. **Never add a field, an event or an
-  install ID without reading `docs/DECISIONS.md` § Analytics first** — and if
+  install ID without reading the `analytics` skill and `docs/DECISIONS.md`
+  § Analytics first** — and if
   you do change that file, the Play **Data safety form** must be re-checked
   against it (`docs/GOOGLE-PLAY.md` Phase D), because a wrong answer there is a
   takedown risk, not a paperwork slip.

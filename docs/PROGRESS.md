@@ -395,9 +395,9 @@ There are no accounts, so there are no sign-ins to count.
 
 **Two things still to do, both off-repo:**
 
-- [ ] **Enable Web Analytics in the Vercel dashboard** (project → Analytics →
-      Enable). Nothing is collected until this is clicked — the code alone does
-      not switch it on.
+- [x] **Enable Web Analytics in the Vercel dashboard.** Done 2026-08-23 at
+      https://vercel.com/dcs-projects-15812ffd/dumpling-clicker/analytics.
+      Nothing backfills — the script only fires on views after that click.
 - [ ] **Custom events are Pro-only.** Hobby gets page views, 50k events/month
       and a **one-month reporting window**. The six game events are written,
       tested and wired but `EVENTS_ENABLED` in `src/analytics.ts` is `false`;
