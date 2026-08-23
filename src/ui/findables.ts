@@ -18,13 +18,14 @@ import { STR } from '../i18n/strings.he';
 import type { AvatarDesign } from '../game/state';
 import { avatarSVG } from './avatar';
 import { renderIcon } from './icons';
+import { PALETTE } from './palette';
 
-const GOLD = '#f3c033';
+const GOLD = PALETTE.goldFill;
 // The fill override only reaches the body, so accessories kept their own
 // colours — a "golden" squishy wearing a bright blue baseball cap. A CSS
 // sepia+saturate pass over the whole SVG pulls every layer into the same
 // metallic range, which is also what the real toy's gold variant looks like.
-const GOLD_FILTER = 'sepia(0.75) saturate(2.6) hue-rotate(-12deg) brightness(1.08)';
+const GOLD_FILTER = PALETTE.goldFilter;
 
 /** Wider than the face gap: the idle bob rotates 4deg, inflating the box. */
 const SEPARATION = 16;

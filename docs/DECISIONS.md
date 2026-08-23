@@ -278,6 +278,13 @@ tile width, so the last frame is the first frame.
 **Do not "upgrade" this back to video.** A prettier clip has the same three
 problems. If richer art is wanted, add layers to the SVG.
 
+> **Amended 2026-08-23.** The palette half of reason 2 was overruled — the game
+> is now bright (see "Bright, and why the old rejection still stands" below).
+> **Reasons 1 and 3 are untouched and still binding:** no binary background
+> asset, and the sky gradient stays static so the loop cannot pop. Reason 2 was
+> resolved by decoupling the UI's contrast from the backdrop — opaque panels —
+> **not** by the video getting better. Still do not upgrade this back to video.
+
 ### The tile is fixed pixels, because percentages broke desktop
 
 2026-08-23, same day. The first version made each layer 200% of the viewport
@@ -323,6 +330,253 @@ last two are the general lessons:
   was zero pixels. Decode and count differing pixels with a small tolerance;
   a single antialiased pixel is not a seam either.
 
+## Analytics: aggregate or nothing
+
+Shipped 2026-08-23. `src/analytics.ts`, wired from `src/boot.ts`.
+
+The problem was real: there is no backend, so the only signal on where players
+actually are was Dor, one family member, and whatever Gal reported — and the
+whole weekly release cadence in `PROGRESS.md` §6 is a bet on how fast people
+move through ranks. That bet needed a measurement.
+
+**The binding constraint is not GDPR — it is that the players are kids.** Three
+regimes stack, and the child-directed one is strictest:
+
+- **COPPA** (amended Rule, in full force; compliance deadline 22 Apr 2026). On a
+  child-directed service a **persistent identifier is itself personal
+  information**. There is a narrow "support for internal operations" carve-out
+  that plain analytics can sit inside, but the amended Rule makes you *name* the
+  specific purpose and say how the identifier will not be used to contact
+  anyone — and **per-user profiling is outside the carve-out entirely**,
+  however anonymous the fields look.
+- **Israel PPL Amendment 13**, in force 14 Aug 2025. Its online-tracking
+  guidance deliberately converges on the EDPB cookie-banner criteria: if you
+  track, you owe a first-layer reject button, separately toggleable
+  necessary/analytics/marketing, and a withdrawal path.
+- **Google Play Families.** Bans transmitting AAID, IMEI, MAC, SSID, BSSID,
+  IMSI and SIM/Build serial from children or unknown-age users, points
+  analytics at App Set ID, and requires everything collected to be declared on
+  the Data safety form.
+
+**The decision: aim at "nothing to consent to", not "consent done well."** Four
+properties, and all four have to hold:
+
+1. no cookie, and nothing read from or written to the device for analytics
+2. no identifier transmitted — not a device ID, not an install ID, not a hash
+   we compute ourselves
+3. no per-player profile: no field may let two events be joined into one child's
+   history
+4. aggregate counts only
+
+Hit all four and the stack collapses — no ePrivacy Art 5(3) trigger (nothing is
+stored on the device), no GDPR personal data, no COPPA personal information,
+nothing on the Families ban list, and therefore **no banner**. This is the
+documented Plausible / German DSK position and Israel's guidance follows the EU
+line. Miss any one and the game inherits a consent banner as its first screen,
+*plus* a written retention policy and a written security programme.
+
+**Why Vercel Web Analytics, and this is the whole argument: Vercel already
+hosts the game and therefore already sees every request and every IP.** Adding
+their analytics adds **no new recipient of data** — no new sub-processor, no new
+DPA, no new cross-border transfer, nothing new to name on the privacy page or
+the Play form. Every alternative loses on exactly that point. Their collector
+keeps a hash of the incoming request for 24h and retains no IP.
+
+**The enforcement lives in code, not in a comment.** `sanitize()` in
+`src/analytics.ts` holds an allowlist of six event names and two property keys,
+and drops anything else — the whole event, not just the offending key, because
+a half-sent event is how an unvetted field ships. `tests/analytics.test.ts`
+pins that boundary. Adding a seventh event means re-reading this section first.
+
+Two things worth knowing before reading the dashboard:
+
+- **Custom events are Pro-only.** Hobby gets page views, 50k events/month and a
+  **one-month reporting window**. So the six game events are written, tested and
+  wired, but `EVENTS_ENABLED` is `false` — one constant to flip on upgrade,
+  rather than firing requests at a plan that discards them. Note the one-month
+  window is shorter than the multi-week question the cadence needs answering.
+- **"How many sign-ins" has no answer and should not get one.** There are no
+  accounts. Daily uniques come free from Vercel's 24h server-side hash;
+  retention cohorts and "is this the same kid as last week" do not, and the
+  obvious shortcut — a random install ID in the save — is *precisely* the
+  persistent identifier COPPA restricts.
+
+### Rejected, and why
+
+- **Google Analytics 4** — sets a persistent `_ga` identifier, which is
+  disqualifying on its own for a child-directed service, before Google's own
+  terms about child-directed properties are reached.
+- **Plausible, PostHog, or any third-party analytics** — each is legally sound
+  in isolation (Plausible in particular has the best-documented no-consent
+  assessment there is), but each adds a **new data recipient** to disclose on
+  the privacy page and the Play Data safety form. Vercel adds none. On a kids'
+  game that difference outweighs every feature comparison.
+- **Self-hosting a collector** (a Vercel function into KV or D1) — sounds like
+  the privacy-maximising option and is the opposite: it makes Dor the
+  controller of raw data, which pulls COPPA's written security programme and
+  written retention policy onto him. More legal surface, not less.
+- **A random install ID in the save, to count returning players** — the single
+  most tempting shortcut here, and the one that breaks property 2 and turns the
+  whole thing into regulated collection. Not worth a retention chart.
+- **Session length / time-on-page** — genuinely useful for the "45 min a day"
+  assumption in `tools/release-policy.mjs`, and dropped anyway: it is the field
+  most likely to read as behavioural measurement of a child to a reviewer, and
+  the milestone events answer the same question more directly.
+- **Exact rebirth rank in the event** — the player base is small enough that an
+  exact deep rank is a near-unique value, i.e. an identifier by another name.
+  `rankMilestone()` reports 5/10/20/30/40/50 or nothing.
+- **An in-game opt-out toggle** — considered and rejected as *actively worse*.
+  A toggle implies there is something to opt out of, invites the A13 argument
+  that consent was the lawful basis all along, and adds a save field and a
+  settings row for a payload that identifies nobody. The right answer to "can I
+  turn tracking off" is that there is no tracking to turn off.
+- **Keeping the query string** — `beforeSend` strips it. The game never reads a
+  query parameter, so nothing is lost, and a URL is the classic route by which
+  personal data reaches an analytics pipeline by accident.
+
+## Bright, and why the old rejection still stands
+
+2026-08-23, the same day the dusk backdrop shipped. Gal: the game is **too dark**;
+his audience wants more colour and "shiny stuff". The whole game moved from a
+dark plum ground with cream text to a bright pastel one with dark ink, drawn from
+the same low-poly reference clip that produced the backdrop composition.
+
+**This looks like re-trying a rejected idea, and it is not.** The section above
+rejected that clip for three measured reasons. Two of them are untouched, and
+they are still binding rules:
+
+1. **2.61MB against a ~180KB precache.** Still true, still disqualifying. The
+   backdrop is still ~5KB of drawn SVG. *Shine is CSS gradients, shadows and SVG
+   shapes only — no new binary assets, ever.* (The precache actually went
+   170KB after this change: the new app icons compress better than the dark
+   ones.)
+3. **Its 10s loop popped, because it opened pink and closed orange.** Still true,
+   and now a trap with a specific name: **the sky gradient is static.** Anyone
+   animating those stops through hues to mimic the clip's drift rebuilds the
+   exact bug that killed the video. Motion belongs to the layer translations and
+   to `bd-breathe`/`bd-rainbow`, which are symmetric keyframes that return to
+   their own start value.
+
+Reason **2** is the one Gal overruled, and it is worth being precise about what
+it actually said: *"It made the UI unreadable… fixing that needs a scrim heavy
+enough that little of the video survives it."*
+
+**That was true only because the UI borrowed its contrast from the backdrop.**
+`#shop` was `rgba(58,44,62,0.75)` and nine other surfaces were white tints at
+0.05–0.18 alpha. None of those is a surface; they are *tints*, and they were
+legible purely because something dark sat behind them. So brightening the ground
+really did break the UI — the scrim was load-bearing.
+
+**The fix is not a better scrim. It is decoupling.** Every panel is now opaque
+(`--surface`), so legibility is a function of `ink vs surface` — a fixed pair of
+values that a unit test can hold — and stops being a function of the landscape
+at all. Once that was true the backdrop was free to be as bright as it liked.
+
+The measurable proof the coupling is gone: **the scrim's alphas roughly halved**
+(0.5/0.6 → 0.34/0.20) and its middle two stops went fully transparent. It no
+longer carries legibility; it just pushes the sky back a notch.
+
+### The token layer
+
+Colour used to live in nine files with ~150 literals and **six different
+spellings of "gold"** (`#f0b25e`, `#ffd766`, `#ffd07a`, `#ffd75e`, `#f0b429`,
+`rgba(243,192,51,…)`). It now lives in `src/ui/palette.ts`:
+
+- `PALETTE` — art constants for the TypeScript that emits SVG. `backdrop.ts`,
+  `icons.ts`, `avatar.ts`, `dumpling.ts` and `findables.ts` **import** these. The
+  data-URI constraint is about *CSS custom properties*, not about TS modules, so
+  within TypeScript there is no duplication at all.
+- `TOKENS` — 35 semantic tokens mirrored into `src/styles/tokens.css`, which is
+  linked **first** in `index.html`.
+
+That mirror is the one place a colour is written twice, and it has to be:
+a data: URI SVG cannot read CSS variables, and CSS cannot import TypeScript.
+`tests/palette.test.ts` checks **both directions**, so editing one side without
+the other fails the suite.
+
+Rejected for the sync problem: **runtime injection of `:root` from JS** (three
+stylesheets are linked before `main.ts` runs, so every variable is undefined on
+a cold start and a PWA flashes unstyled) and **build-time codegen** (a vite
+plugin plus a generated file in the repo is more machinery than 35 tokens
+justify, and generated files get hand-edited anyway).
+
+### Two techniques that do not survive the move to a light ground
+
+- **A glow is dead on paper.** Glow is luminance *addition* and near-white has no
+  headroom left. All eight glow sites — three findable lanes, the frenzy badge,
+  `#rebirth.ready`, `.dz-new`, the crit floater, `.scene-wash` — would not have
+  read at any radius. They were replaced by the **sticker idiom**: a doubled
+  white outline (`--sticker`) plus a grounded plum shadow. A *single* pass at
+  that radius reads as a blur; two read as an outline, and `palette.test.ts`
+  pins that it stays doubled.
+- **Lane identity by glow intensity.** The three findable lanes used to differ by
+  how bright their halo was. They now differ by **hue** — `--find-gold`,
+  `--find-air`, `--find-common`. Filter-chain length is a budget: the airdrop
+  lane can have **ten** elements on screen at once, so it gets three passes while
+  the one-at-a-time golden gets four.
+
+Also: **do not reach for `mix-blend-mode: multiply`** on the gold wash. On a
+light ground multiply darkens, so the biggest celebration in the game would read
+as a shadow. It is a white-hot core with a saturated ring instead.
+
+### The accent had to split in two
+
+`--accent` `#f0b25e` on paper measures **1.66:1** — and it was colouring *every
+price and every gain in the shop*, i.e. exactly the numbers a purchase decision
+is made on. So `--accent` is now fills, borders and gradient stops only, and
+`--accent-text` (`#9a5410`, 5.66:1) is the only token allowed to colour text.
+`tests/contrast.test.ts` asserts both directions — including that `--accent`
+itself **fails** AA, which is what stops someone quietly using it as ink again.
+
+While in there, **QA-REPORT M6** was fixed: `.producer-row.mystery` dimmed the
+whole row to `opacity: 0.35`, far below any legibility floor. It read as broken
+rather than teased. The row keeps full contrast now and only the hidden icon is
+dimmed. Fixing a pre-existing contrast bug *before* the flip means any later
+complaint about legibility is unambiguously about the new theme.
+
+### What the tests do and do not cover
+
+`palette.test.ts` (mirror), `contrast.test.ts` (WCAG ratios over every token pair
+and all 16 body colours) and `no-raw-colour.test.ts` (no hex outside the palette
+files; no `rgb()`/`rgba()` at all in `.ts`). 113 assertions where there were
+previously **zero** — a full recolour used to break nothing.
+
+They catch **drift, coupling and unreadability**. They do not catch **ugly**, and
+no unit test will. Ugly is caught by looking at it.
+
+Per `CLAUDE.md`'s own rule, the no-raw-colour test was verified with a control:
+a planted `#ff00ff` in `ui/scene.ts` fails it, and removing it passes again. A
+verification that cannot fail is not a verification.
+
+### Rejected
+
+- **Keeping a dark theme behind a settings toggle** — doubles the surface every
+  future visual change has to be checked against, for a look Gal just said his
+  audience does not want. One theme.
+- **A bright backdrop with the dark panels kept on top** — cheapest option and it
+  only half-answers the complaint: the panels are most of the screen, so it would
+  still read as a dark game with a colourful wallpaper.
+- **`color-mix(in srgb, …)` for the alpha variants** — cleaner in principle, but
+  if it is unsupported the whole `filter` declaration is dropped, which silently
+  removes the sticker outline that pale art depends on. Explicit `rgb(r g b / a)`
+  degrades to nothing rather than to broken.
+- **Deleting the two star layers** now that the sky is daylight. They were
+  re-drawn as sparkle glints instead, because that cross-fade is the **only
+  working demonstration** of the one thing that can move inside a static
+  rendering context — element opacity, never the art. Deleting it loses the trick
+  and the next agent re-learns it the expensive way.
+- **Recolouring the 16 body swatches.** They were already pastel and already
+  match the reference; only `snow` moved (`#f2f0ea` → `#eaf1f7`), because it was
+  within a hair of the cream UI surface. Ids are save keys and were untouched.
+
+### One thing to watch
+
+`--bd-sky-3` and `--bd-sky-4` must stay **saturated**. The steam above the
+steamer is white at 0.62 alpha and only reads because the sky band behind it has
+some colour. If the horizon ever drifts toward white, the steam disappears with
+it — and the `--surface` vs `--bd-sky-*` separation assertions in
+`contrast.test.ts` are the guard against the same instinct applied to the panels.
+
 ## Things that were tried and rejected
 
 - **Growth 2.6 for the rebirth curve** — 341 hours by rebirth 25.
@@ -348,7 +602,11 @@ last two are the general lessons:
   after you reach rank 50, so the gate never binds.
 - **A video file as the background** — 2.61MB against a 182KB precache, bright
   daylight footage under light-on-dark UI, and a 10s loop that popped. Redrawn
-  as ~5KB of SVG; see above.
+  as ~5KB of SVG; see above. (The *palette* was later adopted anyway, drawn
+  rather than filmed — the file is still rejected.)
+- **A dark-theme toggle**, kept alongside the bright one — one theme, see above.
+- **Glows, on a light ground** — luminance addition with no headroom left.
+  Replaced by the white sticker outline plus a plum shadow.
 
 ## Known errors in the older spec files
 

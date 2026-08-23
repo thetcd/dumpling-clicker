@@ -18,7 +18,7 @@
 .steamer svg {
   width: 100%;
   display: block;
-  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 14px 22px rgb(var(--shadow-tint) / 0.32));
 }
 
 .squish-wrap {
@@ -42,7 +42,7 @@
 .squish-wrap svg {
   width: 100%;
   display: block;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 6px 10px rgb(var(--shadow-tint) / 0.25));
 }
 
 /* rising steam */
@@ -61,7 +61,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgb(255 255 255 / 0.62);
   filter: blur(6px);
   animation: steam-rise 3.2s ease-in infinite;
 }

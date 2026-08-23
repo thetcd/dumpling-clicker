@@ -13,6 +13,7 @@ import { FRENZY_MULTIPLIER } from './game/config/balance';
 import { clearStorage, loadFromStorage, saveToStorage } from './game/save';
 import { createInitialState, type GameState } from './game/state';
 import { STR } from './i18n/strings.he';
+import { EVENTS, initAnalytics, launchMode, rankMilestone, track } from './analytics';
 import {
   playFanfare,
   playAppear,
@@ -46,8 +47,17 @@ import { initSettings, shareGame, toast } from './ui/settings';
 import { initShop } from './ui/shop';
 
 const now = Date.now();
-let state: GameState = loadFromStorage() ?? createInitialState(now);
+const saved = loadFromStorage();
+let state: GameState = saved ?? createInitialState(now);
 setMuted(!state.settings.sound);
+
+// Aggregate, cookieless measurement. It lives HERE and not in main.ts: the
+// retired Pages build renders the "we moved" screen and must stay silent.
+// Read src/analytics.ts before adding anything to it — what it may collect is
+// a legal boundary, not a style preference.
+initAnalytics();
+track(EVENTS.launch, { mode: launchMode() });
+if (!saved) track(EVENTS.firstLaunch);
 
 // Browsers refuse to start audio outside a user gesture, so the context and the
 // music loop both come up on the player's first tap — whatever that tap was.
@@ -149,6 +159,12 @@ const rebirthBar = initRebirth(
             playRebirth();
             navigator.vibrate?.([18, 60, 18, 60, 26]);
             saveToStorage(state, at);
+            // Aggregate only: the first rebirth as a funnel step, then a
+            // coarse rank histogram. rankMilestone() drops every rank that is
+            // not a bucket, so an exact deep rank never leaves the device.
+            if (state.prestige === 1) track(EVENTS.firstRebirth);
+            const milestone = rankMilestone(state.prestige);
+            if (milestone !== null) track(EVENTS.rank, { rank: milestone });
             // the shop and settings read through getters, so they follow the
             // replaced state automatically; the scene and dumpling hold their
             // own render output and have to be repainted
@@ -207,6 +223,7 @@ const shop = initShop(document.getElementById('shop')!, () => state, (kind, id) 
     playPurchase(6, true);
   }
   if (kind === 'producer' && id === 'boss' && state.producers.boss === 1) {
+    track(EVENTS.boss);
     playFanfare();
     showModal({
       title: STR.bossTitle,
@@ -252,6 +269,11 @@ if (!state.designed) {
     state.designed = true;
     dumpling.setAvatar(avatarSVG(design, 'squishy-svg'));
     saveToStorage(state, Date.now());
+    // The designer is the first screen anyone sees and therefore the first
+    // place they can leave. Fired only here, never from editSquishy() — this
+    // counts players who got past the door, not designer visits. No part of
+    // the design is sent; the event carries nothing at all.
+    track(EVENTS.designed);
   });
 }
 

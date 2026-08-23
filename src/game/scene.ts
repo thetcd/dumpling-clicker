@@ -85,9 +85,12 @@ export function sceneSprites(producers: Record<string, number>): SceneSprite[] {
         yPct: SCENE_BAND_TOP + (1 - depth) * (SCENE_BAND_BOTTOM - SCENE_BAND_TOP - 6)
           + hash01(seed + 7) * 6,
         scale: 0.5 + (1 - depth) * 0.5,
-        // dim enough to stay background, bright enough to actually read on the
-        // dark gradient — the whole point is that things are visibly happening
-        opacity: 0.42 + (1 - depth) * 0.38,
+        // Dim enough to stay background, solid enough to actually read on the
+        // bright sky — the whole point is that things are visibly happening.
+        // Raised from 0.42/0.38 with the move off the dark gradient: a sprite
+        // that was legible as a light shape on dusk is a ghost on daylight.
+        // The white sticker outline in .scene-sprite does the rest.
+        opacity: 0.62 + (1 - depth) * 0.3,
         // desynced so the crowd never breathes in unison
         delayMs: Math.round(hash01(seed + 13) * 4000),
         durationMs: 5200 + Math.round(hash01(seed + 19) * 4200),

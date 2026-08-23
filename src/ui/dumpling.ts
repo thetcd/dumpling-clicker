@@ -8,19 +8,22 @@
 // the game loop in game/loop.ts that writes that property gets clobbered here
 // one frame later — idle behaviour belongs in frame() below, not in tickGolden.
 import { springStep } from './spring';
+import { PALETTE } from './palette';
+
+const S = PALETTE.steamer;
 
 const STEAMER_SVG = `
 <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <ellipse cx="160" cy="84" rx="150" ry="40" fill="#c9a875"/>
+  <ellipse cx="160" cy="84" rx="150" ry="40" fill="${S.rim}"/>
   <path d="M10 84 L10 110 Q 10 138 60 144 L 260 144 Q 310 138 310 110 L310 84
-           Q 310 122 160 122 Q 10 122 10 84 Z" fill="#b08e5e"/>
-  <ellipse cx="160" cy="84" rx="132" ry="32" fill="#8a6b42"/>
-  <ellipse cx="160" cy="82" rx="126" ry="29" fill="#f6f1e6"/>
-  <g stroke="#e3dbc8" stroke-width="3" fill="none">
+           Q 310 122 160 122 Q 10 122 10 84 Z" fill="${S.body}"/>
+  <ellipse cx="160" cy="84" rx="132" ry="32" fill="${S.inner}"/>
+  <ellipse cx="160" cy="82" rx="126" ry="29" fill="${S.liner}"/>
+  <g stroke="${S.linerFold}" stroke-width="3" fill="none">
     <path d="M60 78 Q 160 104 260 78"/>
     <path d="M80 70 Q 160 92 240 70"/>
   </g>
-  <g stroke="#9c7c50" stroke-width="2" opacity="0.6">
+  <g stroke="${S.grain}" stroke-width="2" opacity="0.6">
     <line x1="40" y1="96" x2="40" y2="132"/>
     <line x1="100" y1="106" x2="100" y2="141"/>
     <line x1="160" y1="108" x2="160" y2="143"/>

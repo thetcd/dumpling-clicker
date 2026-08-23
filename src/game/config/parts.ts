@@ -28,7 +28,7 @@ export const BODY_COLORS: (PartOption & { fill: string })[] = [
   { id: 'coral', nameHe: 'אלמוג', fill: '#f9a58c' , unlockAtPrestige: 30 },
   { id: 'teal', nameHe: 'ירוק ים', fill: '#8fd6cc' , unlockAtPrestige: 33 },
   { id: 'blueberry', nameHe: 'אוכמניות', fill: '#8fa2dc' , unlockAtPrestige: 36 },
-  { id: 'snow', nameHe: 'שלג', fill: '#f2f0ea' , unlockAtPrestige: 40 },
+  { id: 'snow', nameHe: 'שלג', fill: '#eaf1f7', unlockAtPrestige: 40 },
 ];
 
 export const EYES: PartOption[] = [

@@ -1,10 +1,18 @@
-// The ambient landscape behind everything: parallax hills at dusk, a lit
-// village, drifting clouds, stars and a slow aurora.
+// The ambient landscape behind everything: parallax hills ramping green → aqua
+// → lavender with distance, a village, drifting clouds, sparkle glints and a
+// rainbow arc.
 //
 // Drawn rather than filmed. The source video was 2.6MB against a 182KB
-// precache, its bright pastel palette made the light UI text unreadable, and
-// its 10s loop popped because the sky started pink and ended orange. See
-// docs/DECISIONS.md.
+// precache and its 10s loop popped because the sky started pink and ended
+// orange. Both of those are still true and still disqualifying — the *palette*
+// was adopted (2026-08-23) but the file was not. Two rules follow from it:
+// nothing here may become a binary asset, and THE SKY GRADIENT STAYS STATIC,
+// because animating it through hues rebuilds the exact pop that killed the
+// video. See docs/DECISIONS.md § "Bright, and why the old rejection still
+// stands".
+//
+// Colours come from PALETTE.bd, never from CSS variables — see the note on the
+// `C` alias below for why that is forced rather than chosen.
 //
 // **Each layer is a fixed-pixel tile repeated with background-repeat.** The
 // first version sized the tile as a percentage of the viewport, which meant
@@ -17,23 +25,16 @@
 // No per-frame JS, same rule as scene.ts: everything is a CSS transform or
 // opacity animation, so it stays on the compositor and off the rAF loop.
 
+import { PALETTE } from './palette';
+
 /** Tile coordinate space. Square, so the art is authored undistorted. */
 export const VB_W = 1200;
 const VB_H = 1200;
 
-// The palette lives here rather than in CSS custom properties because each
+// Art colours come from PALETTE.bd rather than CSS custom properties: each
 // layer is serialised into a data: URI, and a data: URI cannot see the page's
-// variables. Values mirror the tokens in main.css.
-const C = {
-  far: '#43335a',
-  mid: '#33264a',
-  near: '#241a33',
-  roof: '#5a3f63',
-  wall: '#2e2340',
-  window: '#f0b25e',
-  cloud: '#6b5175',
-  star: '#f5eee6',
-};
+// variables. Importing keeps it to one source of truth all the same.
+const C = PALETTE.bd;
 
 /** Wrap tile content in a standalone SVG and encode it for `background-image`. */
 function tileUrl(content: string, vbW = VB_W, vbH = VB_H): string {
@@ -142,20 +143,33 @@ function clouds(): string {
 }
 
 // Fixed positions, not random: a re-render must not reshuffle the sky.
-const STARS: Array<[number, number]> = [
+const SPARKS: Array<[number, number]> = [
   [60, 62], [148, 148], [232, 44], [318, 190], [402, 96], [488, 232], [560, 52],
   [648, 164], [726, 82], [812, 214], [890, 110], [968, 48], [1046, 174], [1130, 92],
 ];
 
 /**
- * Half the stars, so two layers can cross-fade into each other and read as
- * twinkling. The element's opacity is animated, which works — animating
- * anything *inside* the tile would not, since it is a background image.
+ * Half the sparkles, so two layers can cross-fade into each other and read as
+ * glinting. The element's opacity is animated, which works — animating anything
+ * *inside* the tile would not, since it is a background image. Stars made no
+ * sense once the sky became daylight, but the CROSS-FADE MECHANISM is the only
+ * working example of motion in a static rendering context, so it was kept and
+ * the art re-drawn as four-point glints instead.
  */
-function stars(half: 0 | 1): string {
-  return STARS.filter((_, i) => i % 2 === half)
-    .map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${3 + (i % 3) * 1.4}"
-        fill="${C.star}" opacity="${0.45 + (i % 4) * 0.15}"/>`)
+function sparks(half: 0 | 1): string {
+  return SPARKS.filter((_, i) => i % 2 === half)
+    .map(([x, y], i) => {
+      const r = 7 + (i % 3) * 3;
+      const k = r * 0.2;
+      // A four-point glint: one path of four quadratic arcs pinched toward the
+      // centre. Drawn rather than a circle because at daylight contrast a plain
+      // white dot reads as dust on the screen rather than as a sparkle.
+      return `<path d="M${x} ${y - r} Q${x + k} ${y - k} ${x + r} ${y}`
+        + ` Q${x + k} ${y + k} ${x} ${y + r}`
+        + ` Q${x - k} ${y + k} ${x - r} ${y}`
+        + ` Q${x - k} ${y - k} ${x} ${y - r} Z"`
+        + ` fill="${C.sparkle}" opacity="${0.5 + (i % 4) * 0.14}"/>`;
+    })
     .join('');
 }
 
@@ -170,9 +184,9 @@ export function initBackdrop(host: HTMLElement): void {
   el.innerHTML = `
     <div class="bd-sky"></div>
     <div class="bd-glow"></div>
-    <div class="bd-aurora"></div>
-    <div class="bd-layer bd-stars bd-stars-a"></div>
-    <div class="bd-layer bd-stars bd-stars-b"></div>
+    <div class="bd-rainbow"></div>
+    <div class="bd-layer bd-sparks bd-sparks-a"></div>
+    <div class="bd-layer bd-sparks bd-sparks-b"></div>
     <div class="bd-layer bd-clouds"></div>
     <div class="bd-layer bd-far"></div>
     <div class="bd-layer bd-mid"></div>
@@ -183,8 +197,8 @@ export function initBackdrop(host: HTMLElement): void {
   const set = (sel: string, url: string) =>
     el.querySelector<HTMLElement>(sel)!.style.setProperty('--bd-img', url);
 
-  set('.bd-stars-a', tileUrl(stars(0), VB_W, 400));
-  set('.bd-stars-b', tileUrl(stars(1), VB_W, 400));
+  set('.bd-sparks-a', tileUrl(sparks(0), VB_W, 400));
+  set('.bd-sparks-b', tileUrl(sparks(1), VB_W, 400));
   set('.bd-clouds', tileUrl(clouds(), VB_W, 400));
   set('.bd-far', tileUrl(`<path d="${FAR}" fill="${C.far}"/>`));
   set('.bd-mid', tileUrl(`<path d="${MID}" fill="${C.mid}"/>${village()}`));

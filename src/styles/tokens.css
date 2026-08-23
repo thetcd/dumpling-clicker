@@ -1,0 +1,73 @@
+/* The semantic colour tokens, mirrored from src/ui/palette.ts.
+ *
+ * THIS FILE AND palette.ts MUST AGREE. It is the one place a colour is written
+ * twice, and it exists because a data: URI SVG cannot read CSS variables while
+ * the UI cannot import TypeScript. tests/palette.test.ts checks both directions,
+ * so change one and the suite tells you about the other.
+ *
+ * Linked FIRST in index.html — main.css and backdrop.css both read these. */
+
+:root {
+  /* Stops Chrome for Android's "auto dark theme" force-inverting the game back
+   * to the dusk look we just left. Matters most inside the planned Play TWA,
+   * where a chunk of the audience would otherwise never see this theme. */
+  color-scheme: light;
+
+  /* --- ink --- */
+  --ink: #3d2f2a;
+  --ink-soft: #6b5a52;
+  --ink-inverse: #fffdf8;
+
+  /* --- surfaces --- */
+  /* Opaque on purpose. The dusk build used nine different white tints at */
+  /* 0.05–0.18 alpha as "panels", which worked only because whatever sat behind */
+  /* them was dark. Over a bright landscape a 6%-white tint is not a surface, it */
+  /* is nothing — so legibility now comes from opaque paper, and the backdrop is */
+  /* free to be as colourful as it likes. */
+  --surface: #fffdf8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ece7f2;
+  --surface-veil: rgb(255 253 248 / 0.86);
+  --hairline: rgb(61 47 42 / 0.12);
+
+  /* --- brand --- */
+  /* Split deliberately. `--accent` is for fills, gradients and borders; */
+  /* `--accent-text` is the only one allowed to colour text. The dusk `#f0b25e` */
+  /* measured 1.66:1 on paper, and it was being used for every price and every */
+  /* gain in the shop — the exact numbers a purchase decision is made on. */
+  --accent: #ffb43d;
+  --accent-deep: #f0912b;
+  --accent-text: #9a5410;
+  --accent-ink: #40230a;
+
+  /* --- events --- */
+  /* Separated by HUE now, not by glow intensity, because glow does not survive */
+  /* the move to a light ground. */
+  --crit: #e03a1c;
+  --find-gold: #ff9d1f;
+  --find-air: #38a6ff;
+  --find-common: #ff7ab8;
+  --danger: #c62740;
+  --success: #2f9e5f;
+
+  /* --- depth --- */
+  --shadow-tint: 92 74 128;
+  --shadow-sm: 0 1px 2px rgb(92 74 128 / 0.10);
+  --shadow-md: 0 4px 12px rgb(92 74 128 / 0.14);
+  --shadow-lg: 0 18px 44px rgb(92 74 128 / 0.22);
+  --lift: drop-shadow(0 3px 5px rgb(92 74 128 / 0.28));
+  --sticker: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff);
+
+  /* --- backdrop --- */
+  --bd-sky-1: #bfe4f7;
+  --bd-sky-2: #d9edf8;
+  --bd-sky-3: #f3e6dc;
+  --bd-sky-4: #fcdcc4;
+  --bd-sun: rgb(255 236 170 / 0.55);
+  --bd-rainbow-1: rgb(255 138 160 / 0.3);
+  --bd-rainbow-2: rgb(255 214 128 / 0.3);
+  --bd-rainbow-3: rgb(150 224 190 / 0.3);
+  --bd-rainbow-4: rgb(150 196 240 / 0.3);
+  --scrim-top: rgb(255 253 248 / 0.34);
+  --scrim-bottom: rgb(255 253 248 / 0.2);
+}

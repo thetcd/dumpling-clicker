@@ -86,7 +86,22 @@ work, ~4–6 weeks calendar, dominated by Google's closed-testing rule (below).
 - **Target audience = children → Families policy applies** (the game is
   marketed to kids via Gal):
   - Privacy policy URL: `https://dumplingclicker.com/privacy.html` (live).
-  - Data safety form: "no data collected" — truthful, nothing leaves the device.
+  - **Data safety form: NOT "no data collected" any more.** Analytics shipped
+    2026-08-23 (`src/analytics.ts`), so the form must declare, under
+    **App activity → Other actions** and **App info and performance**:
+    collected, **not** shared, **not** linked to identity, **not** used for
+    tracking, purpose **Analytics** only, and *not* optional (there is no
+    in-game toggle — see DECISIONS.md for why a toggle would be worse). Nothing
+    goes under Personal info, Location (country-level is not "location" on this
+    form), or Device or other IDs.
+  - **The Families persistent-identifier ban is not tripped.** Google's list is
+    AAID, IMEI, MAC, SSID, BSSID, IMSI, SIM/Build serial — the game transmits
+    none of them, and no App Set ID either. If that ever changes, App Set ID is
+    the only identifier Families permits for analytics, and it may never touch
+    ads personalisation or measurement.
+  - A wrong Data safety answer is a **policy violation and a takedown risk**,
+    not a paperwork slip. Re-check this form against `src/analytics.ts` every
+    time that file changes.
   - **Ads: launch with none.** Families apps may only use self-certified ads
     SDKs; H5 Games Ads is a *web* product and may not be Families-compliant
     inside the app. Decide ads separately later — and never ship web ads into

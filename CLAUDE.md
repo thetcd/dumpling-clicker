@@ -35,7 +35,7 @@ what `DECISIONS.md` exists for, and it is the part that stops the same idea
 being re-tried in six weeks.
 
 ```bash
-npm test        # 320 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
+npm test        # 448 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
 npm run dev     # the port drifts; read the printed URL
 npm run dev:phone  # LAN URL for real-phone testing
 npm run build   # tsc + vite + service worker
@@ -69,6 +69,19 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   rounding error within half an hour.
 - **A frenzy must never pay for time away.** `incomeMultiplier()` is applied
   only in `click()` and `accrue()`, never folded into `dpsOf()`.
+- **Analytics is aggregate-only, and that is a LEGAL boundary, not a style
+  preference.** The players are kids, so COPPA, Israel's PPL Amendment 13 and
+  Play Families all apply, and the game stays clear of all three — no consent
+  banner, no retention policy, no security programme — only while four things
+  hold: no cookie or device storage for measurement, **no identifier
+  transmitted** (not a device ID, not an install ID, not one we hash
+  ourselves), no per-player profile, aggregate counts only. `sanitize()` in
+  `src/analytics.ts` enforces it with an allowlist of six event names and two
+  property keys and drops everything else. **Never add a field, an event or an
+  install ID without reading `docs/DECISIONS.md` § Analytics first** — and if
+  you do change that file, the Play **Data safety form** must be re-checked
+  against it (`docs/GOOGLE-PLAY.md` Phase D), because a wrong answer there is a
+  takedown risk, not a paperwork slip.
 
 ## Traps that have already cost real time
 
@@ -119,6 +132,36 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
 - **`.squish-wrap`'s box is NOT the dumpling.** It spans the whole stage and its
   SVG box is 15% taller than the drawn body, so geometry checks against it are
   meaningless. Derive from viewBox fractions or `getBBox()`.
+- **Every colour comes from `src/ui/palette.ts`.** `PALETTE` holds art constants
+  (imported by `backdrop.ts`, `icons.ts`, `avatar.ts`, `dumpling.ts`,
+  `findables.ts`); `TOKENS` is mirrored verbatim into `src/styles/tokens.css`,
+  which `index.html` links FIRST. That mirror is the one place a colour is
+  written twice — it has to be, because a data: URI SVG cannot read CSS
+  variables and CSS cannot import TypeScript — and
+  `tests/palette.test.ts` checks both directions.
+  `tests/no-raw-colour.test.ts` bans hex anywhere else (`#fff` excepted; pure
+  white is not a theme colour). **Shadows and glows are tokens too** — they are
+  exactly the values people copy-paste between rules, and leaving them literal
+  is how a theme rots.
+- **A GLOW IS DEAD ON A LIGHT GROUND.** Glow is luminance *addition* and paper
+  has no headroom left, so `drop-shadow` in a bright colour makes a smudge at
+  any radius. Separation comes from `--sticker` (a **doubled** white outline —
+  one pass reads as a blur) and depth from `--shadow-*`. The three findable
+  lanes separate by **hue**, not by glow intensity. Filter chains are a budget:
+  the airdrop lane can have TEN elements on screen at once, so it gets three
+  passes where the one-at-a-time golden gets four. And never reach for
+  `mix-blend-mode: multiply` on a celebration — on light it darkens, so the gold
+  wash would read as a shadow.
+- **`--accent` may never colour text.** It measures 1.66:1 on paper. Text uses
+  `--accent-text`; `--accent` is fills, borders and gradient stops.
+  `tests/contrast.test.ts` asserts `--accent` *fails* AA on purpose, so that
+  quietly using it as ink again breaks the suite. Careful with find-and-replace
+  here: `color: var(--accent)` is a substring of both `border-color:` and
+  `accent-color:`, which is how three decorative sites got silently converted
+  once already.
+- **`:root { color-scheme: light }` must stay.** Without it Chrome for Android's
+  "auto dark theme" force-inverts the game straight back to the dusk look — and
+  the planned Play TWA is exactly where that would happen unseen.
 - **The backdrop's tile is a FIXED PIXEL SIZE, never a percentage of the
   viewport.** Each layer in `ui/backdrop.ts` is one tile wider than the window
   and repeats its art every `--bd-tile` px, so sliding it exactly one tile is
@@ -135,7 +178,7 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   only catchable by eye.
 - **An SVG used as a `background-image` is a STATIC rendering context** — CSS
   animations inside it never run. Anything in the backdrop that has to move must
-  be a property of the *element* (the star layers cross-fade their own opacity;
+  be a property of the *element* (the sparkle layers cross-fade their own opacity;
   the layers translate), never of the art. Flickering windows were lost to this
   and are now baked in at varying opacity instead.
 - **A CSS animation outranks an inline style**, so `el.style.transform` is
@@ -152,7 +195,9 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
 - **A designer part** = two files: an entry in `config/parts.ts` (stable id,
   Hebrew name, optional `unlockAtPrestige`) and a matching `case` in
   `ui/avatar.ts`. `tests/avatar.test.ts` fails loudly if you do one and not the
-  other. Check new parts at thumbnail size *and* on a dark body.
+  other. Check new parts at thumbnail size *and* on the palest body (`snow`) —
+  the theme is light now, so a pale part on a pale body against a pale sky is
+  the failure case, and `--sticker` is what saves it.
 - **Producer or findable art** = one entry in `ui/icons.ts` keyed by the id,
   viewBox `0 0 100 100`. Always render a contact sheet and look at it — two
   icons read fine in code and failed at 30px.

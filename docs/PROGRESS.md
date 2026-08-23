@@ -1,6 +1,6 @@
 # Where the project stands, and what still needs connecting
 
-Last updated **2026-08-22**. This is the handover document: everything you need
+Last updated **2026-08-23**. This is the handover document: everything you need
 to pick the project up on a different machine, without the chat history that
 produced it.
 
@@ -40,7 +40,7 @@ Currency is **shekels (₪)**. The single meta-loop is **rebirth**
 | Old URL | https://thetcd.github.io/dumpling-clicker/ — still deploys, but serves a "we moved" screen, not the game. |
 | DNS | Cloudflare Registrar; records **DNS-only / grey cloud** (see below). |
 | Identity | `thetcd` is the personal GitHub account, **not** `DorFordefi`. `gh auth switch -u thetcd`. |
-| Tests | 320, in 20 files |
+| Tests | 448, in 24 files |
 
 ```bash
 cd dumpling-clicker
@@ -105,7 +105,9 @@ to round and the flat upgrades became permanent. `CLICK_DPS_SHARE` raised 0.01 �
 (see below — this was a real leak). The exp meter under the rebirth bar. The
 rebirth cap at 50. Plus Hebrew singular/plural fixes and a `VITE_BASE` footgun.
 
-**2026-08-23 — the ambient backdrop.** A dusk landscape now sits behind
+**2026-08-23 — the ambient backdrop.** *(Superseded the same day by the bright
+theme below — kept because the tile geometry and the traps it turned up still
+apply verbatim; only the palette changed.)* A dusk landscape now sits behind
 everything: parallax hills, a village with lit windows, drifting clouds, stars
 and a slow aurora (`src/ui/backdrop.ts`, `src/styles/backdrop.css`). Drawn as
 animated SVG (~5KB) rather than the 2.61MB video it was based on. All motion is
@@ -118,6 +120,39 @@ pixel size that steps up at 900px and 1600px, so proportions hold from a 430px
 phone to a 1920px desktop — checked at four widths, with the loop differing by
 zero pixels at each. The reasoning, and the four traps this turned up, are in
 `DECISIONS.md` and `CLAUDE.md`.
+
+**2026-08-23 — bright.** Gal said the game was too dark and his audience wants
+colour and "shiny stuff", so the whole thing moved off the dark plum ground onto
+a bright pastel one drawn from the same low-poly reference clip that gave the
+backdrop its composition: blue sky, white clouds, a rainbow, and hills ramping
+green → aqua → lavender. Dark ink on opaque paper panels, no dark mode.
+
+**This is not the rejected video coming back.** Two of that decision's three
+reasons still bind and are now written as rules (no binary background asset; the
+sky gradient stays static so the loop cannot pop). The third — "it made the UI
+unreadable" — was true only because the panels were translucent tints borrowing
+their contrast from the backdrop. They are opaque now, so legibility is a fixed
+ink-vs-surface pair and the backdrop is free to be bright. The proof: the scrim's
+alphas roughly halved.
+
+Colour also stopped being scattered. It lived in nine files with ~150 literals
+and six different spellings of "gold"; it now lives in `src/ui/palette.ts`,
+mirrored into `src/styles/tokens.css`. Three new test files (113 assertions,
+where a full recolour previously broke **zero** tests) hold the mirror, the WCAG
+ratios and the no-raw-hex rule. Full reasoning, and the six rejected
+alternatives, in `DECISIONS.md` § "Bright, and why the old rejection still
+stands".
+
+**2026-08-23 — analytics, aggregate-only.** The §7D open question is closed:
+Vercel Web Analytics, cookieless, no identifier transmitted, no per-player
+profile (`src/analytics.ts`). The audience being children is what set every
+constraint — the game clears COPPA, Amendment 13 and Play Families **without a
+consent banner** precisely because there is nothing to consent to. Vercel won
+on one argument: it already hosts the game, so it adds no new recipient of data.
+`privacy.html` was rewritten in the same commit (it claimed "no analytics"), and
+the Play Data safety form can no longer say "no data collected". Still needs one
+click in the Vercel dashboard to start collecting; the six game events are wired
+but dark until the account is Pro.
 
 **2026-08-22, later — the origin move.** The game left
 `thetcd.github.io/dumpling-clicker/` for **https://dumplingclicker.com/** on
@@ -277,8 +312,12 @@ import bridge was built. The old Pages URL still deploys but now shows a Hebrew
       approved. The custom domain is a hard prerequisite — **now satisfied**
       (section A).
 - [x] Write a **privacy policy** page, Hebrew and English. Shipped 2026-08-22
-      as `public/privacy.html`. It honestly says: no accounts, no analytics, no
-      backend, one `localStorage` key that never leaves the device.
+      as `public/privacy.html`, **rewritten 2026-08-23** when analytics landed —
+      it used to say "no analytics and no tracking", which stopped being true.
+      It now itemises what Vercel Web Analytics records, states plainly that no
+      identifier is collected and no profile is built, and keeps the honest
+      part: no accounts, no game server, one `localStorage` key that never
+      leaves the device. **Any change to `src/analytics.ts` changes this page.**
 - [x] Add an **about page** (`public/about.html`, same date). A single-page
       game is a common cause of AdSense "thin content" rejection.
 - [ ] Apply for AdSense on the new domain. Then apply for **H5 Games Ads**
@@ -333,13 +372,42 @@ or never, at no loss.
   ("watch to run it again") — better UX, and it sidesteps the never-stacks
   invariant because it is a fresh window rather than an extension.
 
-### D · Analytics — an open question, not a task
+### D · Analytics — **DONE 2026-08-23** (one dashboard toggle left)
 
-There is deliberately no backend, so there is **no signal on where players
-actually are.** A weekly release cadence has to match real play time, and right
-now the only inputs are Dor, one family member, and whatever Gal reports. Worth
-deciding whether that is enough or whether one opt-in ping is worth the
-complexity and the child-privacy exposure.
+Was an open question; now shipped as `src/analytics.ts`, wired from
+`src/boot.ts`. **Vercel Web Analytics, aggregate and cookieless.** Full
+reasoning and the seven rejected alternatives are in `docs/DECISIONS.md`
+§ "Analytics: aggregate or nothing" — read that before touching this.
+
+The one-line version: the players are kids, so COPPA + Israel's Amendment 13 +
+Play Families all bind, and the game clears all three **without a consent
+banner** only while no identifier is transmitted and no per-player profile
+exists. Vercel was chosen because it already hosts the game and so adds **no new
+recipient of data** — the argument that beats Plausible, PostHog and
+self-hosting alike. `sanitize()` enforces the allowlist in code;
+`tests/analytics.test.ts` pins it.
+
+What it answers: how many players, roughly where, installed-app vs browser
+share, and how far into the game people get (first launch → designer finished →
+first rebirth → ranks 5/10/20/30/40/50 → boss). What it deliberately cannot
+answer: retention cohorts, "same player as last week", or anything per-person.
+There are no accounts, so there are no sign-ins to count.
+
+**Two things still to do, both off-repo:**
+
+- [ ] **Enable Web Analytics in the Vercel dashboard** (project → Analytics →
+      Enable). Nothing is collected until this is clicked — the code alone does
+      not switch it on.
+- [ ] **Custom events are Pro-only.** Hobby gets page views, 50k events/month
+      and a **one-month reporting window**. The six game events are written,
+      tested and wired but `EVENTS_ENABLED` in `src/analytics.ts` is `false`;
+      flipping that constant is the entire upgrade path. Worth knowing that the
+      one-month window is shorter than the multi-week question §6's release
+      cadence actually needs answering.
+
+**And one thing that must not be forgotten:** the Play **Data safety form** can
+no longer say "no data collected". `docs/GOOGLE-PLAY.md` Phase D now carries the
+exact answers.
 
 ---
 

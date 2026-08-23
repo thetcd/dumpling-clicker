@@ -1,17 +1,20 @@
-/* The ambient dusk landscape. See ui/backdrop.ts for why this is drawn rather
-   than filmed, and why each layer is a fixed-pixel repeating tile.
+/* The ambient landscape. See ui/backdrop.ts for why this is drawn rather than
+   filmed, and why each layer is a fixed-pixel repeating tile.
 
    The geometry rule: a layer is one tile WIDER than the viewport and repeats
    its art every --bd-tile pixels, so sliding it exactly --bd-tile to the left
    lands on an identical arrangement. Seamless at any window width, and because
    the tile is a fixed pixel size the art keeps its proportions on a phone and
    a widescreen alike — a widescreen just shows more tiles. Motion is
-   transform/opacity only: compositor work, never the rAF loop. */
+   transform/opacity only: compositor work, never the rAF loop.
+
+   Colours come from tokens.css. NOTHING here may hold a raw hex —
+   tests/no-raw-colour.test.ts enforces it. */
 
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: -1; /* behind #app's content, above body's gradient */
+  z-index: -1; /* behind #app's content, above body's flat sky tone */
   overflow: hidden;
   pointer-events: none;
 
@@ -36,14 +39,27 @@
   }
 }
 
-/* --- sky --- */
+/* --- sky ---
+   Daylight: cool blue overhead falling to a warm haze at the horizon, which is
+   what gives the hills something to sit against.
+
+   THIS GRADIENT IS STATIC, ON PURPOSE. The reference clip was rejected as a
+   video partly because it started pink and ended orange, so its 10s loop
+   popped. Animating these stops through hues rebuilds that exact bug. */
 .bd-sky {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #241a2e 0%, #2c2033 42%, #3a2a42 72%, #4a3350 100%);
+  background: linear-gradient(
+    180deg,
+    var(--bd-sky-1) 0%,
+    var(--bd-sky-2) 38%,
+    var(--bd-sky-3) 70%,
+    var(--bd-sky-4) 100%
+  );
 }
 
-/* the last of the sunset, sitting on the horizon behind the hills */
+/* Sun haze on the horizon, behind the hills. Breathes rather than drifts, so it
+   returns to its own start value and cannot seam. */
 .bd-glow {
   position: absolute;
   left: -20%;
@@ -52,24 +68,38 @@
   height: 42%;
   background: radial-gradient(
     ellipse 60% 100% at 50% 100%,
-    rgba(240, 178, 94, 0.3),
-    rgba(217, 143, 58, 0.12) 45%,
-    transparent 72%
+    var(--bd-sun),
+    transparent 68%
   );
   animation: bd-breathe 19s ease-in-out infinite;
 }
 
-/* replaces the video's rainbow: a slow band that drifts and fades */
-.bd-aurora {
+/* The rainbow the reference clip has, and the dusk build dropped. Concentric
+   bands of one radial gradient centred below the horizon, so only the arc is on
+   screen. Kept soft — at full saturation it competes with the shop panel. */
+.bd-rainbow {
   position: absolute;
-  left: -30%;
-  right: -30%;
-  top: 4%;
-  height: 46%;
-  background:
-    radial-gradient(ellipse 42% 60% at 38% 60%, rgba(126, 200, 176, 0.16), transparent 68%),
-    radial-gradient(ellipse 34% 52% at 66% 42%, rgba(196, 150, 224, 0.14), transparent 68%);
-  animation: bd-aurora 34s ease-in-out infinite;
+  left: -25%;
+  right: -25%;
+  top: 0;
+  height: 100%;
+  /* The centre sits BELOW the viewport and the radius is larger than it, so
+     only the apex of a very large circle is on screen — which is what makes it
+     read as a distant arc rather than a printed band. Tuned by eye against the
+     reference: the earlier version put the apex at y≈330, i.e. behind the
+     hills, where it was invisible. If you change the ridge heights in
+     backdrop.ts, re-check that this still clears the horizon. */
+  background: radial-gradient(
+    ellipse 66% 150% at 50% 120%,
+    transparent 0 67%,
+    var(--bd-rainbow-4) 67% 70%,
+    var(--bd-rainbow-3) 70% 73%,
+    var(--bd-rainbow-2) 73% 76%,
+    var(--bd-rainbow-1) 76% 79%,
+    transparent 79%
+  );
+  filter: blur(2px);
+  animation: bd-rainbow 34s ease-in-out infinite;
 }
 
 /* --- shared layer geometry ---
@@ -87,14 +117,14 @@
   will-change: transform;
 }
 
-.bd-stars,
+.bd-sparks,
 .bd-clouds {
   top: 0;
   bottom: auto;
   width: calc(100% + var(--bd-tile-sky));
   background-size: var(--bd-tile-sky) 100%;
 }
-.bd-stars {
+.bd-sparks {
   height: 46%;
   width: 100%;
   will-change: opacity;
@@ -104,26 +134,34 @@
   animation: bd-drift-sky 170s linear infinite;
 }
 
-/* Two half-skies fading against each other read as twinkling. The art itself
-   cannot animate — it is a background image — but the element's opacity can. */
-.bd-stars-a { animation: bd-twinkle-a 7s ease-in-out infinite; }
-.bd-stars-b { animation: bd-twinkle-b 7s ease-in-out infinite; }
+/* Two half-skies fading against each other read as glinting. This is the ONE
+   working demonstration of the only thing that can move inside a static
+   rendering context: the art itself cannot animate — it is a background image —
+   but the element's opacity can. Keep this pattern even if the sparkles
+   themselves are ever redrawn. */
+.bd-sparks-a { animation: bd-twinkle-a 7s ease-in-out infinite; }
+.bd-sparks-b { animation: bd-twinkle-b 7s ease-in-out infinite; }
 
 /* parallax: further away scrolls slower */
 .bd-far  { opacity: 0.9; animation: bd-drift 230s linear infinite; }
 .bd-mid  { animation: bd-drift 145s linear infinite; }
 .bd-near { animation: bd-drift 90s linear infinite; }
 
-/* Keeps the scene from competing with the UI: the HUD sits on the top band and
-   the shop panel on the bottom one. The middle is left clear so the landscape
-   is actually visible behind the squishy. */
+/* A light veil, and note how much weaker it is than the dusk version it
+   replaces (0.5/0.6 → 0.34/0.20). It no longer carries legibility: the UI
+   panels are opaque now and own their own contrast. All this does is push the
+   sky back a notch so the cards have somewhere to sit. That weakening IS the
+   measurable proof the old backdrop/UI coupling is gone. */
 .bd-scrim {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(25, 18, 25, 0.5) 0%, rgba(25, 18, 25, 0.1) 18%,
-                    rgba(25, 18, 25, 0) 42%, rgba(25, 18, 25, 0.28) 78%,
-                    rgba(25, 18, 25, 0.6) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--scrim-top) 0%,
+    transparent 26%,
+    transparent 62%,
+    var(--scrim-bottom) 100%
+  );
 }
 
 @keyframes bd-drift {
@@ -136,19 +174,19 @@
 }
 @keyframes bd-twinkle-a {
   0%, 100% { opacity: 1; }
-  50%      { opacity: 0.35; }
+  50%      { opacity: 0.3; }
 }
 @keyframes bd-twinkle-b {
-  0%, 100% { opacity: 0.4; }
+  0%, 100% { opacity: 0.35; }
   50%      { opacity: 1; }
 }
 @keyframes bd-breathe {
   0%, 100% { opacity: 0.72; }
   50%      { opacity: 1; }
 }
-@keyframes bd-aurora {
-  0%, 100% { transform: translateX(-3%) scaleY(1); opacity: 0.75; }
-  50%      { transform: translateX(3%) scaleY(1.12); opacity: 1; }
+@keyframes bd-rainbow {
+  0%, 100% { transform: translateX(-2%) scaleY(1); opacity: 0.8; }
+  50%      { transform: translateX(2%) scaleY(1.06); opacity: 1; }
 }
 
 /* Motion is decorative — freeze it, but keep the scene visible. Matches how
@@ -158,11 +196,11 @@
   .bd-far,
   .bd-mid,
   .bd-near,
-  .bd-stars-a,
-  .bd-stars-b,
+  .bd-sparks-a,
+  .bd-sparks-b,
   .bd-glow,
-  .bd-aurora {
+  .bd-rainbow {
     animation: none;
   }
-  .bd-stars-b { opacity: 0.7; }
+  .bd-sparks-b { opacity: 0.7; }
 }

@@ -12,25 +12,32 @@
 // so detail is deliberately low — thin lines and small text vanish at that size
 // (the same lesson the `shekel` eyes taught in avatar.ts).
 
-const INK = '#3a2e26';
-const CREAM = '#f6e7c8';
-const CREAM_EDGE = '#cfae7c';
-const GOLD = '#f2c14e';
-const GOLD_EDGE = '#c9922f';
-const RED = '#e8607a';
-const RED_EDGE = '#c44860';
-const WOOD = '#c9a06a';
-const WOOD_EDGE = '#9d7442';
-const STONE = '#b9b3c9';
-const STONE_EDGE = '#867e9b';
-const GREEN = '#7ec46a';
-const GREEN_EDGE = '#54924a';
-const BLUE = '#7fb8e0';
-const BLUE_EDGE = '#4d87b3';
+import { PALETTE, white } from './palette';
+
+// Every colour comes from PALETTE.icon. Note that each *_EDGE is more
+// SATURATED than its fill, not merely darker: on a pale sky a pastel edge on a
+// pastel fill is a smudge, and that edge stroke is the entire reason an icon
+// still reads as a sticker at the 30px it is drawn at in the shop.
+const I = PALETTE.icon;
+const INK = PALETTE.ink;
+const CREAM = I.cream;
+const CREAM_EDGE = I.creamEdge;
+const GOLD = I.gold;
+const GOLD_EDGE = I.goldEdge;
+const RED = I.red;
+const RED_EDGE = I.redEdge;
+const WOOD = I.wood;
+const WOOD_EDGE = I.woodEdge;
+const STONE = I.stone;
+const STONE_EDGE = I.stoneEdge;
+const GREEN = I.green;
+const GREEN_EDGE = I.greenEdge;
+const BLUE = I.blue;
+const BLUE_EDGE = I.blueEdge;
 
 /** A soft white highlight, the same trick the squishy's body uses. */
 const shine = (cx: number, cy: number, rx: number, ry: number, rot = -20) =>
-  `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="rgba(255,255,255,0.4)" transform="rotate(${rot} ${cx} ${cy})"/>`;
+  `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${white(0.4)}" transform="rotate(${rot} ${cx} ${cy})"/>`;
 
 const ART: Record<string, string> = {
   // ---------- producers ----------
@@ -41,14 +48,14 @@ const ART: Record<string, string> = {
     <circle cx="40" cy="60" r="3.5" fill="${INK}"/>
     <circle cx="60" cy="60" r="3.5" fill="${INK}"/>
     <path d="M45 70 Q 50 75 55 70" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
-    <ellipse cx="33" cy="68" rx="5" ry="3.5" fill="rgba(240,130,140,0.5)"/>
-    <ellipse cx="67" cy="68" rx="5" ry="3.5" fill="rgba(240,130,140,0.5)"/>
+    <ellipse cx="33" cy="68" rx="5" ry="3.5" fill="${I.blush}"/>
+    <ellipse cx="67" cy="68" rx="5" ry="3.5" fill="${I.blush}"/>
     ${shine(38, 48, 9, 6)}`,
 
   stall: `
     <rect x="18" y="52" width="64" height="32" rx="4" fill="${WOOD}" stroke="${WOOD_EDGE}" stroke-width="3"/>
     <path d="M12 52 L20 30 L80 30 L88 52 Z" fill="${RED}" stroke="${RED_EDGE}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M32 30 L26 52 M50 30 L50 52 M68 30 L74 52" stroke="rgba(255,255,255,0.6)" stroke-width="5"/>
+    <path d="M32 30 L26 52 M50 30 L50 52 M68 30 L74 52" stroke="${white(0.6)}" stroke-width="5"/>
     <ellipse cx="50" cy="66" rx="11" ry="9" fill="${CREAM}" stroke="${CREAM_EDGE}" stroke-width="2.5"/>
     ${shine(42, 62, 4, 2.5)}`,
 
@@ -74,17 +81,17 @@ const ART: Record<string, string> = {
   bakery: `
     <rect x="16" y="50" width="68" height="34" rx="4" fill="${CREAM}" stroke="${CREAM_EDGE}" stroke-width="3"/>
     <path d="M12 50 Q 16 34 26 34 L74 34 Q 84 34 88 50 Z" fill="${GOLD}" stroke="${GOLD_EDGE}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M34 34 L30 50 M50 34 L50 50 M66 34 L70 50" stroke="rgba(255,255,255,0.55)" stroke-width="5"/>
+    <path d="M34 34 L30 50 M50 34 L50 50 M66 34 L70 50" stroke="${white(0.55)}" stroke-width="5"/>
     <ellipse cx="50" cy="68" rx="17" ry="13" fill="${WOOD}" stroke="${WOOD_EDGE}" stroke-width="3"/>
-    <path d="M38 64 Q 50 56 62 64" fill="none" stroke="#f7e3bd" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M40 72 Q 50 66 60 72" fill="none" stroke="#f7e3bd" stroke-width="3" stroke-linecap="round"/>
+    <path d="M38 64 Q 50 56 62 64" fill="none" stroke="${I.creamLine}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M40 72 Q 50 66 60 72" fill="none" stroke="${I.creamLine}" stroke-width="3" stroke-linecap="round"/>
     ${shine(41, 62, 6, 3)}`,
 
   factory: `
     <path d="M14 84 L14 54 L36 62 L36 46 L58 54 L58 40 L86 40 L86 84 Z" fill="${STONE}" stroke="${STONE_EDGE}" stroke-width="3" stroke-linejoin="round"/>
     <rect x="66" y="16" width="12" height="26" rx="2" fill="${STONE}" stroke="${STONE_EDGE}" stroke-width="3"/>
-    <circle cx="72" cy="12" r="7" fill="rgba(255,255,255,0.55)"/>
-    <circle cx="60" cy="8" r="5" fill="rgba(255,255,255,0.35)"/>
+    <circle cx="72" cy="12" r="7" fill="${white(0.55)}"/>
+    <circle cx="60" cy="8" r="5" fill="${white(0.35)}"/>
     <rect x="22" y="68" width="11" height="16" rx="2" fill="${GOLD}" stroke="${GOLD_EDGE}" stroke-width="2"/>
     <rect x="44" y="68" width="11" height="16" rx="2" fill="${GOLD}" stroke="${GOLD_EDGE}" stroke-width="2"/>
     <rect x="66" y="68" width="11" height="16" rx="2" fill="${GOLD}" stroke="${GOLD_EDGE}" stroke-width="2"/>`,
@@ -133,14 +140,14 @@ const ART: Record<string, string> = {
 
   bill: `
     <rect x="10" y="28" width="80" height="44" rx="6" fill="${GREEN}" stroke="${GREEN_EDGE}" stroke-width="3.5"/>
-    <circle cx="50" cy="50" r="13" fill="rgba(255,255,255,0.6)" stroke="${GREEN_EDGE}" stroke-width="2.5"/>
-    <circle cx="22" cy="38" r="4" fill="rgba(255,255,255,0.5)"/>
-    <circle cx="78" cy="62" r="4" fill="rgba(255,255,255,0.5)"/>
+    <circle cx="50" cy="50" r="13" fill="${white(0.6)}" stroke="${GREEN_EDGE}" stroke-width="2.5"/>
+    <circle cx="22" cy="38" r="4" fill="${white(0.5)}"/>
+    <circle cx="78" cy="62" r="4" fill="${white(0.5)}"/>
     ${shine(30, 38, 10, 5)}`,
 
   gem: `
     <path d="M50 12 L84 40 L50 88 L16 40 Z" fill="${BLUE}" stroke="${BLUE_EDGE}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M16 40 L84 40 M50 12 L36 40 L50 88 M50 12 L64 40" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="3"/>
+    <path d="M16 40 L84 40 M50 12 L36 40 L50 88 M50 12 L64 40" fill="none" stroke="${white(0.55)}" stroke-width="3"/>
     ${shine(34, 28, 8, 4)}`,
 
   star: `
@@ -161,7 +168,7 @@ const ART: Record<string, string> = {
     <path d="M22 34 L38 50 L22 66 Z" fill="${RED}" stroke="${RED_EDGE}" stroke-width="3" stroke-linejoin="round"/>
     <path d="M78 34 L62 50 L78 66 Z" fill="${RED}" stroke="${RED_EDGE}" stroke-width="3" stroke-linejoin="round"/>
     <ellipse cx="50" cy="50" rx="20" ry="18" fill="${RED}" stroke="${RED_EDGE}" stroke-width="3"/>
-    <path d="M40 44 Q 50 52 40 58 M56 42 Q 46 50 56 58" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M40 44 Q 50 52 40 58 M56 42 Q 46 50 56 58" fill="none" stroke="${white(0.75)}" stroke-width="4" stroke-linecap="round"/>
     ${shine(41, 40, 6, 3)}`,
 
   gift: `
