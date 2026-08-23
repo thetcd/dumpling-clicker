@@ -131,6 +131,15 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   rounded corners and edge-to-edge art.
 - **`[hidden]{display:none!important}` must stay in `main.css`** —
   `.producer-row{display:flex}` overrides the UA hidden rule.
+- **The hero's HEIGHT drives its size; width follows from `aspect-ratio`.**
+  `.squish-hit` is centred in `#stage`, so a fixed height overflowed the bottom
+  on any window under ~740px and the steamer slid **under the shop panel**. The
+  `100%` term in `height: min(88vw, 360px, 100%)` resolves against the grid area
+  and is what makes that impossible. Two things that do NOT work: a media-query
+  ladder (`#stage` has a 300px `min-height`, so below ~700px the stage stops
+  shrinking and any fixed size overlaps again), and giving the width its own
+  `min()` (the box shrinks while the art inside it does not — `.squish-wrap` is
+  a *percentage* of the hit box for the same reason).
 - **`.squish-wrap`'s box is NOT the dumpling.** It spans the whole stage and its
   SVG box is 15% taller than the drawn body, so geometry checks against it are
   meaningless. Derive from viewBox fractions or `getBBox()`.

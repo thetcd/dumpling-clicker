@@ -1,9 +1,22 @@
 /* The steamer scene. The squish transform is set from JS; everything here is
    static positioning, so JS transforms never fight CSS ones. */
+/* HEIGHT drives this box, and width follows from aspect-ratio.
+   It used to be the other way round, with both fixed: width min(84vw,340px)
+   and height min(88vw,360px). #stage centres the hero, so the moment the stage
+   was shorter than 360px — roughly 740px of viewport, i.e. any laptop — the
+   steamer overflowed the bottom and slid UNDER the shop panel.
+   The `100%` term is what fixes it: it resolves against the grid area, so the
+   hero can never be taller than the space it is centred in.
+   A media-query ladder was tried first and does not work — #stage has a 300px
+   min-height, so below ~700px of viewport the stage stops shrinking and any
+   fixed hero size overlaps again.
+   Width MUST stay derived (aspect-ratio, not a second min()), or the box
+   shrinks while the art inside it does not. */
 .squish-hit {
   position: relative;
-  width: min(84vw, 340px);
-  height: min(88vw, 360px);
+  height: min(88vw, 360px, 100%);
+  aspect-ratio: 340 / 360;
+  width: auto;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -30,7 +43,10 @@
   bottom: 11%;
   inset-inline: 0;
   margin-inline: auto;
-  width: min(76vw, 304px);
+  /* A share of .squish-hit, not its own min(): the hit box now shrinks on
+     short windows and the dumpling has to shrink with it. 89.4% is the old
+     304/340 ratio, so nothing moves at full size. */
+  width: 89.4%;
   /* 85%, not 100%: the wrap's bottom edge is 15% below the drawn body, so a
      100% origin squashed the dumpling toward a point in mid-air instead of
      planting it on the plate. */
