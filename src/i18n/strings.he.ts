@@ -35,6 +35,22 @@ export const STR = {
   sound: 'צלילים',
   music: 'מוזיקת רקע',
   editSquishy: 'עיצוב הסקווישי מחדש',
+  // The backup code is the only rescue path a save has — no accounts, no
+  // server, and iOS Safari evicts localStorage after ~7 days away. "קוד" and
+  // not "ייצוא/יבוא": codes are a thing these players already know from Roblox.
+  backup: 'קוד גיבוי',
+  backupBody:
+    'שמרו את הקוד במקום בטוח — למשל בהודעה לעצמכם. אם המשחק יימחק, מדביקים אותו ב"שחזור מקוד גיבוי" וממשיכים בדיוק מאיפה שהפסקתם.',
+  backupCopy: 'העתקת הקוד',
+  backupCopyFailed: 'ההעתקה נחסמה — סמנו את הקוד והעתיקו ידנית',
+  restore: 'שחזור מקוד גיבוי',
+  restoreBody: 'הדביקו כאן קוד גיבוי. שימו לב: ההתקדמות הנוכחית תוחלף במה שבקוד.',
+  restoreYes: 'לשחזר',
+  restoreInvalid: 'הקוד לא תקין 😕 בדקו שהעתקתם את כולו',
+  // The update toast: a new build downloaded in the background and WAITS for
+  // this tap. Never reload on our own — see ui/update.ts.
+  updateReady: '🎁 עדכון חדש מוכן — הקישו לרענון',
+  updateLoading: 'מעדכן…',
   share: 'שתפו את הסקווישי שלכם',
   shareText: (count: string) =>
     `הסקווישי שלי כבר הרוויח ${count} שקלים בדאמפלינג קליקר! 🥟 בואו תמעכו גם`,

@@ -17,7 +17,13 @@ export default defineConfig({
   base,
   plugins: [
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt', not 'autoUpdate': a new build downloads in the background
+      // and WAITS for the player's tap on the update toast (src/ui/update.ts).
+      // autoUpdate swapped the worker and reloaded the page on its own — which
+      // can pull the game out from under a kid mid-frenzy, silently. With this
+      // mode the plugin injects no register script; boot.ts registers via the
+      // 'virtual:pwa-register' module and owns the refresh moment.
+      registerType: 'prompt',
       includeAssets: ['icons/icon.svg', 'icons/icon-192.png'],
       manifest: {
         // Fixed id: installs must survive a future start_url/scope change

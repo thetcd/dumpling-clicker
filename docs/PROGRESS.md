@@ -43,7 +43,7 @@ Currency is **shekels (₪)**. The single meta-loop is **rebirth**
 | Old URL | https://thetcd.github.io/dumpling-clicker/ — still deploys, but serves a "we moved" screen, not the game. |
 | DNS | Cloudflare Registrar; records **DNS-only / grey cloud** (see below). |
 | Identity | `thetcd` is the personal GitHub account, **not** `DorFordefi`. `gh auth switch -u thetcd`. |
-| Tests | 479, in 24 files |
+| Tests | 490, in 25 files |
 
 ```bash
 cd dumpling-clicker
@@ -157,6 +157,25 @@ the Play Data safety form can no longer say "no data collected". Still needs one
 click in the Vercel dashboard to start collecting; the six game events are wired
 but dark until the account is Pro.
 
+**2026-08-24 — early-user hardening, before sharing the link.** Two pieces:
+
+- **The save backup code** (`src/game/backup.ts` + settings sheet). Export is
+  serialize → base64 behind a `DC1:` prefix, shown in a readonly textarea with
+  a copy button; restore is paste → validate → replace the save → reload.
+  Import strips ALL whitespace (messaging apps wrap long strings), tolerates a
+  missing prefix, and goes through `deserialize()` — the same heal-or-null gate
+  storage loads use — so a tampered code can never produce a broken state.
+  This is the only rescue path a save has (iOS Safari evicts localStorage
+  after ~7 days away); "my game is gone" finally has a support answer.
+- **Updates now wait for a tap.** `vite-plugin-pwa` moved from `autoUpdate` to
+  `prompt`: a new build downloads in the background and a toast
+  (`src/ui/update.ts`, top-center) offers the refresh — nothing reloads the
+  page on its own under a player mid-frenzy. Registration moved from the
+  auto-injected script into `boot.ts` via `virtual:pwa-register`, which also
+  means the retired Pages "we moved" screen registers nothing. Verified with a
+  real two-build service-worker update cycle in a driven browser: toast
+  appears, page does NOT self-reload, tap swaps the new version in.
+
 **2026-08-22, later — the origin move.** The game left
 `thetcd.github.io/dumpling-clicker/` for **https://dumplingclicker.com/** on
 Vercel. Every save was wiped, as planned. `src/main.ts` became a two-line
@@ -267,9 +286,11 @@ Also: `tests/unlocks.test.ts` pins "everything open by rank 40". That has to
 become a bound derived from the data or every release breaks the suite.
 
 ### 4. A "what's new" surface
-`registerType: 'autoUpdate'` delivers new code but silently, and can reload the
-page under a player mid-frenzy. Nothing announces that the cap rose from 50 to
-55. For a weekly rhythm this is the highest-value missing piece.
+~~`registerType: 'autoUpdate'` delivers new code but silently, and can reload
+the page under a player mid-frenzy.~~ **The reload half shipped 2026-08-24**:
+`prompt` mode + an update toast that waits for a tap (§4). Still missing is the
+content half — nothing announces *what* changed or that the cap rose from 50 to
+55. For a weekly rhythm that screen is the highest-value missing piece.
 
 ### 5. The two ad rewards, behind a stub
 See §7 and `docs/DOMAIN-AND-ADS.md`.
@@ -494,15 +515,12 @@ every deploy, privacy + about pages, Web Share, and a 224KB bundle.
       was always ≥262% once all four share upgrades are owned. What changed is
       that it moved from the end of a long run to *all of every run* past rank
       20. Dor's call 2026-08-24: ship it, retune the share ladder next.
-4. **Saves die with no rescue path.** No export, no import, no cloud. iOS Safari
-      evicts localStorage after ~7 days away, and clearing site data wipes ten
-      hours of rebirths. A copy-paste backup code (serialize → base64 →
-      clipboard, and paste to restore) needs no backend and is the only thing
-      that lets a support answer exist at all.
-5. **Updates are silent and can reload a kid mid-frenzy.** `registerType:
-      'autoUpdate'` with no UI. A weekly cadence needs a "new version" toast
-      that waits for a tap, plus §6.4's what's-new screen — otherwise a release
-      is invisible and the reason to come back never lands.
+4. ~~**Saves die with no rescue path.**~~ **Done 2026-08-24** — the backup code
+      in the settings sheet (§4): copy a `DC1:` code, paste to restore.
+5. ~~**Updates are silent and can reload a kid mid-frenzy.**~~ **The toast half
+      shipped 2026-08-24** (§4) — `prompt` mode, reload waits for a tap. §6.4's
+      what's-new screen is still open, so a release announces *that* it landed
+      but not what's in it.
 6. **Low-end Android has never been tested.** Gal's audience is not on a
       MacBook, and the backdrop layers, ten simultaneous airdrops and the spring
       all want a real cheap phone.

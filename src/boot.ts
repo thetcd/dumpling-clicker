@@ -55,6 +55,16 @@ import { showModal } from './ui/modal';
 import { initPopups, spawnFloater } from './ui/popups';
 import { initSettings, shareGame, toast } from './ui/settings';
 import { initShop } from './ui/shop';
+import { showUpdateToast } from './ui/update';
+import { registerSW } from 'virtual:pwa-register';
+
+// Service-worker registration, in 'prompt' mode (vite.config.ts). Importing
+// the virtual module here — instead of the plugin's auto-injected script in
+// index.html — also keeps the retired Pages "we moved" screen from registering
+// anything: main.ts only imports this file on the real origin.
+const updateSW = registerSW({
+  onNeedRefresh: () => showUpdateToast(() => void updateSW(true)),
+});
 
 const now = Date.now();
 const saved = loadFromStorage();
@@ -307,6 +317,15 @@ initSettings(document.getElementById('settings-btn')!, () => state, {
   onReset: () => {
     state = resetGame(state, Date.now());
     clearStorage();
+    saveToStorage(state, Date.now());
+    location.reload();
+  },
+  // Restoring a backup code replaces the whole run. Reassign `state` BEFORE the
+  // reload — the loop's pagehide autosave reads through the getter, so leaving
+  // the old object in place would let it clobber the save we just wrote (the
+  // exact bug that once made "start over" a silent no-op).
+  onRestore: (imported) => {
+    state = imported;
     saveToStorage(state, Date.now());
     location.reload();
   },

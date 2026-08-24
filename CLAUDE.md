@@ -36,7 +36,7 @@ what `DECISIONS.md` exists for, and it is the part that stops the same idea
 being re-tried in six weeks.
 
 ```bash
-npm test        # 479 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
+npm test        # 490 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
 npm run dev     # the port drifts; read the printed URL
 npm run dev:phone  # LAN URL for real-phone testing
 npm run build   # tsc + vite + service worker
@@ -143,6 +143,19 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   74% in a full-bleed field, source `icon-maskable.svg`). Never point
   `purpose: 'maskable'` at `icon-512.png` — Android's circular crop clips its
   rounded corners and edge-to-edge art.
+- **Modal buttons close the modal BEFORE `onClick` runs** (`ui/modal.ts`), so
+  an `onClick` can never read an input inside the modal — it is already gone.
+  Mirror the value into a local via an `input` listener while the modal is
+  open (the restore textarea does this), and remember anything shown in the
+  modal vanishes on any button press — which is why a failed clipboard copy
+  reopens the backup modal instead of just toasting.
+- **The service worker is in `prompt` mode and registered from `boot.ts`**
+  (`virtual:pwa-register` — the plugin injects no script into `index.html`).
+  A new build downloads, WAITS, and `src/ui/update.ts` offers the reload;
+  never switch back to `autoUpdate`, which reloads the page under a player.
+  Prompt mode has no `clientsClaim`, so the FIRST visit is uncontrolled —
+  `navigator.serviceWorker.controller` is null until the next navigation, which
+  matters to any browser drive that waits on it.
 - **`[hidden]{display:none!important}` must stay in `main.css`** —
   `.producer-row{display:flex}` overrides the UA hidden rule.
 - **The hero's HEIGHT drives its size; width follows from `aspect-ratio`.**

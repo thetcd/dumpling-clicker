@@ -1,6 +1,7 @@
-// Settings sheet: sound, redesign, share, reset. Share uses the Web Share API
-// with a clipboard fallback so it works on desktop too.
+// Settings sheet: sound, redesign, share, backup/restore, reset. Share uses
+// the Web Share API with a clipboard fallback so it works on desktop too.
 import type { GameState } from '../game/state';
+import { exportCode, importCode } from '../game/backup';
 import { STR } from '../i18n/strings.he';
 import { setMuted, setMusicEnabled, unlockAudio } from '../audio/sound';
 import { startMusic, stopMusic } from '../audio/music';
@@ -13,6 +14,7 @@ export function initSettings(
   hooks: {
     onEditSquishy: () => void;
     onReset: () => void;
+    onRestore: (imported: GameState) => void;
   },
 ): void {
   button.addEventListener('click', () => {
@@ -29,6 +31,8 @@ export function initSettings(
         </label>
         <button class="btn setting-btn" id="set-edit">🎨 ${STR.editSquishy}</button>
         <button class="btn setting-btn" id="set-share">📤 ${STR.share}</button>
+        <button class="btn setting-btn" id="set-backup">💾 ${STR.backup}</button>
+        <button class="btn setting-btn" id="set-restore">📥 ${STR.restore}</button>
         <button class="btn setting-btn danger" id="set-reset">🗑️ ${STR.reset}</button>`,
       buttons: [{ label: STR.close, primary: true }],
     });
@@ -50,6 +54,37 @@ export function initSettings(
     document.getElementById('set-share')!.addEventListener('click', () => {
       void shareGame(getState());
     });
+    document.getElementById('set-backup')!.addEventListener('click', () => {
+      openBackupModal(exportCode(getState()));
+    });
+    document.getElementById('set-restore')!.addEventListener('click', () => {
+      // Modal buttons close the modal BEFORE onClick runs, so the textarea is
+      // gone by then — mirror its value into a local as the player types.
+      let pasted = '';
+      showModal({
+        title: STR.restore,
+        bodyHTML: `<p>${STR.restoreBody}</p>
+          <textarea class="backup-code" id="restore-code" dir="ltr"></textarea>`,
+        buttons: [
+          {
+            label: STR.restoreYes,
+            primary: true,
+            onClick: () => {
+              const imported = importCode(pasted);
+              if (imported === null) {
+                toast(STR.restoreInvalid);
+                return;
+              }
+              hooks.onRestore(imported);
+            },
+          },
+          { label: STR.cancel },
+        ],
+      });
+      document.getElementById('restore-code')!.addEventListener('input', (e) => {
+        pasted = (e.target as HTMLTextAreaElement).value;
+      });
+    });
     document.getElementById('set-reset')!.addEventListener('click', () => {
       showModal({
         title: STR.reset,
@@ -60,6 +95,35 @@ export function initSettings(
         ],
       });
     });
+  });
+}
+
+// Its own function because the failure path re-enters it: modal buttons close
+// the modal before onClick runs, so if the clipboard write is blocked the code
+// would vanish with the modal — reopening keeps it on screen for a manual copy.
+// The code is base64 (plus the DC1: prefix), so it is innerHTML-safe by
+// construction — tests/backup.test.ts pins the alphabet.
+function openBackupModal(code: string): void {
+  showModal({
+    title: STR.backup,
+    bodyHTML: `<p>${STR.backupBody}</p>
+      <textarea class="backup-code" readonly dir="ltr">${code}</textarea>`,
+    buttons: [
+      {
+        label: STR.backupCopy,
+        primary: true,
+        onClick: () => {
+          navigator.clipboard.writeText(code).then(
+            () => toast(STR.copied),
+            () => {
+              openBackupModal(code);
+              toast(STR.backupCopyFailed);
+            },
+          );
+        },
+      },
+      { label: STR.close },
+    ],
   });
 }
 

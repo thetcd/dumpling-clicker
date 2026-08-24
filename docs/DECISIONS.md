@@ -634,6 +634,53 @@ some colour. If the horizon ever drifts toward white, the steam disappears with
 it — and the `--surface` vs `--bd-sky-*` separation assertions in
 `contrast.test.ts` are the guard against the same instinct applied to the panels.
 
+## The save's only rescue path is a code, not a cloud
+
+Shipped 2026-08-24, the day before early users got the link. There is no
+backend and no account, and iOS Safari evicts localStorage after ~7 days of not
+visiting — so before this, a lost save had literally no support answer.
+
+- **A copy-paste code, not cloud sync**: `exportCode()` is serialize → base64
+  behind a `DC1:` prefix; `importCode()` validates through `deserialize()`, the
+  same heal-or-null gate storage loads use. Zero infrastructure, and a faked or
+  edited code only affects the faker's own device — the same power the browser
+  console already grants. "קוד" is also a word these players know from Roblox.
+- **Import strips ALL whitespace before decoding.** The realistic transport for
+  a kid's backup is a WhatsApp message to themselves, and messaging apps wrap
+  long strings with line breaks. The prefix is optional on import for the same
+  reason — partial selection happens.
+- **Restore replaces the state and reloads.** Every UI module either reads
+  through a getter or needs an explicit repaint after a state swap; a reload
+  gets all of that for free and matches the reset flow. The one rule: reassign
+  `state` BEFORE `location.reload()`, or the loop's pagehide autosave writes
+  the old run back over the restored save (the "reset was a silent no-op" bug).
+- **Rejected: auto-copying to the clipboard with only a toast.** The code is
+  shown in a readonly textarea with a copy button instead — if the clipboard
+  write is blocked, a toast alone would leave the player with nothing to
+  select, so the failure path reopens the modal with the code still on screen.
+
+## Updates wait for a tap
+
+Also 2026-08-24. `vite-plugin-pwa` moved `autoUpdate` → `prompt`, with a
+persistent top-center toast (`src/ui/update.ts`) offering the refresh.
+
+- **Why:** `autoUpdate` swaps the service worker and reloads the page on its
+  own schedule — under a kid mid-frenzy, silently. With a weekly release
+  cadence planned, that reload would fire weekly. The toast makes every reload
+  a moment the player chose, and doubles as the "something new arrived" signal
+  until the real what's-new screen exists (PROGRESS §6.4, still open).
+- Registration moved from the plugin's auto-injected `registerSW.js` into
+  `boot.ts` via `virtual:pwa-register`. Side effect, accepted deliberately: the
+  retired Pages "we moved" screen no longer registers a service worker at all —
+  browsers still update the existing installation's worker on navigation, so
+  old installs keep getting the moved screen.
+- The toast sits top-center over the HUD title — the one line of chrome that
+  costs nothing to cover. The transient `.toast` spot (bottom) is above the
+  rebirth bar, which a *persistent* element would permanently cover.
+- Verified with a real two-build update cycle in a driven browser, not by
+  reading the docs: v1 controlled, v2 built with a marker, reload → toast, 3s
+  hold proves no self-reload, tap → marker present.
+
 ## Things that were tried and rejected
 
 - **Growth 2.6 for the rebirth curve** — 341 hours by rebirth 25.
