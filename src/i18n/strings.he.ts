@@ -40,16 +40,16 @@ export const STR = {
   // not "ייצוא/יבוא": codes are a thing these players already know from Roblox.
   backup: 'קוד גיבוי',
   backupBody:
-    'שמרו את הקוד במקום בטוח — למשל בהודעה לעצמכם. אם המשחק יימחק, מדביקים אותו ב"שחזור מקוד גיבוי" וממשיכים בדיוק מאיפה שהפסקתם.',
+    'שמרו את הקוד במקום בטוח, למשל בהודעה לעצמכם. אם המשחק נמחק, מדביקים אותו ב"שחזור מקוד גיבוי" וממשיכים מאיפה שעצרתם.',
   backupCopy: 'העתקת הקוד',
-  backupCopyFailed: 'ההעתקה נחסמה — סמנו את הקוד והעתיקו ידנית',
+  backupCopyFailed: 'ההעתקה לא עבדה. סמנו את הקוד והעתיקו אותו ידנית',
   restore: 'שחזור מקוד גיבוי',
-  restoreBody: 'הדביקו כאן קוד גיבוי. שימו לב: ההתקדמות הנוכחית תוחלף במה שבקוד.',
+  restoreBody: 'הדביקו כאן את קוד הגיבוי. זה יחליף את ההתקדמות הנוכחית שלכם.',
   restoreYes: 'לשחזר',
   restoreInvalid: 'הקוד לא תקין 😕 בדקו שהעתקתם את כולו',
   // The update toast: a new build downloaded in the background and WAITS for
   // this tap. Never reload on our own — see ui/update.ts.
-  updateReady: '🎁 עדכון חדש מוכן — הקישו לרענון',
+  updateReady: '🎁 יש עדכון חדש! לחצו כאן',
   updateLoading: 'מעדכן…',
   share: 'שתפו את הסקווישי שלכם',
   shareText: (count: string) =>
@@ -67,7 +67,7 @@ export const STR = {
   rebirthNext: (mult: string) => `אחרי הלידה מחדש: ×${mult} לתמיד`,
   rebirthConfirmTitle: 'להיוולד מחדש?',
   rebirthConfirmBody:
-    'השקלים והצוות שלכם יתאפסו. הסקווישי, הלידות מחדש והבונוס הקבוע נשארים — ואקססוריז חדשים ייפתחו.',
+    'השקלים והצוות שלכם יתאפסו. הסקווישי, הלידות מחדש והבונוס הקבוע נשארים, ואקססוריז חדשים ייפתחו.',
   // Spelled out because Dor could not tell what a rebirth kept ("the saved
   // items in each rebirth are not consistent"). Fed by rebirthKeepSummary, so
   // it always matches what the reset actually does.
@@ -83,12 +83,12 @@ export const STR = {
   // "in 1 places" is wrong, and this is the line that explains the game's own
   // rules, so it cannot read as machine output.
   rebirthKeepProducers: (units: number, tiers: number) =>
-    `אחד מכל 4 בצוות — ${units === 1 ? 'סקווישי אחד' : `${units} סקווישים`} ${
+    `אחד מכל 4 בצוות: ${units === 1 ? 'סקווישי אחד' : `${units} סקווישים`} ${
       tiers === 1 ? 'במקום אחד' : `ב־${tiers} מקומות`
     }`,
   rebirthKeepUpgrades: (n: number) =>
     n === 1 ? 'שדרוג מעיכה קבוע אחד' : `${n} שדרוגי מעיכה קבועים`,
-  rebirthKeepNothing: 'הפעם אין צוות לשמור — הכל מתחיל מחדש',
+  rebirthKeepNothing: 'הפעם אין צוות לשמור, הכל מתחיל מחדש',
   rebirthYes: 'קדימה!',
   rebirthDone: (n: number) => `לידה מחדש ${n}! 🎉`,
   rebirthCelebrateTitle: (n: number) => `🎉 לידה מחדש ${n}!`,
@@ -98,12 +98,12 @@ export const STR = {
   rebirthNoParts: 'הפריט הבא לעיצוב מחכה לכם בלידה מחדש הבאה.',
   rebirthDesignNow: '🎨 לעצב עכשיו',
   reset: 'מחיקת הכל',
-  resetConfirm: 'בטוחים? הכל יימחק — שקלים, צוות ולידות מחדש. אין דרך לחזור.',
+  resetConfirm: 'בטוחים? הכל יימחק: שקלים, צוות ולידות מחדש. אין דרך לחזור.',
   resetYes: 'כן, למחוק הכל',
   cancel: 'ביטול',
   close: 'סגירה',
   bossTitle: '👑 הגעתם לפסגה!',
-  bossBody: 'הבוס של הסקווישים — גל בכבודו ובעצמו — הצטרף לצוות שלכם!',
+  bossBody: 'הבוס של הסקווישים, גל בכבודו ובעצמו, הצטרף לצוות שלכם!',
   bossShare: 'לספר לכולם',
   iosInstallHint: 'טיפ: לחצו על שיתוף ואז "הוסף למסך הבית" כדי לשחק כמו אפליקציה',
   gotIt: 'הבנתי',
@@ -123,7 +123,7 @@ export const STR = {
   commonLabel: 'משהו נוצץ!',
   rewardCaught: (amount: string) => `‎+${amount}`,
   critFloater: (amount: string) => `‎+${amount} 💥`,
-  frenzyBadge: (mult: number, secs: number) => `🔥 טירוף ×${mult} — ${secs} שנ׳`,
+  frenzyBadge: (mult: number, secs: number) => `🔥 טירוף ×${mult} · ${secs} שנ׳`,
   frenzyStart: (mult: number) => `×${mult} טירוף!`,
   // The GitHub Pages build (VITE_BASE set) is retired to this screen after the
   // domain move — old home-screen installs land here instead of a dead game.

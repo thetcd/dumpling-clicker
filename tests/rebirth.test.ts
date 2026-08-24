@@ -354,11 +354,11 @@ describe('the keep-list copy', () => {
   // "in 1 places" is wrong, and this line is the one place the game explains
   // its own rules — it cannot read as machine output.
   test('reads naturally for a single place and a single squishy', () => {
-    expect(STR.rebirthKeepProducers(1, 1)).toBe('אחד מכל 4 בצוות — סקווישי אחד במקום אחד');
+    expect(STR.rebirthKeepProducers(1, 1)).toBe('אחד מכל 4 בצוות: סקווישי אחד במקום אחד');
   });
 
   test('takes the numeral for more than one', () => {
-    expect(STR.rebirthKeepProducers(10, 3)).toBe('אחד מכל 4 בצוות — 10 סקווישים ב־3 מקומות');
+    expect(STR.rebirthKeepProducers(10, 3)).toBe('אחד מכל 4 בצוות: 10 סקווישים ב־3 מקומות');
   });
 
   test('handles a single permanent upgrade', () => {

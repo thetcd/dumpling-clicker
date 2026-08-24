@@ -499,6 +499,14 @@ every deploy, privacy + about pages, Web Share, and a 224KB bundle.
       source. Both bucket ladders are now itemised in Hebrew and English.
 - [x] **Analytics collection enabled** ahead of the launch (see §7 D — the Pro
       upgrade is the remaining half, and it is a dashboard action).
+- [x] **Copy humanized, and the about page caught lying too** (2026-08-24).
+      Em-dashes removed from every user-facing string in favour of plainer
+      sentences (a Dor tone rule, not cosmetics: the game must not read as
+      machine output). While in there, `about.html` still claimed "no data
+      collection" — false since analytics went live and contradicting the
+      corrected privacy page beside it; both languages now use the privacy
+      page's own phrasing. Same lesson as the privacy page: **a data claim on
+      any published page moves with `src/analytics.ts`, not just privacy.html.**
 
 **Still open, in the order it matters:**
 
