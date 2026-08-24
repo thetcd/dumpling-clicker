@@ -44,18 +44,31 @@ export interface UpgradeDef {
   critChance?: number; // 0..1 chance a tap pays critMult times over
   critMult?: number; // how much a critical squish pays
   /**
-   * Survives a rebirth. TRUE for the flat tier only.
+   * The rebirth rank from which this upgrade is yours FOREVER. 0 = always.
    *
-   * Dor at rebirth 18 was re-buying the same five cheap upgrades at the top of
-   * every run before the ladder he was actually there for even started — grind,
-   * not progression. The share and crit tiers ARE the ladder, so they are
-   * re-climbed; keeping them would make that whole progression one-and-done.
+   * Replaced a boolean `keepOnRebirth` that was true for the five cheapest.
+   * That was arbitrary and it did not scale: Dor at rebirth 8 watched the shop
+   * offer him the 60k upgrade he had bought last run, which reads as a
+   * demotion. A hardcoded five also silently strips permanence from everything
+   * above any upgrade later inserted mid-ladder.
    *
-   * An explicit flag rather than a rule derived from the effect shape, because
-   * the share upgrades also carry a flat `multiplier` now (so they can never be
-   * a dud) and any such derivation would misclassify them.
+   * The rule behind the numbers: an upgrade becomes permanent at the rank where
+   * its price has stopped being a meaningful share of the run —
+   *
+   *     P(u) = ceil( log1.5( cost(u) / (0.5 * REBIRTH_BASE) ) )
+   *
+   * i.e. permanent once it costs under half a run's requirement. This is
+   * Antimatter Dimensions' Eternity Milestone principle: permanence removes
+   * what has become OVERHEAD, never what is still a decision. Below its rank an
+   * upgrade is genuinely the run's central purchase; above it, re-buying is a
+   * chore. Seven separate "yours forever" moments between rank 10 and 37, which
+   * is the reward drip a reset needs to feel like a prize rather than a loss.
+   *
+   * Safe against the exponential requirement by construction: the total
+   * keepable bonus is BOUNDED and one-time (x48 flat, x10.5 share, crit EV
+   * ~x1.4), while the requirement is not. Never make this multiply by rank.
    */
-  keepOnRebirth?: boolean;
+  permanentFromRank: number;
   unlockAtClicks: number;
 }
 
@@ -66,7 +79,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'כל מעיכה שווה כפול 2',
     cost: 100,
     multiplier: 2,
-    keepOnRebirth: true,
+    permanentFromRank: 0,
     unlockAtClicks: 10,
   },
   {
@@ -75,7 +88,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'הבצק רך יותר ככה. כפול 2.',
     cost: 400,
     multiplier: 2,
-    keepOnRebirth: true,
+    permanentFromRank: 0,
     unlockAtClicks: 20,
   },
   {
@@ -84,7 +97,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'הסקווישי נהנה מזה. כפול 2.',
     cost: 1_000,
     multiplier: 2,
-    keepOnRebirth: true,
+    permanentFromRank: 0,
     unlockAtClicks: 25,
   },
   {
@@ -93,7 +106,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'למה למעוך עם אחד? כפול 2.',
     cost: 4_000,
     multiplier: 2,
-    keepOnRebirth: true,
+    permanentFromRank: 0,
     unlockAtClicks: 40,
   },
   {
@@ -102,7 +115,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'עברה במשפחה שלוש דורות. כפול 3.',
     cost: 15_000,
     multiplier: 3,
-    keepOnRebirth: true,
+    permanentFromRank: 0,
     unlockAtClicks: 60,
   },
   {
@@ -112,6 +125,7 @@ export const UPGRADES: UpgradeDef[] = [
     cost: 60_000,
     multiplier: 1.5, // floor: never a dud with no production owned
     shareMultiplier: 1.5,
+    permanentFromRank: 10,
     unlockAtClicks: 110,
   },
   {
@@ -121,6 +135,7 @@ export const UPGRADES: UpgradeDef[] = [
     cost: 200_000,
     multiplier: 2, // floor: never a dud with no production owned
     shareMultiplier: 2,
+    permanentFromRank: 13,
     unlockAtClicks: 120,
   },
   {
@@ -130,6 +145,7 @@ export const UPGRADES: UpgradeDef[] = [
     cost: 800_000,
     multiplier: 1.5, // floor: never a dud with no production owned
     shareMultiplier: 1.4,
+    permanentFromRank: 16,
     unlockAtClicks: 175,
   },
   {
@@ -139,6 +155,7 @@ export const UPGRADES: UpgradeDef[] = [
     cost: 5_000_000,
     multiplier: 2, // floor: never a dud with no production owned
     shareMultiplier: 2.5,
+    permanentFromRank: 20,
     unlockAtClicks: 250,
   },
   {
@@ -147,6 +164,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'מדי פעם יוצאת מעיכה מושלמת — פי 7!',
     cost: 40_000_000,
     critChance: 0.05,
+    permanentFromRank: 26,
     unlockAtClicks: 260,
   },
   {
@@ -155,6 +173,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'המזל מגיע כפול. הסיכוי למעיכה מושלמת — 10%.',
     cost: 400_000_000,
     critChance: 0.1,
+    permanentFromRank: 31,
     unlockAtClicks: 280,
   },
   {
@@ -163,6 +182,7 @@ export const UPGRADES: UpgradeDef[] = [
     descHe: 'כשזה קורה, זה קורה בגדול. מעיכה מושלמת — פי 12!',
     cost: 4_000_000_000,
     critMult: 12,
+    permanentFromRank: 37,
     unlockAtClicks: 300,
   },
 ];

@@ -189,7 +189,12 @@ for (let n = 0; n < balance.REBIRTH_MAX; n++) {
   // ...and the flat click upgrades are permanent, so the run does NOT start by
   // re-buying them. Omitting this makes every measured run too long and models
   // a grind the game no longer asks for.
-  next.upgrades = state.upgrades.filter((id) => upgrades.UPGRADE_BY_ID[id]?.keepOnRebirth);
+  // Mirrors keptUpgrades(): each upgrade names the rank from which it is
+  // permanent, measured against the rank being rebirthed INTO. Forgetting this
+  // models a game nobody plays and every number printed below is wrong.
+  next.upgrades = state.upgrades.filter(
+    (id) => next.prestige >= (upgrades.UPGRADE_BY_ID[id]?.permanentFromRank ?? Infinity),
+  );
   state = next;
 }
 

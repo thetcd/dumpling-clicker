@@ -56,6 +56,13 @@ export const STR = {
   // items in each rebirth are not consistent"). Fed by rebirthKeepSummary, so
   // it always matches what the reset actually does.
   rebirthKeepTitle: 'מה נשאר לכם:',
+  // On a chip that is not permanent yet: turns re-buying it from a demotion
+  // into a visible countdown. One line, one number — the same grammar a Roblox
+  // rebirth shop uses, which these players already read.
+  upgradeKeepFrom: (rank: number) => `נשאר לתמיד מדרגה ${rank}`,
+  upgradeKeepForever: 'נשאר לכם לתמיד ✨',
+  rebirthNewPermanent: (n: number) =>
+    n === 1 ? 'שדרוג מעיכה אחד נשאר לכם לתמיד מעכשיו! ✨' : `${n} שדרוגי מעיכה נשארים לכם לתמיד מעכשיו! ✨`,
   // Hebrew takes no numeral for one — "ב־1 מקומות" is wrong the way
   // "in 1 places" is wrong, and this is the line that explains the game's own
   // rules, so it cannot read as machine output.

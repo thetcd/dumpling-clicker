@@ -105,11 +105,23 @@ export function keptProducers(producers: Record<string, number>): Record<string,
 }
 
 /**
- * Which click upgrades survive: the flat tier only. The share and crit tiers
- * are the ladder a run exists to climb. See `UpgradeDef.keepOnRebirth`.
+ * Which click upgrades survive, given the rank the player is rebirthing INTO.
+ *
+ * Each upgrade names its own permanence rank, so what you keep grows the
+ * further you go — seven times between rank 10 and 37. See
+ * `UpgradeDef.permanentFromRank` for the rule and why it is a rank per upgrade
+ * rather than a flag.
+ *
+ * Only what was actually BOUGHT can be kept: permanence is earned, and
+ * auto-granting an upgrade at its threshold would both skip content and break
+ * the "I earned this" framing the reward depends on.
  */
-export function keptUpgrades(upgrades: string[]): string[] {
-  return upgrades.filter((id) => UPGRADE_BY_ID[id]?.keepOnRebirth);
+export function keptUpgrades(upgrades: string[], prestige: number): string[] {
+  const rank = rankOf(prestige);
+  return upgrades.filter((id) => {
+    const def = UPGRADE_BY_ID[id];
+    return def !== undefined && rank >= def.permanentFromRank;
+  });
 }
 
 /**
@@ -128,6 +140,23 @@ export function rebirthKeepSummary(state: GameState): {
   return {
     units: counts.reduce((a, b) => a + b, 0),
     tiers: counts.length,
-    upgrades: keptUpgrades(state.upgrades).length,
+    // the rank being rebirthed INTO, matching actions.rebirth()
+    upgrades: keptUpgrades(state.upgrades, rankOf(state.prestige) + 1).length,
   };
+}
+
+
+/**
+ * Owned upgrades whose permanence rank is exactly `prestige` — what the rebirth
+ * celebration announces as newly yours forever.
+ *
+ * Deliberately the same shape as `unlocks.partsUnlockedAt`, so the modal that
+ * already announces new designer parts gains a second line rather than a second
+ * UI surface. Turning the demotion moment into a prize is most of why a scaling
+ * keep rule feels different from a hardcoded one.
+ */
+export function upgradesPermanentAt(upgrades: string[], prestige: number): string[] {
+  const rank = rankOf(prestige);
+  if (rank < 1) return [];
+  return upgrades.filter((id) => UPGRADE_BY_ID[id]?.permanentFromRank === rank);
 }

@@ -186,7 +186,8 @@ export function initShop(
         <span class="u-name">${def.nameHe}</span>
         <span class="u-desc">${def.descHe}</span>
         <span class="u-gain" data-upgrade-gain="${def.id}"></span>
-        <span class="u-cost">${STR.currency} ${formatNumber(def.cost)}</span>`;
+        <span class="u-cost">${STR.currency} ${formatNumber(def.cost)}</span>
+        <span class="u-keep" data-upgrade-keep="${def.id}"></span>`;
       chip.addEventListener('click', () => {
         if (buyUpgrade(getState(), def.id)) {
           onPurchase('upgrade', def.id);
@@ -225,6 +226,16 @@ export function initShop(
     for (const el of upgradeHost.querySelectorAll<HTMLElement>('[data-upgrade-gain]')) {
       const def = UPGRADES.find((u) => u.id === el.dataset.upgradeGain);
       if (def) el.textContent = upgradeGainLabel(def, getState());
+    }
+    // Permanence countdown. Why it is on the chip and not in a menu: this is
+    // the line that stops a re-bought upgrade reading as a demotion.
+    for (const el of upgradeHost.querySelectorAll<HTMLElement>('[data-upgrade-keep]')) {
+      const def = UPGRADES.find((u) => u.id === el.dataset.upgradeKeep);
+      if (!def) continue;
+      const rank = getState().prestige;
+      el.textContent =
+        rank >= def.permanentFromRank ? STR.upgradeKeepForever : STR.upgradeKeepFrom(def.permanentFromRank);
+      el.classList.toggle('is-forever', rank >= def.permanentFromRank);
     }
     const teaser = upgradeHost.querySelector<HTMLElement>('.teaser [data-teaser]');
     const teaserChip = upgradeHost.querySelector<HTMLElement>('.teaser');

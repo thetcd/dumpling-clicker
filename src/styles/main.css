@@ -1074,3 +1074,15 @@ button {
   background: linear-gradient(180deg, var(--accent), var(--accent-deep));
   text-decoration: none;
 }
+
+/* Permanence countdown on an upgrade chip: "yours forever from rank 13".
+   Quiet until it is earned, then it is the reward line. */
+.u-keep {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.62;
+}
+.u-keep.is-forever {
+  opacity: 1;
+  font-weight: 600;
+}

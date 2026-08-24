@@ -13,7 +13,16 @@ import { FRENZY_MULTIPLIER } from './game/config/balance';
 import { clearStorage, loadFromStorage, saveToStorage } from './game/save';
 import { createInitialState, type GameState } from './game/state';
 import { STR } from './i18n/strings.he';
-import { EVENTS, initAnalytics, launchMode, rankMilestone, track } from './analytics';
+import {
+  EVENTS,
+  createSessionTimer,
+  initAnalytics,
+  installAgeBucket,
+  isFirstOpenToday,
+  launchMode,
+  rankMilestone,
+  track,
+} from './analytics';
 import {
   playFanfare,
   playAppear,
@@ -38,6 +47,7 @@ import { initScene } from './ui/scene';
 import { initRebirth } from './ui/rebirth';
 import { canRebirth, rebirthKeepSummary, rebirthMultiplier } from './game/rebirth';
 import { partsUnlockedAt } from './game/unlocks';
+import { upgradesPermanentAt } from './game/rebirth';
 import { rewardFor } from './game/rewards';
 import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
@@ -56,8 +66,34 @@ setMuted(!state.settings.sound);
 // Read src/analytics.ts before adding anything to it — what it may collect is
 // a legal boundary, not a style preference.
 initAnalytics();
-track(EVENTS.launch, { mode: launchMode() });
+const mode = launchMode();
+track(EVENTS.launch, { mode });
 if (!saved) track(EVENTS.firstLaunch);
+// RETENTION. Once per calendar day, carrying the install's age bucket — that
+// pair is the whole D1/D7/D30 measurement. Both inputs are gameplay state the
+// save already holds, so nothing extra is written to the device.
+//
+// `mode` is the second property rather than anything richer, and deliberately:
+// iOS Safari evicts localStorage after ~7 days of not visiting, so on the web
+// the save itself dies before a returning player does and long-horizon
+// retention is structurally undercounted. Splitting installed-app from
+// browser-tab is the only way to read the numbers honestly.
+if (saved && isFirstOpenToday(saved.savedAt, now)) {
+  track(EVENTS.dailyOpen, { age: installAgeBucket(saved.stats.createdAt, now), mode });
+}
+
+// SESSION LENGTH, in active minutes.
+const session = createSessionTimer();
+const endSession = () => session.end((active) => track(EVENTS.sessionEnd, { active, mode }));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    session.pause();
+    endSession();
+  } else {
+    session.resume();
+  }
+});
+window.addEventListener('pagehide', endSession);
 
 // Browsers refuse to start audio outside a user gesture, so the context and the
 // music loop both come up on the player's first tap — whatever that tap was.
@@ -76,6 +112,9 @@ initBackdrop(document.body);
 initPopups();
 const hud = initHud(document.getElementById('hud')!);
 const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {
+  // time-to-core-gameplay: the earliest drop-off point there is. Read off the
+  // lifetime click count BEFORE click() increments it, so it fires exactly once.
+  if (state.stats.totalClicks === 0) track(EVENTS.firstSquish);
   ensureAudio();
   playSquish();
   navigator.vibrate?.(8); // subtle haptic tick (Android; iOS ignores it)
@@ -154,6 +193,10 @@ const rebirthBar = initRebirth(
           label: STR.rebirthYes,
           primary: true,
           onClick: () => {
+            // captured BEFORE the reset: the fresh state has already dropped
+            // every upgrade that did not survive, so the celebration cannot
+            // tell what just became permanent from it
+            const ownedBefore = [...state.upgrades];
             state = rebirth(state, at);
             ensureAudio();
             playRebirth();
@@ -177,6 +220,9 @@ const rebirthBar = initRebirth(
             // prestige-gated, so new parts ARE the payoff for rebirthing —
             // nothing told the player it had happened.
             const opened = partsUnlockedAt(state.prestige);
+            // upgrades that just became permanent — read from the run that
+            // ENDED, since the fresh state has already dropped the rest
+            const nowPermanent = upgradesPermanentAt(ownedBefore, state.prestige);
             showModal({
               title: STR.rebirthCelebrateTitle(state.prestige),
               celebration: true,
@@ -185,7 +231,8 @@ const rebirthBar = initRebirth(
               bodyHTML: `<p>${STR.rebirthCelebrateBody(
                 rebirthMultiplier(state.prestige).toFixed(2),
               )}</p>
-                <p>${opened.length ? STR.rebirthNewParts(opened.length) : STR.rebirthNoParts}</p>`,
+                <p>${opened.length ? STR.rebirthNewParts(opened.length) : STR.rebirthNoParts}</p>
+                ${nowPermanent.length ? `<p>${STR.rebirthNewPermanent(nowPermanent.length)}</p>` : ''}`,
               buttons: [
                 ...(opened.length
                   ? [{ label: STR.rebirthDesignNow, primary: true, onClick: editSquishy }]
@@ -208,6 +255,9 @@ const shop = initShop(document.getElementById('shop')!, () => state, (kind, id) 
   // the same run without the celebration, so the first of each still lands.
   ensureAudio();
   if (kind === 'producer') {
+    // the first real core-loop decision — "aha, things earn on their own"
+    const ownedTotal = Object.values(state.producers).reduce((a, b) => a + b, 0);
+    if (ownedTotal === 1) track(EVENTS.firstBuy);
     const tierIndex = PRODUCERS.findIndex((p) => p.id === id);
     const first = (state.producers[id] ?? 0) <= 1;
     playPurchase(tierIndex, first);

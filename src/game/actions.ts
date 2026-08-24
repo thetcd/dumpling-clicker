@@ -124,6 +124,9 @@ export function rebirth(state: GameState, now: number): GameState {
   // The keep rule itself lives in rebirth.ts, because the confirm modal states
   // it to the player before they commit and the two must never disagree.
   fresh.producers = keptProducers(state.producers);
-  fresh.upgrades = keptUpgrades(state.upgrades);
+  // Each upgrade names the rank from which it is permanent, so what survives
+  // grows as the player goes deeper. Measured against the rank being rebirthed
+  // INTO — crossing the threshold is this rebirth's reward, not the next one's.
+  fresh.upgrades = keptUpgrades(state.upgrades, fresh.prestige);
   return fresh;
 }

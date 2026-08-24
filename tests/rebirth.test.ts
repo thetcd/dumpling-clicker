@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { STR } from '../src/i18n/strings.he';
-import { REBIRTH_MAX } from '../src/game/config/balance';
 import { isFrenzyActive } from '../src/game/golden';
 import { UPGRADES } from '../src/game/config/upgrades';
 import { roundToDisplay } from '../src/game/quantize';
@@ -11,14 +10,15 @@ import {
   rebirthProgress,
   rebirthKeepSummary,
   rebirthRequirement,
+  upgradesPermanentAt,
 } from '../src/game/rebirth';
 import { rebirth } from '../src/game/actions';
 import { clickValue, dpsOf } from '../src/game/economy';
 import { createInitialState } from '../src/game/state';
 import {
   REBIRTH_BASE,
-
   REBIRTH_GROWTH,
+  REBIRTH_MAX,
 } from '../src/game/config/balance';
 
 const at = (prestige: number, runEarned: number) => {
@@ -157,29 +157,76 @@ describe('the rebirth action', () => {
     expect(after.producers.factory).toBe(10);
   });
 
-  test('the flat click upgrades are kept forever', () => {
-    // Dor at rebirth 18 was re-buying the same five cheap upgrades every run
-    // before the ladder even started, which is grind, not progression. The flat
-    // tier is now permanent; `keepOnRebirth` says so in the data.
+  /**
+   * PER-UPGRADE PERMANENCE. Each click upgrade names the rank from which it is
+   * yours forever, instead of a hardcoded "the five cheapest are permanent".
+   *
+   * The rule: an upgrade goes permanent at the rank where its price has stopped
+   * being a meaningful share of the run. That is Antimatter Dimensions' Eternity
+   * Milestone mechanism — permanence removes what has become overhead, never
+   * what is still a decision — wearing the clothes of a Roblox rebirth shop,
+   * which is the grammar these players already read.
+   */
+  test('the flat tier is permanent from the very start', () => {
     const s = at(0, REBIRTH_BASE);
     s.upgrades = ['fast-fingers', 'warm-hands', 'silk-gloves', 'two-thumbs', 'secret-technique'];
     expect(rebirth(s, 0).upgrades).toEqual(s.upgrades);
   });
 
-  test('the share and crit upgrades are re-climbed every run', () => {
-    // these are the ladder the run is FOR — keeping them makes it one-and-done
-    const s = at(0, REBIRTH_BASE);
-    s.upgrades = ['fast-fingers', 'team-spirit', 'quantum-squish', 'lucky-hands'];
+  test('a share upgrade is re-bought below its rank and kept from it onward', () => {
+    // team-spirit is permanent from rank 10, so rebirthing INTO 10 keeps it
+    const below = at(7, REBIRTH_BASE * 999);
+    below.upgrades = ['fast-fingers', 'team-spirit'];
+    expect(rebirth(below, 0).upgrades).toEqual(['fast-fingers']);
+
+    const at10 = at(9, REBIRTH_BASE * 999);
+    at10.upgrades = ['fast-fingers', 'team-spirit'];
+    expect(rebirth(at10, 0).upgrades).toEqual(['fast-fingers', 'team-spirit']);
+  });
+
+  test('permanence is earned, never granted — an unbought upgrade stays unbought', () => {
+    // auto-granting at the threshold would skip content and break "I earned it"
+    const s = at(40, REBIRTH_BASE * 999);
+    s.upgrades = ['fast-fingers'];
     expect(rebirth(s, 0).upgrades).toEqual(['fast-fingers']);
   });
 
-  test('every upgrade is either kept or re-climbed, never unclassified', () => {
-    // a new upgrade added without deciding which side it is on would silently
-    // land in the re-climbed pile
+  test('by the last permanence rank every upgrade owned is permanent', () => {
+    const s = at(40, REBIRTH_BASE * 999);
+    s.upgrades = UPGRADES.map((u) => u.id);
+    expect(rebirth(s, 0).upgrades).toEqual(s.upgrades);
+  });
+
+  test('every upgrade names a permanence rank, and the ladder only rises with cost', () => {
+    // a rank per upgrade rather than a boolean, so inserting an upgrade
+    // mid-ladder can never silently strip permanence from the ones above it
+    const byCost = [...UPGRADES].sort((a, b) => a.cost - b.cost);
+    let previous = -1;
+    for (const def of byCost) {
+      expect(typeof def.permanentFromRank, `${def.id}`).toBe('number');
+      expect(def.permanentFromRank, `${def.id} regresses`).toBeGreaterThanOrEqual(previous);
+      previous = def.permanentFromRank;
+    }
+  });
+
+  test('nothing becomes permanent after the cap, or it never becomes permanent', () => {
     for (const def of UPGRADES) {
-      const permanent = def.keepOnRebirth === true;
-      const laddered = Boolean(def.shareMultiplier || def.critChance || def.critMult);
-      expect(permanent).toBe(!laddered);
+      expect(def.permanentFromRank, `${def.id}`).toBeLessThanOrEqual(REBIRTH_MAX);
+    }
+  });
+
+  test('the table agrees with the curve that generated it', () => {
+    // P(u) = ceil(log1.5(cost / (k * REBIRTH_BASE))) with k = 0.5 — permanent
+    // once the price is under half a run's requirement. The table is the
+    // content and the formula is its rationale, so they may differ by the one
+    // rank a hand review is allowed to move; more than that means the table
+    // drifted away from any stated reason.
+    for (const def of UPGRADES) {
+      if (def.permanentFromRank === 0) continue;
+      const generated = Math.ceil(
+        Math.log(def.cost / (0.5 * REBIRTH_BASE)) / Math.log(REBIRTH_GROWTH),
+      );
+      expect(Math.abs(def.permanentFromRank - generated), `${def.id}`).toBeLessThanOrEqual(1);
     }
   });
 
@@ -376,5 +423,39 @@ describe('the rebirth cap', () => {
   test('the last legitimate rebirth lands exactly on the cap', () => {
     const s = at(REBIRTH_MAX - 1, Number.MAX_SAFE_INTEGER);
     expect(rebirth(s, 0).prestige).toBe(REBIRTH_MAX);
+  });
+});
+
+describe('upgradesPermanentAt', () => {
+  test('names only the upgrades whose rank is exactly this one', () => {
+    // team-spirit is permanent from 10, grandma-hands from 13
+    expect(upgradesPermanentAt(['team-spirit', 'grandma-hands'], 10)).toEqual(['team-spirit']);
+    expect(upgradesPermanentAt(['team-spirit', 'grandma-hands'], 13)).toEqual(['grandma-hands']);
+  });
+
+  test('says nothing on a rank that grants nothing', () => {
+    expect(upgradesPermanentAt(['team-spirit', 'grandma-hands'], 11)).toEqual([]);
+  });
+
+  test('an upgrade never bought is never announced', () => {
+    expect(upgradesPermanentAt([], 10)).toEqual([]);
+  });
+
+  test('the always-permanent flat tier is never announced as news', () => {
+    expect(upgradesPermanentAt(['fast-fingers'], 0)).toEqual([]);
+    expect(upgradesPermanentAt(['fast-fingers'], 10)).toEqual([]);
+  });
+
+  test('every non-flat upgrade gets exactly one announcement across a playthrough', () => {
+    const owned = UPGRADES.map((u) => u.id);
+    const announced = new Set<string>();
+    for (let rank = 1; rank <= REBIRTH_MAX; rank++) {
+      for (const id of upgradesPermanentAt(owned, rank)) {
+        expect(announced.has(id), `${id} announced twice`).toBe(false);
+        announced.add(id);
+      }
+    }
+    const expected = UPGRADES.filter((u) => u.permanentFromRank > 0).map((u) => u.id);
+    expect([...announced].sort()).toEqual(expected.sort());
   });
 });
