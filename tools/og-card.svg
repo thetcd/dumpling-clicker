@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Source for public/og.png — the link-preview card. Render with:
+       qlmanage -t -s 1200 -o <dir> tools/og-card.svg
+       Palette is the backdrop's own sky ramp (the bd-sky tokens), so the
+       card and the game's first paint are the same colours. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe4f7"/>
+      <stop offset="0.55" stop-color="#d9edf8"/>
+      <stop offset="1" stop-color="#fcdcc4"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.16" cy="0.22" r="0.42">
+      <stop offset="0" stop-color="#ffecaa" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffecaa" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#5c4a80" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#sky)"/>
+  <rect width="1200" height="630" fill="url(#sun)"/>
+
+  <!-- hills, the backdrop's shapes at card scale -->
+  <path d="M0 470 Q 150 396 330 452 T 700 470 L 700 630 L 0 630 Z" fill="#a8dcc0" opacity="0.75"/>
+  <path d="M520 500 Q 760 414 980 486 T 1200 470 L 1200 630 L 520 630 Z" fill="#8fd0b4" opacity="0.7"/>
+
+  <!-- the hero: the player's squishy, in its steamer -->
+  <g filter="url(#lift)">
+<svg viewBox="0 0 512 512" x="86" y="94" width="420" height="420" overflow="visible">
+  <defs>
+    <linearGradient id="iconSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe4f7"/>
+      <stop offset="0.62" stop-color="#f3e6dc"/>
+      <stop offset="1" stop-color="#fcdcc4"/>
+    </linearGradient>
+  </defs>
+  
+  <ellipse cx="256" cy="404" rx="190" ry="44" fill="#9a7a4c"/>
+  <ellipse cx="256" cy="396" rx="176" ry="38" fill="#fffaf0"/>
+  <g transform="translate(56 24) scale(2)">
+    <path d="M100 34 C 138 34 166 66 169 108 C 172 148 142 170 100 170 C 58 170 28 148 31 108 C 34 66 62 34 100 34 Z"
+          fill="#f5e6c8" stroke="rgba(94,62,34,0.55)" stroke-width="3"/>
+    <path d="M100 34 C 97 44 95 52 94 60" fill="none" stroke="rgba(94,62,34,0.42)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M100 34 C 103 44 105 52 106 60" fill="none" stroke="rgba(94,62,34,0.42)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M88 37 C 84 46 81 53 79 62" fill="none" stroke="rgba(94,62,34,0.42)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M112 37 C 116 46 119 53 121 62" fill="none" stroke="rgba(94,62,34,0.42)" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="100" cy="32" rx="10" ry="7" fill="#f5e6c8" stroke="rgba(94,62,34,0.55)" stroke-width="2.5"/>
+    <ellipse cx="72" cy="82" rx="22" ry="14" fill="rgba(255,255,255,0.5)" transform="rotate(-20 72 82)"/>
+    <ellipse cx="62" cy="122" rx="11" ry="7" fill="rgba(240,120,135,0.5)"/>
+    <ellipse cx="138" cy="122" rx="11" ry="7" fill="rgba(240,120,135,0.5)"/>
+    <g fill="#3d2f2a">
+      <circle cx="76" cy="110" r="7"/><circle cx="124" cy="110" r="7"/>
+      <circle cx="78.5" cy="107.5" r="2.2" fill="#fff"/><circle cx="126.5" cy="107.5" r="2.2" fill="#fff"/>
+    </g>
+    <path d="M84 130 Q 100 144 116 130" fill="none" stroke="#3d2f2a" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>
+  </g>
+
+  <g font-family="Heebo, 'Arial Hebrew', -apple-system, BlinkMacSystemFont, sans-serif" fill="#3d2f2a" text-anchor="start" direction="rtl">
+    <text x="1120" y="252" font-size="96" font-weight="800">דאמפלינג קליקר</text>
+    <text x="1120" y="336" font-size="44" font-weight="600" fill="#9a5410">מעצבים סקווישי. מועכים אותו.</text>
+    <text x="1120" y="398" font-size="44" font-weight="600" fill="#9a5410">בונים אימפריה של שקלים.</text>
+    <text x="1120" y="492" font-size="34" font-weight="700" fill="#6b5a52" direction="ltr" text-anchor="end">dumplingclicker.com</text>
+  </g>
+</svg>

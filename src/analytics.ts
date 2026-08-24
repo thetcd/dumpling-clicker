@@ -24,11 +24,19 @@
 // hash of the incoming request for 24h and stores no IP.
 import { inject, track as vercelTrack } from '@vercel/analytics';
 
-// Custom events are a Pro-plan feature. On Hobby the account gets page views
-// only (50k events/month, one-month reporting window), so firing events there
-// spends requests on data nobody can read. Every call site is written and
-// tested now; the day the Vercel team goes Pro this constant is the only edit.
-export const EVENTS_ENABLED = false;
+// ON since 2026-08-24, ahead of the promoted launch: the launch week is the
+// most informative week the game will ever have and there is no raw data to
+// backfill from, so measuring it late means not measuring it.
+//
+// Custom events are a Pro-plan feature. On Hobby the SDK still sends them and
+// Vercel simply does not record them — harmless, but invisible, so the plan
+// upgrade is what actually turns this on. Page views work on every plan.
+//
+// TIED TO public/privacy.html. The page enumerates this exact event surface and
+// both bucket ladders. Adding an event or moving a boundary is a change to a
+// published promise on a site played by children: edit both in the same commit,
+// or don't edit either.
+export const EVENTS_ENABLED = true;
 
 /** The complete event surface. Nothing outside this may ever be sent. */
 export const EVENTS = {

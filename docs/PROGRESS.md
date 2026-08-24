@@ -1,6 +1,6 @@
 # Where the project stands, and what still needs connecting
 
-Last updated **2026-08-23**. This is the handover document: everything you need
+Last updated **2026-08-24**. This is the handover document: everything you need
 to pick the project up on a different machine, without the chat history that
 produced it.
 
@@ -16,6 +16,9 @@ Companion docs, all in the repo — a clone is everything you need:
   errors (noted in DECISIONS.md).
 - **`DESIGN-NOTES.md`** — real squishy-toy trait research and the v2 backlog.
 - **`art-prompts-gemini.txt`** — the prompt playbook for generating real art.
+
+**Going public?** §10 is the launch-readiness list — what a promoted link needs
+that merely being online does not cover.
 
 ---
 
@@ -40,7 +43,7 @@ Currency is **shekels (₪)**. The single meta-loop is **rebirth**
 | Old URL | https://thetcd.github.io/dumpling-clicker/ — still deploys, but serves a "we moved" screen, not the game. |
 | DNS | Cloudflare Registrar; records **DNS-only / grey cloud** (see below). |
 | Identity | `thetcd` is the personal GitHub account, **not** `DorFordefi`. `gh auth switch -u thetcd`. |
-| Tests | 448, in 24 files |
+| Tests | 479, in 24 files |
 
 ```bash
 cd dumpling-clicker
@@ -388,22 +391,36 @@ self-hosting alike. `sanitize()` enforces the allowlist in code;
 `tests/analytics.test.ts` pins it.
 
 What it answers: how many players, roughly where, installed-app vs browser
-share, and how far into the game people get (first launch → designer finished →
-first rebirth → ranks 5/10/20/30/40/50 → boss). What it deliberately cannot
-answer: retention cohorts, "same player as last week", or anything per-person.
-There are no accounts, so there are no sign-ins to count.
+share, how far into the game people get (first launch → designer finished →
+first squish → first buy → first rebirth → ranks 5/10/20/30/40/50 → boss), a
+real **per-day retention cohort**, and a median session length in **active**
+minutes. What it deliberately cannot answer: "same player as last week", or
+anything per-person, or any exact rank or duration. There are no accounts, so
+there are no sign-ins to count.
+
+**Retention turned out to be reachable** without breaking the boundary, which
+this section previously said it was not: the device computes its own install age
+and reports a frozen coarse bucket, so no identifier crosses and no two events
+can be joined. `docs/DECISIONS.md` carries the reversal and its reasoning,
+including why *raw* session length is still forbidden while a five-value band is
+not.
 
 **Two things still to do, both off-repo:**
 
 - [x] **Enable Web Analytics in the Vercel dashboard.** Done 2026-08-23 at
       https://vercel.com/dcs-projects-15812ffd/dumpling-clicker/analytics.
       Nothing backfills — the script only fires on views after that click.
-- [ ] **Custom events are Pro-only.** Hobby gets page views, 50k events/month
-      and a **one-month reporting window**. The six game events are written,
-      tested and wired but `EVENTS_ENABLED` in `src/analytics.ts` is `false`;
-      flipping that constant is the entire upgrade path. Worth knowing that the
-      one-month window is shorter than the multi-week question §6's release
-      cadence actually needs answering.
+- [ ] **Upgrade the Vercel project to Pro — the last step, and it is Dor's.**
+      `EVENTS_ENABLED` went to `true` on 2026-08-24 (nothing backfills, and the
+      promoted launch week is unrepeatable), but **custom events are a Pro-plan
+      feature**: on Hobby the SDK sends all ten events and Vercel records none
+      of them. Page views work on every plan and are already flowing. Worth
+      knowing that Hobby's one-month reporting window is also shorter than the
+      multi-week question §6's release cadence asks, and that the Web Analytics
+      Plus add-on raises the per-event property ceiling from 2 to 8 and the
+      window to 24 months — the first property worth buying is a
+      completed-the-designer flag on `daily-open`, which splits retention by
+      whether the player ever got past the creator.
 
 **And one thing that must not be forgotten:** the Play **Data safety form** can
 no longer say "no data collected". `docs/GOOGLE-PLAY.md` Phase D now carries the
@@ -431,6 +448,66 @@ exact answers.
 dumpling empire.~~ **Fixed** — the live manifest reads
 `מעצבים סקווישי, מועכים אותו, ובונים אימפריה של שקלים`.
 
-One left, cosmetic: `index.html`'s `<meta name="description">` still says
-`אימפריית כופתאות`. It is not the install manifest, so it only shows in search
-and link previews.
+~~One left, cosmetic: `index.html`'s `<meta name="description">` still says
+`אימפריית כופתאות`.~~ **Fixed 2026-08-24** — it now matches the manifest, and
+it had stopped being cosmetic: it is the text the new link-preview card ships
+with.
+
+---
+
+## 10 · Launch readiness — what a promoted link needs
+
+Assessed 2026-08-24, when Dor asked what was missing to release on the web. The
+game has been *online* since 2026-08-20; this section is about the different,
+higher bar of **an audience arriving at once from Gal's channel**.
+
+Already release-grade: the custom domain, `git push` deploys, installable PWA
+with a real maskable icon, offline play, Hebrew RTL throughout, 479 tests gating
+every deploy, privacy + about pages, Web Share, and a 224KB bundle.
+
+**Done in this pass:**
+
+- [x] **Link-preview card.** `og:`/`twitter:` tags + `public/og.png`, rendered
+      from `tools/og-card.svg`. Without them every link Gal posts to WhatsApp,
+      Telegram or a YouTube description rendered as a bare string with no
+      picture — the cheapest conversion win available. Excluded from the service
+      worker precache (`globIgnores`): 200KB that only link scrapers fetch, and
+      they do not run a service worker.
+- [x] **Privacy page brought back in line with the code.** It claimed the game
+      did not measure "how long you played" while `session-end` existed in the
+      source. Both bucket ladders are now itemised in Hebrew and English.
+- [x] **Analytics collection enabled** ahead of the launch (see §7 D — the Pro
+      upgrade is the remaining half, and it is a dashboard action).
+
+**Still open, in the order it matters:**
+
+1. **Gal is effectively not in the game.** Tier 10 at ₪75B, ungated, measured at
+      ~16.3h of play — past the rank-50 cap. Kids arriving from *his* channel
+      will look for him first and never reach him, and the art is still a
+      placeholder 👑 with no written sign-off. §6.1 is the build half; the
+      sign-off is §8.
+2. **The last ~7 hours of the game hand out nothing** (§6.3). Every cosmetic is
+      spent by ~3.4h, the cap is at ~10.2h, and `dz-new` never fires again.
+3. **Tapping swallows the game from rank 20** — measured at 284% of total idle
+      income at 5 taps/sec, ~680% with three fingers. Not caused by the
+      permanence ranks; `CLICK_DPS_SHARE = 0.05` against a ×10.5 share ladder
+      was always ≥262% once all four share upgrades are owned. What changed is
+      that it moved from the end of a long run to *all of every run* past rank
+      20. Dor's call 2026-08-24: ship it, retune the share ladder next.
+4. **Saves die with no rescue path.** No export, no import, no cloud. iOS Safari
+      evicts localStorage after ~7 days away, and clearing site data wipes ten
+      hours of rebirths. A copy-paste backup code (serialize → base64 →
+      clipboard, and paste to restore) needs no backend and is the only thing
+      that lets a support answer exist at all.
+5. **Updates are silent and can reload a kid mid-frenzy.** `registerType:
+      'autoUpdate'` with no UI. A weekly cadence needs a "new version" toast
+      that waits for a tap, plus §6.4's what's-new screen — otherwise a release
+      is invisible and the reason to come back never lands.
+6. **Low-end Android has never been tested.** Gal's audience is not on a
+      MacBook, and the backdrop layers, ten simultaneous airdrops and the spring
+      all want a real cheap phone.
+7. ~~`QA-REPORT.md` at the repo root describes bugs fixed months ago.~~
+      **Done** — moved to `docs/QA-REPORT-2026-08-20.md` with a stale banner. It
+      is public and Dor's brother files issues from the repo; it still claimed
+      "reset is a no-op" and measured an offline-income mechanic that was
+      deleted on 2026-08-21.

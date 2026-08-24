@@ -107,11 +107,18 @@ describe('rankMilestone', () => {
 });
 
 describe('track', () => {
-  test('sends nothing at all while custom events are a Pro-only feature', () => {
-    // Hobby gets page views only, so an event here spends a request on data
-    // nobody can read. Flip EVENTS_ENABLED in src/analytics.ts on upgrade.
-    expect(EVENTS_ENABLED).toBe(false);
+  test('a legal event reaches the SDK', () => {
+    // Collection went live 2026-08-24 for the promoted launch. This assertion
+    // and public/privacy.html are the two places that know it is on: if the
+    // flag ever goes back to false, the page has to say so too.
+    expect(EVENTS_ENABLED).toBe(true);
     track(EVENTS.launch, { mode: 'browser' });
+    expect(vercelTrack).toHaveBeenCalledWith(EVENTS.launch, { mode: 'browser' });
+  });
+
+  test('an event the privacy page does not name is dropped', () => {
+    // the allowlist, not the call site, is what keeps the published promise
+    track('shekels-earned' as never, { rank: 10 });
     expect(vercelTrack).not.toHaveBeenCalled();
   });
 

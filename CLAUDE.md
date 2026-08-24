@@ -36,7 +36,7 @@ what `DECISIONS.md` exists for, and it is the part that stops the same idea
 being re-tried in six weeks.
 
 ```bash
-npm test        # 448 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
+npm test        # 479 tests. Run from THIS directory — a parent sweeps ~900 unrelated tests
 npm run dev     # the port drifts; read the printed URL
 npm run dev:phone  # LAN URL for real-phone testing
 npm run build   # tsc + vite + service worker
@@ -77,8 +77,9 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   hold: no cookie or device storage for measurement, **no identifier
   transmitted** (not a device ID, not an install ID, not one we hash
   ourselves), no per-player profile, aggregate counts only. `sanitize()` in
-  `src/analytics.ts` enforces it with an allowlist of six event names and two
-  property keys and drops everything else. **Never add a field, an event or an
+  `src/analytics.ts` enforces it with an allowlist of **ten event names and four
+  property keys** and drops everything else — the whole event, not just the
+  offending key. **Never add a field, an event or an
   install ID without reading the `analytics` skill and `docs/DECISIONS.md`
   § Analytics first** — and if
   you do change that file, the Play **Data safety form** must be re-checked
@@ -121,6 +122,19 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   serves from a sub-path so nothing may hardcode `/`; and a var that exists but
   is *blank* — one keystroke in a hosting dashboard — used to build
   `start_url: ""` and relative asset paths.
+- **Collection is LIVE (`EVENTS_ENABLED = true`, 2026-08-24) and the event
+  surface is a PUBLISHED PROMISE.** `public/privacy.html` enumerates, in Hebrew
+  and English, every event name and both bucket ladders. Adding an event,
+  adding a property or moving a bucket boundary is an edit to a promise made on
+  a site played by children: change both files in the same commit, or neither.
+  The bucket ladders are additionally **frozen** — no raw data is kept anywhere,
+  so a moved boundary silently severs the series it measures rather than
+  re-basing it.
+- **`index.html` hardcodes `https://dumplingclicker.com` in the `og:`/`twitter:`
+  tags, and that is the only place in the app allowed to.** Every link scraper
+  demands an absolute URL, so `base` cannot help. The retired Pages build ships
+  the same tags on purpose — a shared "we moved" link should still preview, and
+  should point at the real game.
 - **Any standalone static page needs two things**: relative links only (Pages
   serves from a sub-path) and an entry in `navigateFallbackDenylist` in
   `vite.config.ts` — otherwise the service worker's SPA fallback serves the

@@ -52,6 +52,10 @@ export default defineConfig({
       workbox: {
         // the whole game is the app shell — precache everything, run offline
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The link-preview card is 200KB that only link scrapers ever fetch,
+        // and they do not run a service worker. Precaching it would put it in
+        // every install for nobody.
+        globIgnores: ['og.png'],
         navigateFallback: `${base}index.html`,
         // The SPA fallback must not swallow the standalone static pages
         // (privacy/about — required by Play and AdSense) or /.well-known/.

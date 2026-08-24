@@ -383,18 +383,75 @@ the Play form. Every alternative loses on exactly that point. Their collector
 keeps a hash of the incoming request for 24h and retains no IP.
 
 **The enforcement lives in code, not in a comment.** `sanitize()` in
-`src/analytics.ts` holds an allowlist of six event names and two property keys,
-and drops anything else — the whole event, not just the offending key, because
-a half-sent event is how an unvetted field ships. `tests/analytics.test.ts`
-pins that boundary. Adding a seventh event means re-reading this section first.
+`src/analytics.ts` holds an allowlist of **ten event names and four property
+keys**, and drops anything else — the whole event, not just the offending key,
+because a half-sent event is how an unvetted field ships.
+`tests/analytics.test.ts` pins that boundary. Adding an eleventh event means
+re-reading this section first.
+
+### Retention, and the reversal of the session-length ban (2026-08-24)
+
+This section originally listed **"send session length / time-on-page"** under
+*never* — "the field most likely to read as behavioural measurement of a child
+to a reviewer" — and treated retention cohorts as unreachable without an install
+ID. Both were re-decided on 2026-08-24 after research into how the metric is
+actually measured, and the code now sends both. The reasoning, because reversing
+a documented *never* on a children's service needs one:
+
+**The device may compute a statistic about itself and report a coarse bucket.**
+That breaks none of the four properties — nothing is stored for measurement,
+no identifier crosses the boundary, and a bucket shared by thousands of players
+cannot join two events into one child's history. It is the same construction
+Apple's SKAdNetwork uses at industry scale, and both inputs already exist as
+**gameplay** state (`stats.createdAt`, `savedAt`), so nothing new is written to
+the device.
+
+- **`daily-open` carries a bucketed install age** (0/1/2/3/7/14/30 days), which
+  makes D1 = count(age=1 today) ÷ count(age=0 yesterday) — a real per-day
+  cohort, because `first-launch` supplies every day's denominator. This is the
+  single highest-decision-value number the game can produce, and the release
+  cadence in `PROGRESS.md` §6 is a bet that needs it.
+- **`session-end` carries bucketed ACTIVE minutes** (0/1/3/10/30), never
+  wall-clock. Wall-clock measures a parked tab, not a child: CrazyGames' ~30
+  minute browser average peaks at 4am. The exact figure is never sent, the bands
+  are frozen, and the ladder is log-scale because idle-game sessions are
+  heavy-tailed and a mean cannot be recovered from buckets anyway.
+
+**What made the old ban right and what changed:** the ban was aimed at *raw*
+time-on-page, which is per-session behavioural detail. A frozen five-value band
+is not that. What remains genuinely forbidden is unchanged — no install ID, no
+exact rank, no exact duration, no field that lets two events be joined.
+
+**The bands are disclosed.** `public/privacy.html` itemises both ladders in
+Hebrew and English. That coupling is now the rule: the event surface is a
+published promise, so code and page move in the same commit.
+
+### Collection turned on before the launch, not after (2026-08-24)
+
+`EVENTS_ENABLED` went to `true` ahead of Gal promoting the game. The argument is
+that **nothing backfills**: the promoted week is the most informative week the
+game will ever have — first-launch counts, designer completion, first tap, first
+buy, and the only clean D1 the project will ever get — and there is no raw data
+anywhere to reconstruct it from later. Enabling afterwards means measuring a
+different, quieter population and calling it the launch.
+
+Rejected: launch on page views only and enable if the volume justifies it. That
+trades a permanent, unrepeatable measurement for a saved subscription month.
+
+**Custom events remain a Pro-plan feature**, so the flag alone is not enough:
+on Hobby the SDK sends the events and Vercel does not record them. Harmless, but
+invisible — the plan upgrade is what actually turns this on, and it is a
+dashboard action. Note the Hobby **one-month reporting window** is also shorter
+than the multi-week question the cadence asks; the Web Analytics Plus add-on
+raises the property ceiling from 2 to 8 and the window from 12 to 24 months, and
+the first property worth buying is a completed-the-designer flag on
+`daily-open`, which would split retention by whether the player ever got past
+the creator.
 
 Two things worth knowing before reading the dashboard:
 
 - **Custom events are Pro-only.** Hobby gets page views, 50k events/month and a
-  **one-month reporting window**. So the six game events are written, tested and
-  wired, but `EVENTS_ENABLED` is `false` — one constant to flip on upgrade,
-  rather than firing requests at a plan that discards them. Note the one-month
-  window is shorter than the multi-week question the cadence needs answering.
+  **one-month reporting window**.
 - **"How many sign-ins" has no answer and should not get one.** There are no
   accounts. Daily uniques come free from Vercel's 24h server-side hash;
   retention cohorts and "is this the same kid as last week" do not, and the
