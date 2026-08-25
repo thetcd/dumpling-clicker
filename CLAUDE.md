@@ -13,6 +13,9 @@ else:
 - `docs/DOMAIN-AND-ADS.md` — the domain-move runbook.
 - `docs/GOOGLE-PLAY.md` — the Android/Play runbook (TWA via Bubblewrap; the
   domain move is a prerequisite).
+- `docs/FLUTTER-MIGRATION.md` — the approved plan to rebuild the game as
+  Flutter + Flame and retire the web version. **Planned, not started.** Read it
+  before starting any work in `app/`.
 
 ## Write it down, in the same commit — Dor's standing rule
 
