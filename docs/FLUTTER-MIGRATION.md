@@ -1,6 +1,18 @@
 # Dumpling Clicker → Flutter + Flame
 
-**Status:** planned, not started. Approved 2026-08-25.
+**Status:** IN PROGRESS. Approved 2026-08-25; Phase 0 + Phase 1 built the same
+day. **Three deviations, Dor's call (2026-08-25):** the Flutter project lives in
+its own sibling repo `~/ApiScripts/dumpling-clicker-flutter` (not `app/` here —
+its `PORTING.md` carries the conventions), and ads + richer screens are planned
+after parity. This repo stays the frozen TS oracle the port is tested against.
+
+Done so far (all verified): the 0a format fixture (482 rows, committed to the
+Flutter repo — regenerate with `node tools/format-fixture.mjs` here); the whole
+pure core + tests ported (243 passing); `tool/simulate.dart` diffs
+BYTE-IDENTICAL against `tools/simulate.mjs` at the shipped constants; a first
+runnable RTL shell with the DC1 restore path; Android identity pinned
+(`com.dumplingclicker.twa`, versionCode 2). Not started: Flame stage, real
+avatar/SVG rendering, audio, analytics endpoint, the migration-nag web release.
 
 > **Start here, before writing any code.** Read `CLAUDE.md` and
 > `docs/DECISIONS.md` (721 lines) first. Both encode *measured* decisions where
