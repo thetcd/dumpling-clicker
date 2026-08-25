@@ -108,6 +108,32 @@ Either way:
 
 ## Phase 4 — AdSense prerequisites
 
+> ### ⚠️ Play Console changes that ads REQUIRE — do these too
+>
+> Asked for explicitly on 2026-08-25. Shipping ads is not only a code change;
+> the Play listing declarations become **wrong the moment an ad renders**, and
+> a false declaration on a child-directed app is a takedown risk.
+>
+> - [ ] **App content → Ads: flip to "Yes, contains ads".** It is currently
+>       declared **"does not contain ads"**, which is accurate today.
+> - [ ] **Redo the whole Target audience and content flow.** Play forces this
+>       after the ads answer changes — it is 5 steps, not a single toggle.
+> - [ ] **Expect a "Contains ads" badge** on the store listing. It measurably
+>       costs installs, which is why the flag is not set pre-emptively.
+> - [ ] **Self-certify a Families-compliant ad SDK.** Target audience is
+>       children, so only self-certified SDKs are allowed and personalised
+>       ads are off by policy. AdMob qualifies with child-directed treatment.
+> - [ ] **Remove `בלי פרסומות` from the Hebrew store description.** It is in
+>       the listing copy today and becomes a false claim.
+> - [ ] **Re-check the Data safety form.** An ad SDK usually collects more
+>       than the current aggregate analytics do; the answers in
+>       `docs/GOOGLE-PLAY.md` Phase D would no longer be true.
+>
+> **And the architecture note:** Families-compliant ad SDKs are native, not
+> web. H5 Games Ads is a *web* product and may not satisfy Families inside the
+> app. Realistically ads ship with the **Capacitor migration**, together with
+> iOS and Play Billing — one move rather than three. See `docs/GOOGLE-PLAY.md`.
+
 The domain is necessary but nowhere near sufficient. In order:
 
 - [x] **A privacy policy page**, Hebrew and English. AdSense effectively
