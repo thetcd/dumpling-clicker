@@ -33,7 +33,12 @@ export function initSettings(
         <button class="btn setting-btn" id="set-share">📤 ${STR.share}</button>
         <button class="btn setting-btn" id="set-backup">💾 ${STR.backup}</button>
         <button class="btn setting-btn" id="set-restore">📥 ${STR.restore}</button>
-        <button class="btn setting-btn danger" id="set-reset">🗑️ ${STR.reset}</button>`,
+        <button class="btn setting-btn danger" id="set-reset">🗑️ ${STR.reset}</button>
+        <p class="setting-links">
+          <a href="privacy.html">${STR.privacyLink}</a>
+          <span aria-hidden="true">·</span>
+          <a href="about.html">${STR.aboutLink}</a>
+        </p>`,
       buttons: [{ label: STR.close, primary: true }],
     });
     document.getElementById('set-sound')!.addEventListener('change', (e) => {

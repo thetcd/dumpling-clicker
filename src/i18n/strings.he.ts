@@ -35,6 +35,12 @@ export const STR = {
   sound: 'צלילים',
   music: 'מוזיקת רקע',
   editSquishy: 'עיצוב הסקווישי מחדש',
+  // Play's Designed for Families rules expect the privacy policy to be
+  // reachable INSIDE the app, not only from the store listing. Both pages are
+  // same-origin, so a TWA opens them without leaving the app, and both are
+  // precached, so they work offline.
+  privacyLink: 'מדיניות פרטיות',
+  aboutLink: 'אודות',
   // The backup code is the only rescue path a save has — no accounts, no
   // server, and iOS Safari evicts localStorage after ~7 days away. "קוד" and
   // not "ייצוא/יבוא": codes are a thing these players already know from Roblox.

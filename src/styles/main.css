@@ -622,6 +622,19 @@ button {
   border-color: var(--danger);
 }
 
+/* Policy links. Deliberately quiet — required by Play's Families rules to be
+   reachable in-app, but never something a kid should tap instead of playing. */
+.setting-links {
+  margin: 14px 0 2px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.setting-links a {
+  color: inherit;
+}
+
 /* the save backup code — shown readonly (export) or pasted into (restore) */
 .backup-code {
   width: 100%;
