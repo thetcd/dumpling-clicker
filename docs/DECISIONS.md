@@ -681,6 +681,52 @@ persistent top-center toast (`src/ui/update.ts`) offering the refresh.
   reading the docs: v1 controlled, v2 built with a marker, reload → toast, 3s
   hold proves no self-reload, tap → marker present.
 
+## Pinch-zoom is blocked, and blocking it needed JavaScript
+
+Fixed 2026-08-25, reported by Dor's brother: "zoomed in with two fingers and
+the game became buggy."
+
+It does not degrade — it breaks outright. Every overlay in the app is
+`position: fixed; inset: 0`, and a fixed element anchors to the **layout**
+viewport. A pinch opens a smaller **visual** viewport inside that one, so
+`.modal-backdrop` keeps covering every pixel of the layout viewport, and keeps
+swallowing every pointer event, while the buttons that dismiss it sit outside
+what the player can see. `#app` is `100dvh` with `overscroll-behavior: none`
+and nothing scrollable behind it, so there is no way to pan to them. Taps on
+the squishy do nothing, because the backdrop is still in front of it. To a kid
+the game has simply frozen.
+
+- **The intent was already declared and was never enforced.**
+  `user-scalable=no` has been in the viewport meta since the start. Chrome has
+  ignored it since Chrome 48 and iOS Safari since iOS 10, both deliberately, for
+  accessibility. So this is not a new product decision — it is making an
+  existing one actually work.
+- **`touch-action: manipulation` was the trap.** It reads like "no browser
+  gestures" and it was on `#stage` and `.squish-hit` the whole time, but the
+  spec has it remove only the double-tap zoom. Pinch stays available. Both are
+  now `none`.
+- **`none` where nothing scrolls, `pan-y` where something does.** `#shop` is
+  the core purchase loop and `.designer` is the first screen anyone sees; a
+  blanket `touch-action: none` would lock both and be a worse bug than the one
+  being fixed. `body` keeps `manipulation` — it kills double-tap zoom while
+  leaving children free to opt back into panning.
+- **CSS alone is not enough, which is why `src/ui/gestures.ts` exists.** iOS
+  Safari does not honour `touch-action` for zoom the way Chrome does. The
+  module preventDefaults a `touchmove` carrying more than one touch, and
+  WebKit's `gesturestart`/`gesturechange`/`gestureend`. The `touchmove`
+  listener MUST be registered `{ passive: false }` — touchmove defaults to
+  passive on every mobile browser and a passive preventDefault() is ignored
+  silently, so the guard looks correct while doing nothing.
+- **It lives in `boot.ts`, before any overlay can exist** — not `main.ts`, so
+  the retired Pages "we moved" screen stays untouched.
+- **Rejected: leaving it and fixing the overlays instead.** Re-anchoring every
+  fixed overlay to `window.visualViewport` would mean a resize/scroll listener
+  per overlay and re-deriving positions on every pinch frame, to support a
+  gesture the game has no use for. Blocking the gesture is one rule and one
+  small module.
+- **Rejected: `touch-action: none` on `#app`.** It would cover everything in
+  one line and lock the shop's scroll with it.
+
 ## Things that were tried and rejected
 
 - **Growth 2.6 for the rebirth curve** — 341 hours by rebirth 25.

@@ -42,6 +42,7 @@ import { avatarSVG } from './ui/avatar';
 import { initBackdrop } from './ui/backdrop';
 import { openDesigner } from './ui/designer';
 import { initDumpling } from './ui/dumpling';
+import { initGestures } from './ui/gestures';
 import { initFindables } from './ui/findables';
 import { initScene } from './ui/scene';
 import { initRebirth } from './ui/rebirth';
@@ -119,6 +120,10 @@ function ensureAudio(): void {
 // Behind everything, including the producer crowd in scene.ts. Mounted on
 // <body> rather than #app so it is never affected by the app's flex layout.
 initBackdrop(document.body);
+// Before any overlay can exist. Every one of them is `position: fixed`, which
+// is what makes an accidental pinch-zoom leave an invisible, untappable modal
+// covering the game — see ui/gestures.ts.
+initGestures();
 initPopups();
 const hud = initHud(document.getElementById('hud')!);
 const dumpling = initDumpling(document.getElementById('stage')!, (x, y) => {

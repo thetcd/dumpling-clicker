@@ -18,7 +18,8 @@
   aspect-ratio: 340 / 360;
   width: auto;
   cursor: pointer;
-  touch-action: manipulation;
+  /* none, not manipulation — see #stage in main.css and src/ui/gestures.ts. */
+  touch-action: none;
 }
 
 .steamer {

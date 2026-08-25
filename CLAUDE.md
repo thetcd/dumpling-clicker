@@ -159,6 +159,21 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   Prompt mode has no `clientsClaim`, so the FIRST visit is uncontrolled —
   `navigator.serviceWorker.controller` is null until the next navigation, which
   matters to any browser drive that waits on it.
+- **`touch-action: manipulation` DOES NOT STOP PINCH-ZOOM**, and
+  `user-scalable=no` in `index.html` has never done anything — Chrome has
+  ignored it since Chrome 48 and iOS Safari since iOS 10, both on purpose.
+  `manipulation` only removes the double-tap zoom; the spec keeps pinch
+  available. This matters more than it sounds: every overlay is
+  `position: fixed; inset: 0`, which anchors to the LAYOUT viewport, so a pinch
+  opens a smaller VISUAL viewport inside it and `.modal-backdrop` goes on
+  covering every pixel — swallowing every pointer event — while its buttons sit
+  where the player cannot see them. `#app` is `100dvh` with nothing scrollable
+  behind it, so there is no way to pan to them either, and the game reads as
+  frozen. Reported by Dor's brother, 2026-08-25. The fix is `touch-action: none`
+  plus `src/ui/gestures.ts` (a non-passive `touchmove` guard and WebKit's
+  `gesture*` events, which is the only thing that works on iOS). Anything that
+  SCROLLS gets `pan-y`, never `none` — locking `#shop` or `.designer` is a worse
+  bug than the one being fixed. `tests/gestures.test.ts` pins all of it.
 - **`[hidden]{display:none!important}` must stay in `main.css`** —
   `.producer-row{display:flex}` overrides the UA hidden rule.
 - **The hero's HEIGHT drives its size; width follows from `aspect-ratio`.**
