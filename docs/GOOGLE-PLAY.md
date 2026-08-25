@@ -56,27 +56,83 @@ work, ~4–6 weeks calendar, dominated by Google's closed-testing rule (below).
 ## Phase B — Dor, off-repo
 
 - [x] Domain + Vercel move (`docs/DOMAIN-AND-ADS.md`). Done 2026-08-22.
-- [ ] Play developer account + start recruiting testers. **This is now the only
-      thing blocking the app** — Phase C can start immediately, but nothing
-      reaches a phone-installable track without the account, and the 14-day
-      12-tester clock is the long pole. Start it first.
+- [x] **Play developer account — verified 2026-08-25.** No longer a blocker.
+- [ ] **Recruit 15–16 testers. This is now the critical path.** Nothing else in
+      this document takes weeks; this does. The 14-day clock starts only once a
+      closed-testing release is *approved* AND 12 testers are opted in, and one
+      person dropping out at day 10 can reset it. Start it before packaging is
+      finished — the two run in parallel.
 
-## Phase C — package the TWA (the domain is live; this is unblocked)
+## Phase C — package the TWA (BUILT 2026-08-25)
 
-1. `npx @bubblewrap/cli init --manifest https://dumplingclicker.com/manifest.webmanifest`
-   — reads name/colors/icons from the live manifest.
-   **Choose the applicationId carefully** — reverse-DNS of the domain, so
-   `com.dumplingclicker.twa` or similar. It can never change after the first
-   Play upload.
-2. `bubblewrap build` → `.aab` for Play, `.apk` for local phone testing. Commit
-   `twa-manifest.json` under `android/`; the keystore itself stays out of git.
-3. **The assetlinks trap:** enroll in Play App Signing, then copy the SHA-256
-   from Play Console → Setup → App signing — **the Play signing key, NOT the
-   upload key** — into `public/.well-known/assetlinks.json` and deploy. Wrong
-   key = the app runs but shows a browser address bar. Put the upload key's
-   fingerprint in too, so locally-installed `.apk`s also verify.
-4. Verify on a real phone: no address bar, portrait, offline after first
-   launch, save shared with Chrome on the same domain.
+The Android project is generated and **builds clean**: a 1.3MB APK and a 1.4MB
+AAB, both currently **unsigned**. Local toolchain setup and its three traps are
+in `docs/ANDROID-TOOLCHAIN.md` — read that before building on a new machine.
+
+- [x] **applicationId `com.dumplingclicker.twa`** — permanent, chosen 2026-08-25.
+- [x] `android/twa-manifest.json` committed; the project is regenerated from it
+      with `bubblewrap update --manifest ./twa-manifest.json --skipVersionUpgrade`.
+      **`bubblewrap init` was not used** — it is interactive-only, and a
+      committed manifest keeps every choice in a reviewable diff.
+- [x] Verified in the built APK, not just in the config: package
+      `com.dumplingclicker.twa`, versionCode 1 / versionName 1.0.0, targetSdk 36,
+      minSdk 21, label `דאמפלינג קליקר`, `portrait`, and an asset statement
+      pointing at `https://dumplingclicker.com`.
+- [x] `android/store_icon.png` (512×512) generated — this is the Phase D
+      listing icon, already done.
+
+### Regenerating the project: two things that silently break it
+
+1. **Every field bubblewrap templates into `app/build.gradle` must exist in
+   twa-manifest.json.** A missing one is not defaulted — it emits an empty value
+   like `splashScreenFadeOutDuration: ,`, which is invalid Groovy and fails with
+   a Groovy *parser stack trace* naming neither the field nor the file. After any
+   regeneration, scan for it:
+
+   ```bash
+   grep -nE ":\s*,\s*$" app/build.gradle
+   ```
+
+2. **Always pass `--skipVersionUpgrade`** unless you mean to ship a new version.
+   Without it, `update` prompts for a version name and bumps appVersionCode; on a
+   non-interactive shell that prompt reads EOF and writes `versionName ""`.
+
+### Remaining — needs Dor and the Play Console
+
+1. **Create the upload keystore.** It prompts for a password, so it is Dor's to
+   run, and that password belongs in a password manager:
+
+   ```bash
+   android-tools/jdk/bin/keytool -genkeypair -v -keystore android/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+   `*.jks` is gitignored. Back the file up outside the repo — though with Play
+   App Signing enrolled, a lost *upload* key can be reset by Google. The *app
+   signing* key, which Google holds, cannot.
+
+2. Build the signed AAB, create the Play Console listing, enroll in **Play App
+   Signing**, and upload to a **closed testing** track.
+
+3. **The assetlinks trap — and the live file is currently DEBUG-ONLY.**
+
+   On 2026-08-25 the three placeholders in
+   `public/.well-known/assetlinks.json` were replaced with the **local debug
+   signing certificate** so the app verifies during local testing and shows no
+   browser address bar. That fingerprint is machine-local and useless to Play.
+
+   **Before the closed test, the Play App Signing SHA-256 must be ADDED to that
+   array** — from Play Console → Setup → App signing, taking the **Play signing
+   key, NOT the upload key**. Keep the upload key as a further entry so locally
+   installed `.apk`s keep verifying. There are no placeholder strings left to
+   remind you, so this step is easy to forget: wrong or missing key = the app
+   runs but shows a browser address bar, with no crash and no useful error.
+
+   Deploying is required either way — the file is served from the live origin,
+   not bundled into the app.
+4. Verify on a real phone: no address bar, portrait, offline after first launch,
+   and **the save is shared with Chrome on the same domain** — earn something in
+   the browser, open the app, confirm it is the same save. That shared save is
+   the whole reason for choosing a TWA; confirm it actually holds.
 
 ## Phase D — Play Console listing + policy forms
 

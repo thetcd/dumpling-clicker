@@ -40,3 +40,21 @@ logs/
 # scratch / staging junk
 _to_delete/
 *.tgz
+
+# Android/TWA toolchain — JDK 17 + Android SDK live here, downloaded locally.
+# Hundreds of MB of binaries; never commit. (android/ itself IS committed.)
+android-tools/
+
+# Signing keys NEVER go in git. Losing this file means you can never ship an
+# update to the Play listing again — back it up outside the repo.
+*.keystore
+*.jks
+
+# Android build outputs (the android/ sources and twa-manifest.json ARE committed)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/release/
+android/*.apk
+android/*.aab

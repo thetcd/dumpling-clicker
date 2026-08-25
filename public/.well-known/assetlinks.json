@@ -3,10 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "REPLACE_WITH_APPLICATION_ID",
+      "package_name": "com.dumplingclicker.twa",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_PLAY_APP_SIGNING_KEY_SHA256",
-        "REPLACE_WITH_UPLOAD_KEY_SHA256"
+        "15:82:E6:34:57:56:8D:D6:97:BA:61:28:72:CB:BA:D6:5F:EE:7D:2B:91:4B:60:BF:3D:E5:E0:49:4F:87:F8:A4"
       ]
     }
   }
