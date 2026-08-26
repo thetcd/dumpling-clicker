@@ -25,6 +25,14 @@ Written 2026-08-22. Goal: דאמפלינג קליקר on Google Play as an Andro
 >   the day an analytics endpoint lands.
 > - Release artifact: `flutter build appbundle --release` in the Flutter repo.
 >
+> **2026-08-26 later: UPLOADED AND LIVE ON A TESTER TRACK.** Dor created the
+> Play developer account and uploaded the Flutter AAB himself; a closed-testing
+> release is live. What remains is Phase E's clock: **12 testers opted in for
+> 14 unbroken days**, then apply for production access. Also still open:
+> backing up the Flutter repo's `upload-keystore.jks` (exists only on one Mac),
+> and a real-phone audio/squish-feel check — the tester build is the easy way
+> to do it now.
+>
 > The TWA sections below are kept for reference only.
 
 **The approach is a Trusted Web Activity (TWA) via Bubblewrap** — a thin signed

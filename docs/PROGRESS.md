@@ -381,10 +381,12 @@ privacy/about pages, assetlinks placeholder, SW denylist), and **the domain
 prerequisite is now DONE too** — Phase C (Bubblewrap packaging) is unblocked and
 can start today.
 
-**The only remaining blocker is a Play developer account** ($25 + ID
-verification) and **12 testers opted in for 14 unbroken days** — the
-new-personal-account rule, and by far the longest pole. Start that clock before
-touching Bubblewrap. Kids app → Families policy → launches with **no ads**.
+**Superseded 2026-08-26: the Play app is the FLUTTER app**, not this TWA — see
+the banner in `docs/GOOGLE-PLAY.md`. **And it is UPLOADED**: Dor created the
+Play account and a closed-testing release of the Flutter AAB is live. The
+remaining pole is the clock — **12 testers opted in for 14 unbroken days**,
+then apply for production access. Kids app → Families policy → launches with
+**no ads**.
 
 **No backend.** Both planned ad rewards are client-side state changes. There is
 no leaderboard and nothing to purchase, so a faked reward only affects the
