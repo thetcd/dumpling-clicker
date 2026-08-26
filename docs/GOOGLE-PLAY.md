@@ -2,6 +2,39 @@
 
 Written 2026-08-22. Goal: דאמפלינג קליקר on Google Play as an Android app.
 
+> **SUPERSEDED 2026-08-26 — the Play app is now the FLUTTER app, not this TWA.**
+> Dor's call, and it was always the migration plan's endgame
+> (FLUTTER-MIGRATION.md): the native app at
+> `~/ApiScripts/dumpling-clicker-flutter` reached feature parity (visuals,
+> findables, rebirth, designer, backdrop, audio) and ships to Play directly.
+> Nothing was ever uploaded, so the switch costs nothing. What changes:
+> - The TWA package in `android/` here is RETIRED. Do not upload it. Its
+>   `upload-keystore.jks` (on Dor's other machine) is retired with it — the
+>   Flutter repo generated its OWN upload keystore 2026-08-26
+>   (`dumpling-clicker-flutter/android/upload-keystore.jks` + `key.properties`,
+>   both gitignored). Never mix the two.
+> - `assetlinks.json` and the Play App Signing SHA-256 wiring are NOT needed —
+>   they were TWA-only requirements.
+> - The applicationId stays `com.dumplingclicker.twa` (already pinned in the
+>   Flutter repo; ugly but invisible and unchangeable after first upload).
+> - `play-assets/` (listing images), the privacy URL, the Families posture and
+>   the whole "two hard prerequisites" section below still apply verbatim —
+>   the account + 12-testers-14-days rule dominates the calendar either way.
+> - Data safety gets SIMPLER: the Flutter app currently collects nothing at
+>   all (no analytics wired), so the form is "no data collected" — re-check it
+>   the day an analytics endpoint lands.
+> - Release artifact: `flutter build appbundle --release` in the Flutter repo.
+>
+> **2026-08-26 later: UPLOADED AND LIVE ON A TESTER TRACK.** Dor created the
+> Play developer account and uploaded the Flutter AAB himself; a closed-testing
+> release is live. What remains is Phase E's clock: **12 testers opted in for
+> 14 unbroken days**, then apply for production access. Also still open:
+> backing up the Flutter repo's `upload-keystore.jks` (exists only on one Mac),
+> and a real-phone audio/squish-feel check — the tester build is the easy way
+> to do it now.
+>
+> The TWA sections below are kept for reference only.
+
 **The approach is a Trusted Web Activity (TWA) via Bubblewrap** — a thin signed
 Android wrapper around the live site. Chosen over Capacitor because:
 

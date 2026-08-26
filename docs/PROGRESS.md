@@ -95,6 +95,20 @@ screen — not while closed, not while minimized, not in a background tab.
 
 ## 4 · Shipped in the last two days
 
+**2026-08-25 — the Flutter port is underway, in its own repo.** Dor's call,
+deviating from the plan's one-repo layout: the Flutter + Flame rebuild lives at
+`~/ApiScripts/dumpling-clicker-flutter` (conventions in its `PORTING.md`), with
+ads and richer screens planned after parity. Phase 0 + Phase 1 landed the same
+day the plan was approved: the whole pure core and its test suites are ported
+(243 passing, including a 482-row fixture of this repo's Intl output that
+caught three real JS↔Dart divergences), the Dart simulator prints
+**byte-identical** output to `tools/simulate.mjs`, a first runnable RTL shell
+exists with the DC1 restore path wired, and the Android identity is pinned to
+the TWA's (`com.dumplingclicker.twa`, versionCode 2). This repo is now the
+frozen oracle — see `docs/FLUTTER-MIGRATION.md` for live status. New tool
+here: `tools/format-fixture.mjs` regenerates the formatter fixture whenever
+`format.ts`/`quantize.ts` change.
+
 **2026-08-21 — seven playtest notes.** Offline income removed entirely. A
 rebirth no longer kills an active golden frenzy. The music was rewritten from a
 74bpm ambient pad to the Roblox-style loop. The "384 → 384" dud upgrade fixed on
@@ -367,10 +381,12 @@ privacy/about pages, assetlinks placeholder, SW denylist), and **the domain
 prerequisite is now DONE too** — Phase C (Bubblewrap packaging) is unblocked and
 can start today.
 
-**The only remaining blocker is a Play developer account** ($25 + ID
-verification) and **12 testers opted in for 14 unbroken days** — the
-new-personal-account rule, and by far the longest pole. Start that clock before
-touching Bubblewrap. Kids app → Families policy → launches with **no ads**.
+**Superseded 2026-08-26: the Play app is the FLUTTER app**, not this TWA — see
+the banner in `docs/GOOGLE-PLAY.md`. **And it is UPLOADED**: Dor created the
+Play account and a closed-testing release of the Flutter AAB is live. The
+remaining pole is the clock — **12 testers opted in for 14 unbroken days**,
+then apply for production access. Kids app → Families policy → launches with
+**no ads**.
 
 **No backend.** Both planned ad rewards are client-side state changes. There is
 no leaderboard and nothing to purchase, so a faked reward only affects the
