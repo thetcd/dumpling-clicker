@@ -40,8 +40,9 @@ Feedback → open an issue: https://github.com/thetcd/dumpling-clicker/issues
 ```bash
 npm run dev          # dev server (auto-picks a port if 5173 is busy)
 npm run dev:phone    # dev server on the LAN — open the printed URL on your phone
-npm test             # 214 unit tests: economy, save healing, actions, formatting, avatar art,
-                     # spring feel, findables, scene, rebirth, unlocks, icons, notes
+npm test             # 514 unit tests: economy, save healing, actions, formatting, avatar art,
+                     # spring feel, findables, scene, rebirth, unlocks, icons, notes,
+                     # gestures, the migration switch
 npm run build        # typecheck + production build + service worker (dist/)
 npm run preview      # serve the production build locally
 ```
@@ -64,6 +65,14 @@ and the service worker's `navigateFallback`. Unset — local `dev`, `build`,
 `preview`, or Vercel — it falls back to `/`. `src/main.ts` keys off exactly
 that: a non-`/` base renders the moved screen, `/` imports `./boot` and starts
 the game.
+
+**The site is being retired too.** The game is moving to a native Flutter app on
+Google Play (`docs/FLUTTER-MIGRATION.md`). `PLAY_LIVE` in `src/migration.ts` is
+the switch: `false` today, which keeps the game playable and only asks players
+to copy their backup code, and `true` the day the Play listing goes public,
+which turns this domain into a screen pointing at Play that hands over the code
+one last time. **Do not flip it while the app is on a closed-testing track** —
+the Play link works for 12 opted-in testers and nobody else.
 
 ## Where things live
 

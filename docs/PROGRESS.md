@@ -1,6 +1,6 @@
 # Where the project stands, and what still needs connecting
 
-Last updated **2026-08-24**. This is the handover document: everything you need
+Last updated **2026-08-26**. This is the handover document: everything you need
 to pick the project up on a different machine, without the chat history that
 produced it.
 
@@ -94,6 +94,19 @@ arpeggio over a four-chord progression).
 screen — not while closed, not while minimized, not in a background tab.
 
 ## 4 · Shipped in the last two days
+
+**2026-08-26 — the web side of the DC1 bridge.** `src/migration.ts` and
+`src/ui/farewell.ts`. The site is still the game; what changed is that a
+returning player who has never copied a backup code is now asked to on every
+launch until they actually do, so that a run can survive the move to the Play
+app. The switch that retires the domain outright (`PLAY_LIVE`) is written,
+tested and **off** — flipping it while the Play listing is closed-testing only
+would leave everyone outside the 12-tester list with no game at all. Two notes
+worth keeping: the nag is silenced only by a *successful* clipboard write, and
+the retirement screen still prints the code, because whoever lands on it is
+exactly the player who ignored the nag. `toast()` and `openBackupModal()` moved
+out of `ui/settings.ts` into their own modules so that screen can reuse the real
+ones rather than grow a forgetful copy. Details in `docs/FLUTTER-MIGRATION.md`.
 
 **2026-08-25 — the Flutter port is underway, in its own repo.** Dor's call,
 deviating from the plan's one-repo layout: the Flutter + Flame rebuild lives at

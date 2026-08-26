@@ -53,6 +53,23 @@ export const STR = {
   restoreBody: 'הדביקו כאן את קוד הגיבוי. זה יחליף את ההתקדמות הנוכחית שלכם.',
   restoreYes: 'לשחזר',
   restoreInvalid: 'הקוד לא תקין 😕 בדקו שהעתקתם את כולו',
+  // --- the move to the app (src/migration.ts) ---
+  // Written for a kid holding a phone, not for a release note: the only thing
+  // this copy has to achieve is that the code reaches somewhere that is not
+  // this device. No em-dashes, no "migration", no version numbers.
+  migrationTitle: 'עוברים לאפליקציה!',
+  migrationBody:
+    'דאמפלינג קליקר הופך לאפליקציה אמיתית. ההתקדמות שלכם לא עוברת לבד, אז כדאי להעתיק עכשיו את קוד הגיבוי ולשמור אותו במקום בטוח. באפליקציה מדביקים אותו וממשיכים בדיוק מאיפה שעצרתם.',
+  migrationCta: 'שמירת הקוד שלי',
+  migrationLater: 'אחר כך',
+  // The retired site (PLAY_LIVE). It still hands over the code, because the
+  // player standing here is exactly the one who never saw the nag.
+  farewellTitle: 'המשחק עבר לאפליקציה',
+  farewellBody: 'דאמפלינג קליקר הוא עכשיו אפליקציה. מורידים אותה בגוגל פליי וממשיכים לשחק שם.',
+  farewellCta: 'להורדה בגוגל פליי ←',
+  farewellCodeIntro:
+    'זה קוד הגיבוי שלכם מהאתר. העתיקו אותו, ובאפליקציה בחרו "שחזור מקוד גיבוי" והדביקו אותו כדי להמשיך מאיפה שעצרתם.',
+  farewellNoCode: 'לא נמצאה כאן התקדמות שמורה.',
   // The update toast: a new build downloaded in the background and WAITS for
   // this tap. Never reload on our own — see ui/update.ts.
   updateReady: '🎁 יש עדכון חדש! לחצו כאן',

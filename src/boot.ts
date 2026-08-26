@@ -54,9 +54,12 @@ import { formatNumber } from './ui/format';
 import { initHud } from './ui/hud';
 import { showModal } from './ui/modal';
 import { initPopups, spawnFloater } from './ui/popups';
-import { initSettings, shareGame, toast } from './ui/settings';
+import { initSettings, shareGame } from './ui/settings';
+import { toast } from './ui/toast';
 import { initShop } from './ui/shop';
 import { showUpdateToast } from './ui/update';
+import { showMigrationNag } from './ui/farewell';
+import { shouldNag } from './migration';
 import { registerSW } from 'virtual:pwa-register';
 
 // Service-worker registration, in 'prompt' mode (vite.config.ts). Importing
@@ -349,6 +352,19 @@ if (!state.designed) {
     // the design is sent; the event carries nothing at all.
     track(EVENTS.designed);
   });
+}
+
+// --- the move to the Play app: get the backup code off this device ---
+// Placed after the designer because both are full-screen and the designer is
+// not a modal, so nothing here would have closed it — it would have stacked a
+// "we are leaving" dialog on top of a new player's very first screen.
+// `state.designed` also rules out a returning player who quit mid-designer.
+//
+// shouldNag() keeps asking every launch until the code is genuinely copied.
+// That is deliberate: this is the only warning a save gets before the site
+// stops being the game. See src/migration.ts.
+if (state.designed && shouldNag(saved !== null)) {
+  showMigrationNag(state);
 }
 
 // --- iOS "add to home screen" hint (no beforeinstallprompt on iOS) ---

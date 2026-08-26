@@ -11,8 +11,32 @@ Flutter repo — regenerate with `node tools/format-fixture.mjs` here); the whol
 pure core + tests ported (243 passing); `tool/simulate.dart` diffs
 BYTE-IDENTICAL against `tools/simulate.mjs` at the shipped constants; a first
 runnable RTL shell with the DC1 restore path; Android identity pinned
-(`com.dumplingclicker.twa`, versionCode 2). Not started: Flame stage, real
-avatar/SVG rendering, audio, analytics endpoint, the migration-nag web release.
+(`com.dumplingclicker.twa`, versionCode 2); and, 2026-08-26, **the migration-nag
+web release** in this repo (`src/migration.ts` + `src/ui/farewell.ts`) — the
+half of the DC1 bridge that lives on the web side. Not started: Flame stage,
+real avatar/SVG rendering, audio, analytics endpoint.
+
+### The migration-nag release (this repo, 2026-08-26)
+
+Two things behind one flag, `PLAY_LIVE` in `src/migration.ts`:
+
+- **`false` (shipped now).** The site is still the game. A player who has a save
+  and has never copied a backup code gets asked to, on every launch, until they
+  actually do. "Actually" is load-bearing: the flag that silences the nag is set
+  in exactly one place, the clipboard-success branch of `openBackupModal()`, so
+  a blocked or cancelled copy keeps asking. New players are skipped — they have
+  nothing to rescue, and the first screen anyone sees is already the designer.
+- **`true` (the switch, not yet flipped).** `main.ts` renders `renderFarewell()`
+  instead of importing `./boot`: a static screen pointing at Play, which **still
+  prints the player's backup code and a copy button**. That is not a nicety. The
+  player standing on that screen is by definition the one who ignored every nag,
+  so a screen that only said "we moved" is the thing that would actually destroy
+  their save.
+
+**Do not flip `PLAY_LIVE` while the Play listing is closed-testing only.** The
+link resolves for the 12 opted-in testers and 404s for everyone else, so an
+early flip leaves every other player with no game at all. `tests/migration.test.ts`
+asserts the flag is `false`; delete that case in the same commit that flips it.
 
 > **Start here, before writing any code.** Read `CLAUDE.md` and
 > `docs/DECISIONS.md` (721 lines) first. Both encode *measured* decisions where

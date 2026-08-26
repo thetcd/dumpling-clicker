@@ -1104,14 +1104,19 @@ button {
   background: linear-gradient(90deg, var(--accent-deep), var(--accent));
 }
 
-/* ---------- moved screen (retired GitHub Pages build) ---------- */
+/* ---------- moved screen (retired builds) ----------
+   Two callers: the retired GitHub Pages sub-path, and the retired custom
+   domain once the Play app is public (src/migration.ts). The second one also
+   renders a backup code and a copy button, so this cannot be a fixed-height
+   centred box any more: on a short phone that clipped the code out of reach,
+   which is the one thing this screen exists to hand over. */
 .moved-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  height: 100dvh;
+  min-height: 100dvh;
   padding: 24px;
   gap: 14px;
 }
@@ -1134,6 +1139,14 @@ button {
   color: var(--accent-ink);
   background: linear-gradient(180deg, var(--accent), var(--accent-deep));
   text-decoration: none;
+}
+/* The last-chance backup code on the retired domain. Narrower than the 100%
+   the settings modal gives it: this screen has no modal to bound it, so on a
+   desktop it would otherwise stretch the full viewport. */
+.moved-screen .backup-code {
+  width: 100%;
+  max-width: 34ch;
+  text-align: start;
 }
 
 /* Permanence countdown on an upgrade chip: "yours forever from rank 13".

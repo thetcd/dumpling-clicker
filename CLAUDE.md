@@ -301,6 +301,28 @@ account, not `DorFordefi`.
 So `src/main.ts` is a dispatcher, not the game — **the game's entry point is
 `src/boot.ts`.** Anything that used to go "at the top of main" goes in `boot`.
 
+**A third branch is now wired in and switched off: `PLAY_LIVE`
+(`src/migration.ts`).** The game is moving to the Flutter app on Google Play
+(`docs/FLUTTER-MIGRATION.md`), and flipping that constant to `true` retires
+this domain the same way Pages was retired — `main.ts` renders
+`ui/farewell.ts` instead of importing `./boot`.
+
+- **Do not flip it while the Play listing is closed-testing only.** The link
+  works for the 12 opted-in testers and 404s for everyone else, so an early
+  flip leaves every other player with no game and no app.
+  `tests/migration.test.ts` asserts `PLAY_LIVE === false` on purpose — that
+  case is the tripwire, and it gets deleted in the same commit that flips it.
+- **The retirement screen must keep printing the backup code.** The player who
+  reaches it is by definition the one who ignored every nag. A screen that only
+  says "we moved" is the thing that destroys their save, not the migration.
+- **`migration-code-saved` is set in exactly one place** — the
+  clipboard-*success* branch of `openBackupModal()`. Never set it from opening
+  the modal, or from the nag being shown: neither means the code left the
+  phone, and a false positive there is a silently lost run. This is why
+  `toast()` and `openBackupModal()` were split out of `ui/settings.ts` into
+  their own modules, so the retirement screen can reuse the real one instead
+  of growing a second copy that forgets to set the flag.
+
 The origin move happened 2026-08-22 and **wiped every `localStorage` save**, as
 planned — saves are per-origin and the player base was about three people.
 Don't build an import bridge; that was decided against.

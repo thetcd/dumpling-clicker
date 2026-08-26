@@ -9,6 +9,20 @@
 > Play Families decision the game launches with **no ads at all**, so Phase 4 is
 > parked rather than next.
 
+> **Superseded in part, 2026-08-26: the domain is being retired as the game.**
+> The game is moving to the native Flutter app on Google Play
+> (`docs/FLUTTER-MIGRATION.md`), so `dumplingclicker.com` becomes a landing page
+> pointing at Play rather than the place anyone plays. Two consequences for this
+> document: the assetlinks/TWA reasoning below is dead (that was a TWA-only
+> requirement, and the TWA is retired), and the AdSense phases are dead as the
+> *plan* — ads, if they happen, are AdMob inside the app, which is the path
+> Phase 4 already noted qualifies for child-directed treatment where AdSense
+> does not. The domain itself is still worth keeping: it is the link Gal's
+> audience gets sent, and it is where they will find the Play listing.
+>
+> The switch is `PLAY_LIVE` in `src/migration.ts`, and it is **off** until the
+> Play listing is public — see the warning in `docs/FLUTTER-MIGRATION.md`.
+
 Written 2026-08-22. The goal is a domain Dor owns, serving the game from
 Vercel, because **AdSense can never be served from `thetcd.github.io`** — Google
 approves the *parent* domain and lets subdomains inherit, and nobody can get

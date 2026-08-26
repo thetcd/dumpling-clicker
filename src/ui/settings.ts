@@ -7,6 +7,8 @@ import { setMuted, setMusicEnabled, unlockAudio } from '../audio/sound';
 import { startMusic, stopMusic } from '../audio/music';
 import { formatNumber } from './format';
 import { showModal } from './modal';
+import { openBackupModal } from './backup-modal';
+import { toast } from './toast';
 
 export function initSettings(
   button: HTMLElement,
@@ -103,35 +105,6 @@ export function initSettings(
   });
 }
 
-// Its own function because the failure path re-enters it: modal buttons close
-// the modal before onClick runs, so if the clipboard write is blocked the code
-// would vanish with the modal — reopening keeps it on screen for a manual copy.
-// The code is base64 (plus the DC1: prefix), so it is innerHTML-safe by
-// construction — tests/backup.test.ts pins the alphabet.
-function openBackupModal(code: string): void {
-  showModal({
-    title: STR.backup,
-    bodyHTML: `<p>${STR.backupBody}</p>
-      <textarea class="backup-code" readonly dir="ltr">${code}</textarea>`,
-    buttons: [
-      {
-        label: STR.backupCopy,
-        primary: true,
-        onClick: () => {
-          navigator.clipboard.writeText(code).then(
-            () => toast(STR.copied),
-            () => {
-              openBackupModal(code);
-              toast(STR.backupCopyFailed);
-            },
-          );
-        },
-      },
-      { label: STR.close },
-    ],
-  });
-}
-
 export async function shareGame(state: GameState): Promise<void> {
   const text = STR.shareText(formatNumber(state.totalEarned));
   const url = location.origin + location.pathname;
@@ -151,10 +124,3 @@ export async function shareGame(state: GameState): Promise<void> {
   }
 }
 
-export function toast(text: string): void {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = text;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1800);
-}
