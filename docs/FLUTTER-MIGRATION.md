@@ -1,7 +1,8 @@
 # Dumpling Clicker → Flutter + Flame
 
-**Status:** IN PROGRESS. Approved 2026-08-25; Phase 0 + Phase 1 built the same
-day. **Three deviations, Dor's call (2026-08-25):** the Flutter project lives in
+**Status:** SHIPPING. Approved 2026-08-25; Phase 0 + Phase 1 built the same day;
+**parity reached and uploaded to a Play closed-testing track 2026-08-26.**
+**Three deviations, Dor's call (2026-08-25):** the Flutter project lives in
 its own sibling repo `~/ApiScripts/dumpling-clicker-flutter` (not `app/` here —
 its `PORTING.md` carries the conventions), and ads + richer screens are planned
 after parity. This repo stays the frozen TS oracle the port is tested against.
@@ -13,8 +14,21 @@ BYTE-IDENTICAL against `tools/simulate.mjs` at the shipped constants; a first
 runnable RTL shell with the DC1 restore path; Android identity pinned
 (`com.dumplingclicker.twa`, versionCode 2); and, 2026-08-26, **the migration-nag
 web release** in this repo (`src/migration.ts` + `src/ui/farewell.ts`) — the
-half of the DC1 bridge that lives on the web side. Not started: Flame stage,
-real avatar/SVG rendering, audio, analytics endpoint.
+half of the DC1 bridge that lives on the web side.
+
+**Parity, 2026-08-26.** The Flame stage, real avatar/SVG rendering, findables,
+rebirth, the designer, the backdrop and audio all landed, and the resulting AAB
+is the build now sitting on the closed-testing track — see the banner in
+`docs/GOOGLE-PLAY.md`, which is the record written at upload time. This line
+previously still read "not started" for those, left over from the day-one
+snapshot above; if you are reading a claim in this file that predates 08-26,
+`GOOGLE-PLAY.md` is the more recent source.
+
+**Still not started: the analytics endpoint.** Both docs agree on this one —
+`GOOGLE-PLAY.md` notes the Flutter app "collects nothing at all (no analytics
+wired)", which is also why its Play data-safety form is a clean "no data
+collected". That form stops being true the day an endpoint lands, and the
+privacy page moves with it: see the published-promise rule in `CLAUDE.md`.
 
 ### The migration-nag release (this repo, 2026-08-26)
 
