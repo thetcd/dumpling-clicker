@@ -8,6 +8,14 @@
 > at the bottom. Phases 4–5 (AdSense, ad rewards) are still open — and per the
 > Play Families decision the game launches with **no ads at all**, so Phase 4 is
 > parked rather than next.
+>
+> **ADS SUPERSEDED 2026-08-27 — the ads plan moved to the Flutter repo:**
+> `dumpling-clicker-flutter/docs/ADS.md` (github.com/thetcd/dumpling-clicker-flutter,
+> private). The app ships natively via Play, so the product is **AdMob** in
+> child-directed mode, not AdSense/H5 Games Ads — everything AdSense-specific
+> below is for the retired website path. Still true here: the reward design +
+> its two traps (mirrored in ADS.md), and this domain hosts `app-ads.txt`
+> (in `public/`, plus a `navigateFallbackDenylist` entry) when ads ship.
 
 > **Superseded in part, 2026-08-26: the domain is being retired as the game.**
 > The game is moving to the native Flutter app on Google Play
