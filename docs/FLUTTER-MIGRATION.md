@@ -2,6 +2,32 @@
 
 **Status:** SHIPPING. Approved 2026-08-25; Phase 0 + Phase 1 built the same day;
 **parity reached and uploaded to a Play closed-testing track 2026-08-26.**
+
+> **2026-08-27 — first real-device session, and the Flutter repo is now on
+> Windows too.** It is cloned at `S:\Coding\dumpling-clicker-flutter` with a
+> full Android toolchain (Flutter SDK `S:\Coding\flutter`, Android SDK
+> `S:\Coding\android-sdk`), so the suite, the simulator, release APKs and
+> device installs all work from this machine. The **Mac remains the only
+> machine that can build an uploadable AAB** — it holds the gitignored
+> keystore. See that repo's `README.md` and the "traps paid for on a real
+> phone" section of its `PORTING.md`.
+>
+> What that session found and fixed, all invisible to the test suites: the
+> settings actions were bare `ListTile`s and read as plain text on a phone; the
+> settings sheet overflowed instead of scrolling; the squish sound cut out
+> under fast tapping (an `audioplayers` SoundPool load/unload race); and rank
+> 18 became unplayable because every tap rebuilt the whole tree including the
+> shop. Also landed: both ad rewards, stubbed and measured (`docs/ADS.md`
+> there).
+>
+> **Dor's call the same day: the per-tap squish sound is gone entirely.** A
+> constant sound is texture rather than an event, and it buried the purchase
+> and findable chimes. This retires the `squish_0..16` ladder from the Flutter
+> app; the web build is untouched and keeps its synthesized squish.
+>
+> **The version on the closed-testing track (`1 (1.0.0)`) is NOT a build from
+> the Flutter repo**, which produces `2 (2.0.0)`. Worth resolving before
+> recruiting testers, or they spend 14 days on the wrong app.
 **Three deviations, Dor's call (2026-08-25):** the Flutter project lives in
 its own sibling repo `~/ApiScripts/dumpling-clicker-flutter` (not `app/` here —
 its `PORTING.md` carries the conventions), and ads + richer screens are planned
