@@ -129,6 +129,14 @@ export const FRENZY_DURATION_MS = 30_000;
 export const REBIRTH_MAX = 50;
 export const REBIRTH_BASE = 3_000;
 export const REBIRTH_GROWTH = 1.5;
+// Past rank 50 the curve flattens to 1.2 per rank — the release-cadence
+// prerequisite, MEASURED 2026-08-22 (tools/release-policy.mjs, policies B/D):
+// at 1.5 each +5-rank release multiplies the requirement by 7.6x and the
+// cadence collapses by release five. The PIVOT is pinned at 50 FOREVER — it is
+// where the shipped curve ends, NOT the moving cap: raising REBIRTH_MAX must
+// never re-price a rank a player has already climbed.
+export const REBIRTH_CURVE_PIVOT = 50;
+export const REBIRTH_GROWTH_PAST_CAP = 1.2;
 // LINEAR and small, deliberately: multiplier = 1 + BUFF * n, never compounding.
 // A compounding buff against an exponential requirement makes late rebirths a
 // formality, which is exactly what "not exponentially easy" rules out.

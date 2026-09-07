@@ -8,6 +8,11 @@ export interface ProducerDef {
   baseCost: number; // cost of the first unit; nth unit costs baseCost * COST_GROWTH^n
   baseDps: number; // dumplings per second per unit
   icon: string; // emoji for v1; can become an /art/ path without code changes
+  // The rebirth rank required to BUY this tier (undefined = always). Like the
+  // parts' field, "prestige" means rebirths completed. A gated tier may sit
+  // below the value curve — the rank, not the price, is its gate (PROGRESS.md
+  // §6.1: gating without repricing is a measured no-op).
+  unlockAtPrestige?: number;
 }
 
 export const PRODUCERS: ProducerDef[] = [
@@ -91,9 +96,13 @@ export const PRODUCERS: ProducerDef[] = [
     id: 'boss',
     nameHe: 'הבוס של הסקווישים',
     descHe: 'גל בכבודו ובעצמו, כסקווישי. הגעת לפסגה.',
-    baseCost: 75_000_000_000,
+    // Gated at rank 50 and priced at 1B — ONE change, decided 2026-08-22: at
+    // 75B the gate never binds, and gating without repricing is a no-op.
+    // Rank 50 = max rank, so meeting the boss and finishing are one moment.
+    baseCost: 1_000_000_000,
     baseDps: 1_600_000,
     icon: '👑',
+    unlockAtPrestige: 50,
   },
 ];
 

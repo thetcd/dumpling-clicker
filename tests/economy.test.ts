@@ -46,8 +46,11 @@ describe('costOf', () => {
 describe('producer ladder balance', () => {
   test('no tier is strictly dominated by the tier above it', () => {
     // Cost per +1 dps must not get *cheaper* as you climb, or the lower tier
-    // is a trap purchase that a player is always wrong to make.
+    // is a trap purchase that a player is always wrong to make. A RANK-GATED
+    // tier is exempt where the gate rises: the rank, not the price, is its
+    // barrier (the boss at 1B / rank 50 — the 2026-08-22 measured decision).
     for (let i = 0; i < PRODUCERS.length - 1; i++) {
+      if ((PRODUCERS[i + 1].unlockAtPrestige ?? 0) > (PRODUCERS[i].unlockAtPrestige ?? 0)) continue;
       const here = PRODUCERS[i].baseCost / PRODUCERS[i].baseDps;
       const next = PRODUCERS[i + 1].baseCost / PRODUCERS[i + 1].baseDps;
       expect(

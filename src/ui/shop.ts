@@ -261,14 +261,18 @@ export function initShop(
       r.row.hidden = !known && !teased;
       if (r.row.hidden) continue;
       const cost = costOf(r.def, owned);
+      // A rank-gated tier renders like a locked designer tile: fully visible
+      // — name, price and the rank that opens it. buyProducer() is the guard.
+      const gated = known && getState().prestige < (r.def.unlockAtPrestige ?? 0);
       if (known) {
         renderIcon(r.icon, r.def.id, r.def.icon);
         r.name.textContent = r.def.nameHe;
         r.desc.textContent = r.def.descHe;
         // What this purchase gives you — the row showed a price and an owned
         // count but never the rate, so there was no way to judge the trade.
-        r.gain.textContent =
-          owned > 0
+        r.gain.textContent = gated
+          ? STR.producerLockedAt(r.def.unlockAtPrestige ?? 0)
+          : owned > 0
             ? `${STR.gainPerSecond(formatRate(r.def.baseDps))} · ${STR.producesNow(
                 formatRate(r.def.baseDps * owned),
               )}`
@@ -286,7 +290,8 @@ export function initShop(
       // the cost too, or there is nothing left to be curious about.
       r.cost.textContent = known ? `${STR.currency} ${formatNumber(cost)}` : `${STR.currency} ???`;
       r.ownedEl.textContent = owned > 0 ? String(owned) : '';
-      (r.row as HTMLButtonElement).disabled = getState().dumplings < cost || !known;
+      (r.row as HTMLButtonElement).disabled =
+        getState().dumplings < cost || !known || gated;
     }
     rebuildUpgrades();
   }

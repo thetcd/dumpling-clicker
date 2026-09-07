@@ -96,6 +96,9 @@ function shop(state) {
   for (;;) {
     let best = null;
     for (const p of producers.PRODUCERS) {
+      // the rank gate, mirrored from buyProducer — a sweep that buys the boss
+      // below rank 50 measures a game nobody can play
+      if (state.prestige < (p.unlockAtPrestige ?? 0)) continue;
       const owned = state.producers[p.id] ?? 0;
       const cost = economy.costOf(p, owned);
       if (cost > state.dumplings) continue;

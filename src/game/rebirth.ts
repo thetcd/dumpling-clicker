@@ -8,7 +8,9 @@
 import {
   REBIRTH_BASE,
   REBIRTH_BUFF_TIERS,
+  REBIRTH_CURVE_PIVOT,
   REBIRTH_GROWTH,
+  REBIRTH_GROWTH_PAST_CAP,
   REBIRTH_KEEP_MAX,
   REBIRTH_KEEP_PER,
   REBIRTH_MAX,
@@ -40,7 +42,14 @@ export function isRebirthMaxed(prestige: number): boolean {
  * rising.
  */
 export function rebirthRequirement(prestige: number): number {
-  return roundToDisplay(REBIRTH_BASE * REBIRTH_GROWTH ** rankOf(prestige));
+  // 50% per rank up to the pivot, then 20% (REBIRTH_GROWTH_PAST_CAP — the
+  // release-cadence prerequisite; balance.ts has the measurement)
+  const n = rankOf(prestige);
+  const steep = Math.min(n, REBIRTH_CURVE_PIVOT);
+  const flat = Math.max(0, n - REBIRTH_CURVE_PIVOT);
+  return roundToDisplay(
+    REBIRTH_BASE * REBIRTH_GROWTH ** steep * REBIRTH_GROWTH_PAST_CAP ** flat,
+  );
 }
 
 /**

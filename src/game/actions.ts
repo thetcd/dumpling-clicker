@@ -59,6 +59,9 @@ export function startFrenzy(state: GameState, now: number): void {
 export function buyProducer(state: GameState, id: string): boolean {
   const def = PRODUCER_BY_ID[id];
   if (!def) return false;
+  // the rank gate (unlockAtPrestige) — the UI shows the lock, this is the
+  // guard behind it; a kept unit can never sit below it, prestige only grows
+  if (state.prestige < (def.unlockAtPrestige ?? 0)) return false;
   const cost = costOf(def, state.producers[id] ?? 0);
   if (state.dumplings < cost) return false;
   state.dumplings -= cost;

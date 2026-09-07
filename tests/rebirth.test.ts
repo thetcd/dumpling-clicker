@@ -17,7 +17,9 @@ import { clickValue, dpsOf } from '../src/game/economy';
 import { createInitialState } from '../src/game/state';
 import {
   REBIRTH_BASE,
+  REBIRTH_CURVE_PIVOT,
   REBIRTH_GROWTH,
+  REBIRTH_GROWTH_PAST_CAP,
   REBIRTH_MAX,
 } from '../src/game/config/balance';
 
@@ -42,6 +44,23 @@ describe('rebirthRequirement', () => {
   test('junk prestige falls back to the first rung', () => {
     expect(rebirthRequirement(Number.NaN)).toBe(REBIRTH_BASE);
     expect(rebirthRequirement(-4)).toBe(REBIRTH_BASE);
+  });
+
+  test('the curve flattens past the pivot — the release-cadence prerequisite', () => {
+    // ranks up to the pivot are UNTOUCHED: re-pricing a rank a player has
+    // already climbed is the one thing a release must never do
+    expect(rebirthRequirement(REBIRTH_CURVE_PIVOT)).toBe(
+      roundToDisplay(REBIRTH_BASE * REBIRTH_GROWTH ** REBIRTH_CURVE_PIVOT),
+    );
+    // one rank past the pivot grows by REBIRTH_GROWTH_PAST_CAP, not REBIRTH_GROWTH
+    expect(rebirthRequirement(REBIRTH_CURVE_PIVOT + 1)).toBe(
+      roundToDisplay(
+        REBIRTH_BASE * REBIRTH_GROWTH ** REBIRTH_CURVE_PIVOT * REBIRTH_GROWTH_PAST_CAP,
+      ),
+    );
+    expect(rebirthRequirement(REBIRTH_CURVE_PIVOT + 1)).toBeGreaterThan(
+      rebirthRequirement(REBIRTH_CURVE_PIVOT),
+    );
   });
 });
 

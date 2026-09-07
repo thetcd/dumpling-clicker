@@ -1,35 +1,27 @@
-// Does a weekly "+5 rebirth ranks" release cadence actually stay playable?
+// Does the HYBRID release cadence actually stay playable?
 //
-// This is the tool the top backlog item depends on. The plan is to raise
-// REBIRTH_MAX by ~5 every release, but REBIRTH_GROWTH (1.5) was measured for a
-// game that ENDS at 50, and each release multiplies the requirement by
-// 1.5^5 ~= 7.6x. So the honest question is not "is the cadence nice" but "how
-// many releases before a batch of 5 ranks costs more than anyone will play".
+// Dor's cadence (2026-09-07): a small rank batch every week (+5 or +10), a
+// full WORLD every two weeks carrying ~1-2 new ~6x income rungs. The open
+// question this tool answers is the weekly batch SIZE — +5 needs one rung per
+// world, +10 needs two, and both have to keep every weekly batch under what a
+// kid actually plays.
 //
-//   node tools/release-policy.mjs [tapsPerSecond] [boss]
+//   node tools/release-policy.mjs [tapsPerSecond]
 //
-// `boss` is `shipped` (default) or `repriced`. This matters more than it looks:
-// the planned boss change (gated at rank 50, priced 1B instead of 75B) is what
-// makes the post-cap producer ladder AFFORDABLE at all. Measured with the
-// shipped 75B boss, a "new tier per release" costs 15x of 75B and up, which
-// nobody ever reaches — so policy C does almost nothing and even D drifts. The
-// release cadence therefore DEPENDS on the boss reprice landing first.
+// HISTORY: this tool used to take `shipped|repriced` and compare four
+// policies (A-D, table in docs/PROGRESS.md §6) because the boss reprice and
+// the flattened curve were unbuilt and the cadence DEPENDED on them. Both
+// SHIPPED 2026-09-07 (boss 1B gated rank 50; REBIRTH_GROWTH_PAST_CAP 1.2 past
+// the pinned pivot 50), so the shipped config is what was called "repriced +
+// flattened" and the flag is gone — the tool now reads the real table and the
+// real curve constants.
 //
-// It compares four policies by measuring the PLAY COST of each batch of five
-// ranks. Nothing here mutates the shipped config — the requirement curve and the
-// producer table are patched in memory, so this is a what-if, not a change.
-//
-// Measured 2026-08-22 at 5 taps/sec, `repriced` (see docs/PROGRESS.md):
-//   A cap+5 only           2.3h  4.4h  68m  5.0h  26.6h  154.5h  702.8h  <- collapses
-//   B + flatten curve      2.3h  4.4h  48m  81m    2.7h    5.5h   11.4h
-//   C + income per release 2.3h  4.4h  68m  3.0h   6.9h   14.0h   27.6h
-//   D both                 2.3h  4.4h  48m  57m    1.6h    2.3h    3.5h  <- sustainable
-//
-// ...and with the boss as SHIPPED, even D drifts to 26.7h by the last batch.
-// That is the finding: the reprice is a PREREQUISITE for the cadence.
+// It measures the PLAY COST of each weekly batch. Nothing here mutates the
+// shipped config — invented future tiers live in a local table, so this is a
+// what-if, not a change.
 //
 // A kid playing ~45 min/day gets through ~5h a week, which is the bar every
-// column has to clear.
+// weekly column has to clear.
 import esbuild from '../node_modules/esbuild/lib/main.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -58,10 +50,8 @@ const rewards = await load('src/game/rewards.ts');
 const findableCfg = await load('src/game/config/findables.ts');
 
 const TAPS = Number(process.argv[2] ?? 5);
-const BOSS = (process.argv[3] ?? 'shipped') === 'repriced';
 const CURRENT_CAP = balance.REBIRTH_MAX;
-const BATCH = 5;
-const BATCHES = 7;
+const WEEKS = 8; // measured horizon: two months of releases
 const MAX_SECONDS = 60 * 60 * 900;
 
 const payoutLanes = findableCfg.LANES.flatMap((lane) =>
@@ -75,35 +65,50 @@ const payoutLanes = findableCfg.LANES.flatMap((lane) =>
     })),
 );
 
-/**
- * The requirement curve, with an optional flatter tail past the current cap.
- * Flattening only past the cap keeps every shipped rank exactly as measured —
- * this changes the future, never the game people have already played.
- */
-const requirement = (n, tailGrowth) =>
-  n <= CURRENT_CAP
+// The SHIPPED requirement curve: steep to the pinned pivot, flat past it.
+const requirement = (n) =>
+  n <= balance.REBIRTH_CURVE_PIVOT
     ? balance.REBIRTH_BASE * balance.REBIRTH_GROWTH ** n
-    : balance.REBIRTH_BASE * balance.REBIRTH_GROWTH ** CURRENT_CAP * tailGrowth ** (n - CURRENT_CAP);
+    : balance.REBIRTH_BASE *
+      balance.REBIRTH_GROWTH ** balance.REBIRTH_CURVE_PIVOT *
+      balance.REBIRTH_GROWTH_PAST_CAP ** (n - balance.REBIRTH_CURVE_PIVOT);
 
-function measure({ tailGrowth, incomePerRelease, label }) {
-  // Each release optionally adds one income source worth ~6x the last tier at
-  // ~15x the cost — the same ratio the shipped ten-tier table already uses. It
-  // is deliberately modelled as a producer, but a rank-gated permanent
-  // multiplier of the same size is mathematically identical for pacing, which is
-  // what lets Gal stay the top of the shop at no cost.
-  let table = producers.PRODUCERS.map((p) =>
-    p.id === 'boss' && BOSS ? { ...p, baseCost: 1e9, gate: CURRENT_CAP } : { ...p, gate: 0 },
-  );
-  if (incomePerRelease) {
-    for (let i = 1; i <= BATCHES; i++) {
+function measure({ batchSize, rungsPerWorld, label }) {
+  const BATCH = batchSize;
+  const BATCHES = WEEKS;
+  // A world lands every SECOND weekly batch and carries rungsPerWorld income
+  // sources, each worth ~6x the tier below at ~15x the cost — the shipped
+  // table's own ratio. Modelled as producers, but a rank-gated permanent
+  // multiplier of the same size is mathematically identical for pacing, which
+  // is what lets Gal stay the top of the shop at no cost. A world's rungs
+  // gate at that world's NEW cap: they are the reward for finishing it.
+  let table = producers.PRODUCERS.map((p) => ({ ...p, gate: p.unlockAtPrestige ?? 0 }));
+  for (let w = 1; w * 2 <= WEEKS; w++) {
+    // rungsPerWorld may be fractional: 1.5 = alternate 1-rung and 2-rung worlds
+    const rungs = Math.floor(rungsPerWorld) + (rungsPerWorld % 1 > 0 && w % 2 === 0 ? 1 : 0);
+    for (let k = 0; k < rungs; k++) {
       const last = table[table.length - 1];
+      // a world's rungs SPREAD across its two weekly caps (latest last): a
+      // 2-rung world hands one rung to each week, which is what keeps income
+      // arriving every batch instead of every other
+      const gate = CURRENT_CAP + (w * 2 - (rungs - 1 - k)) * BATCH;
       table = [
         ...table,
         {
-          id: `release${i}`,
-          baseCost: last.baseCost * 15,
+          id: `world${w}rung${k}`,
+          // PRICING IS THE WHOLE GAME HERE, measured three ways tonight:
+          // x15-per-rung (the shipped table's ratio) outruns the 1.2 curve by
+          // world three and late rungs are never bought; a %-of-requirement
+          // price is never SAVED FOR (the shopper spends continuously and
+          // holds no bank). What works: anchor the first rung at 15x the boss
+          // — the shipped table's own step — then grow rung-to-rung by what
+          // the requirement grows between rungs (1.2^ranks), so every rung
+          // stays near the marginal unit cost of the board that meets it.
+          baseCost:
+            15 * 1e9 *
+            balance.REBIRTH_GROWTH_PAST_CAP ** (gate - (CURRENT_CAP + BATCH)),
           baseDps: last.baseDps * 6,
-          gate: CURRENT_CAP + i * BATCH,
+          gate,
         },
       ];
     }
@@ -167,10 +172,10 @@ function measure({ tailGrowth, incomePerRelease, label }) {
   const clock = { now: 0 };
   let elapsed = 0;
   const perRank = [];
-  const lastRank = CURRENT_CAP - BATCH * 2 + BATCH * BATCHES;
+  const lastRank = CURRENT_CAP + BATCH * WEEKS;
 
   while (s.prestige < lastRank && elapsed < MAX_SECONDS) {
-    const need = requirement(s.prestige, tailGrowth);
+    const need = requirement(s.prestige);
     const start = elapsed;
     while (s.runEarned < need && elapsed < MAX_SECONDS) {
       clock.now += 1000;
@@ -225,29 +230,23 @@ function measure({ tailGrowth, incomePerRelease, label }) {
     }
     return sum;
   };
-  const firstBatchStart = CURRENT_CAP - BATCH * 2 + 1;
+  const firstBatchStart = CURRENT_CAP + 1;
   const cells = Array.from({ length: BATCHES }, (_, i) =>
     fmt(batchCost(firstBatchStart + i * BATCH)).padStart(7),
   );
   console.log(`${label.padEnd(38)} ${cells.join(' ')}`);
 }
 
-const firstBatchStart = CURRENT_CAP - BATCH * 2 + 1;
-const headers = Array.from({ length: BATCHES }, (_, i) => {
-  const lo = firstBatchStart + i * BATCH;
-  return `${lo}-${lo + BATCH - 1}`.padStart(7);
-});
 console.log(
-  `Play cost of each batch of ${BATCH} ranks, at ${TAPS} taps/sec. Current cap ${CURRENT_CAP}.`,
+  `Play cost of each WEEKLY batch, at ${TAPS} taps/sec, shipped curve + boss. Cap today: ${CURRENT_CAP}.`,
 );
-console.log(
-  BOSS
-    ? 'Boss REPRICED (gate 50, 1B) — the planned config, not yet built.'
-    : 'Boss as SHIPPED (75B, ungated). Pass `repriced` to model the planned change.',
-);
+console.log('Columns are weeks after launch; a world (with its rungs) lands every 2nd week.');
 console.log('A kid at ~45 min/day plays ~5h a week — that is the bar.\n');
-console.log(`${''.padEnd(38)} ${headers.join(' ')}`);
-measure({ tailGrowth: balance.REBIRTH_GROWTH, incomePerRelease: 0, label: 'A · cap +5 only' });
-measure({ tailGrowth: 1.2, incomePerRelease: 0, label: 'B · + flatten curve past the cap' });
-measure({ tailGrowth: balance.REBIRTH_GROWTH, incomePerRelease: 1, label: 'C · + ~6x income per release' });
-measure({ tailGrowth: 1.2, incomePerRelease: 1, label: 'D · both' });
+const week = (i) => `wk${i + 1}`.padStart(7);
+console.log(`${''.padEnd(38)} ${Array.from({ length: WEEKS }, (_, i) => week(i)).join(' ')}`);
+measure({ batchSize: 5, rungsPerWorld: 1, label: 'H5 · +5/week, 1 rung per world' });
+measure({ batchSize: 5, rungsPerWorld: 1.5, label: 'H5+ · +5/week, alternating 1-2 rungs' });
+measure({ batchSize: 5, rungsPerWorld: 2, label: 'H5++ · +5/week, 2 rungs per world' });
+measure({ batchSize: 5, rungsPerWorld: 0, label: 'H5 control · +5/week, no rungs' });
+measure({ batchSize: 10, rungsPerWorld: 2, label: 'H10 · +10/week, 2 rungs per world' });
+measure({ batchSize: 10, rungsPerWorld: 0, label: 'H10 control · +10/week, no rungs' });

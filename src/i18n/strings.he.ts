@@ -140,6 +140,7 @@ export const STR = {
   gainCritChance: (pct: number, mult: number) => `${pct}% סיכוי למעיכה ×${mult}`,
   gainCritMult: (mult: number) => `מעיכה מושלמת ×${mult}`,
   producesNow: (amount: string) => `מייצרים ${amount} לשנייה`,
+  producerLockedAt: (rank: number) => `🔒 נפתח בלידה מחדש ${rank}`,
   firstOfTier: (name: string) => `${name} הצטרפו לצוות! 🎉`,
   goldenLabel: 'כופתאה מוזהבת!',
   airdropLabel: 'חבילת שקלים!',

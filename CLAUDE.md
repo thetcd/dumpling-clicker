@@ -112,6 +112,14 @@ git push        # this IS the deploy: Vercel publishes dumplingclicker.com
   one decimal above it. Two genuinely different values collide in the *string*
   long before they collide in the maths, which is what made a real upgrade
   preview as "384 ← 384".
+- **`REBIRTH_CURVE_PIVOT` is pinned at 50 FOREVER — it is where the shipped
+  curve ends, never the moving cap.** Raising `REBIRTH_MAX` must never re-price
+  a rank a player has already climbed; the flat 1.2 tail past the pivot is what
+  makes weekly cap raises affordable at all (tools/release-policy.mjs). Related
+  pricing law for post-cap income rungs, measured 2026-09-07: first rung ≈ 15×
+  the boss, then rung-to-rung growth of 1.2^(ranks between) — a ×15 ladder
+  outruns the flat curve by world three, and a %-of-requirement price is never
+  saved for (the greedy player spends continuously and holds no bank).
 - **`runEarned` is the rebirth gate**, written in exactly three places:
   `click()`, `accrue()` and `grant()`. Anything crediting the balance directly
   leaves the rebirth bar frozen. Conversely, anything routed through `grant()`

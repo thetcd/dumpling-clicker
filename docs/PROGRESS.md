@@ -62,7 +62,9 @@ Everything below is shipped, tested and deployed.
 **Core loop.** Tap the squishy for shekels; a tap is worth
 `flat × upgrades + 5% of production`, so tapping stays relevant at every scale.
 A free 0.5/sec trickle runs from the first second. Ten producer tiers from an
-apprentice at ₪15 to Gal at ₪75B, each unit costing 15% more than the last.
+apprentice at ₪15 to Gal at ₪1B — gated behind rebirth rank 50 since
+2026-09-07, so meeting him and reaching max rank are the same moment — each
+unit costing 15% more than the last.
 Twelve click upgrades in three tiers (flat → a cut of production → critical
 squish), sold **one at a time** cheapest-first.
 
@@ -74,7 +76,9 @@ income for 30 seconds.
 **Rebirth.** Requirement `3,000 × 1.5ⁿ` measured against what the run earned.
 Reward is a permanent multiplier on all income — the first five rebirths double
 you, the next ten add half each, then a quarter forever, as a *sum* of steps
-never a product. **Capped at rank 50.** You keep one squishy per every 4
+never a product. **Capped at rank 50.** Past rank 50 the requirement curve
+grows 1.2× per rank instead of 1.5× (shipped 2026-09-07, the release-cadence
+prerequisite; the pivot is pinned at 50 forever). You keep one squishy per every 4
 owned of each tier (1-4 keeps 1, 5-8 keeps 2, ..., capped at 10), the five flat
 click upgrades permanently, your squishy, your settings, your lifetime totals,
 and an active golden frenzy. The confirm screen
@@ -254,11 +258,17 @@ into the shop instead of being reset, so the top tier arrives sooner.)
 
 ## 6 · Backlog, in the order it should be done
 
-### 1. Gate the boss behind rank 50 and reprice him to ₪1B
+### 1. Gate the boss behind rank 50 and reprice him to ₪1B — **DONE 2026-09-07**
+Shipped in BOTH repos: `unlockAtPrestige` on `ProducerDef` (boss = 50, cost
+₪1B), a buyProducer guard, a locked-row shop reveal (visible name + price +
+"🔒 נפתח בלידה מחדש 50", like designer tiles), the gate mirrored in both
+simulators (byte-parity re-verified), and `tools/release-policy.mjs` now reads
+the shipped table. Cap-50 pacing is untouched — the gate binds only AT 50.
+
 Moved to the top on 2026-08-22, because it turns out to be a **prerequisite for
 the whole release cadence** and not an independent improvement — see item 2.
 
-Decided and measured, not built. It moves the headline reward off the curve that
+Decided and measured 2026-08-22; built 2026-09-07. It moves the headline reward off the curve that
 stalls (producer costs) onto the ladder that keeps going. With the cap at 50 this
 makes reaching max rank and meeting Gal the same moment.
 
@@ -272,8 +282,38 @@ after.
 field, a shop-reveal branch showing the required rank the way locked designer
 tiles do, and a mirror in `tools/release-policy.mjs`.
 
-### 2. Flatten the requirement curve past rank 50
-**Nothing about a weekly release cadence works until this lands.** The plan is
+### 2. Flatten the requirement curve past rank 50 — **DONE 2026-09-07**
+Shipped in both repos: `REBIRTH_CURVE_PIVOT = 50` (pinned FOREVER — the pivot
+is where the shipped curve ends, never the moving cap, so raising the cap can
+never re-price a climbed rank) and `REBIRTH_GROWTH_PAST_CAP = 1.2`, applied
+piecewise in `rebirthRequirement()`; tests pin the pivot in both suites.
+
+**The 2026-09-07 hybrid-cadence sweep** (tool rewritten — it now reads the
+shipped curve/table and models Dor's hybrid: weekly rank batch, world every
+2nd week carrying the income rungs). Play cost per WEEKLY batch at 5 taps/sec:
+
+| policy | wk1 | wk2 | wk3 | wk4 | wk5 | wk6 | wk7 | wk8 |
+|---|---|---|---|---|---|---|---|---|
+| **H5 · +5/wk, 1 rung per world (chosen)** | 82m | 2.3h | 2.9h | 5.0h | 4.5h | 6.7h | 5.3h | 7.3h |
+| H5+ · alternating 1-2 rungs | 82m | 2.3h | 2.9h | 2.2h | 66m | 83m | 54m | **25m** |
+| H5++ · 2 rungs per world | 82m | 84m | 56m | 25m | 7m | 2m | 1m | **0m** |
+| H10 · +10/wk, 2 rungs per world | 3.7h | 6.4h | 8.0h | 8.3h | 8.3h | 8.2h | 8.1h | 8.0h |
+
+Three findings that now govern release content:
+- **The weekly batch is +5.** +10/week is stable but costs ~8h EVERY week —
+  over the ~5h a kid has. More than one rung per +10 ranks collapses the other
+  way: requirements trivialize (H5++ hits 0-minute weeks).
+- **One ~6× rung per +10 ranks is the balance point** (6× income per
+  1.2¹⁰ ≈ 6.19× requirement). H5's slow drift IS the 3% shortfall — correct it
+  release-to-release by nudging rung size, re-measuring each time.
+- **Rung PRICING is its own law**: the shipped ×15-per-tier ladder outruns the
+  1.2 curve by world three (rungs never bought), and a %-of-requirement price
+  is never saved for (the shopper spends continuously). What works: first
+  post-cap rung at ~15× the boss (₪15B), then rung-to-rung growth of
+  1.2^(ranks between) — each rung stays near the marginal unit cost of the
+  board that meets it.
+
+The original 2026-08-22 A-D table (kept for the reasoning record). The plan was
 +5 ranks per release, but `REBIRTH_GROWTH = 1.5` was tuned for a game that ends
 at 50, and each release multiplies the requirement by `1.5⁵ ≈ 7.6×`.
 

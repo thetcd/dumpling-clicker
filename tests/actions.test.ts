@@ -51,6 +51,24 @@ describe('buyProducer', () => {
     expect(s.dumplings).toBe(10);
   });
 
+  test('a rank-gated tier refuses below its rank, money or not', () => {
+    // the boss: 1B at rank 50 — the gate, not the price, is the barrier
+    const s = createInitialState(0);
+    s.prestige = 49;
+    s.dumplings = 2_000_000_000;
+    expect(buyProducer(s, 'boss')).toBe(false);
+    expect(s.producers.boss).toBeUndefined();
+    expect(s.dumplings).toBe(2_000_000_000);
+  });
+
+  test('a rank-gated tier sells normally at its rank', () => {
+    const s = createInitialState(0);
+    s.prestige = 50;
+    s.dumplings = 2_000_000_000;
+    expect(buyProducer(s, 'boss')).toBe(true);
+    expect(s.producers.boss).toBe(1);
+  });
+
   test('second unit costs more than the first', () => {
     const s = createInitialState(0);
     s.dumplings = 100;
