@@ -342,25 +342,29 @@ batch takes longer than the last. And **Gal can stay top of the shop at zero
 pacing cost**, because the maths only cares that income grows, not whether it
 comes from a new producer tier or a rank-gated permanent multiplier.
 
-### 3. Backfill ranks 41–50 with rewards
-The empty stretch above. This is also the only situation where the `🆕` badge
-problem bites: it keys on the *exact* current rank, so a part added at rank 43
-gives no badge at all to anyone already past 43. Needs either a "highest rank
-whose rewards were shown" field (`heal()` defaults it, no save-version bump) or a
-policy of only ever shipping ahead of everyone.
+### 3. Backfill ranks 41–50 with rewards — **DONE 2026-09-07, in the FLUTTER app**
+Ten parts, one per rank 41–50 (galaxy/midnight/dragonfruit colours,
+moons/diamonds eyes, whistle/mustache mouths, wings/halo/**crown at 50**), plus
+exactly the predicted badge fix: `highestRankRewardsShown` on the save
+(heal-defaulted, no version bump) and the badge now marks everything unlocked
+in `(highestSeen, prestige]` — so a part backfilled below the player's rank
+badges too. Unlocks tests derive the "all open by" bound from `rebirthMax`.
+**Deliberately NOT mirrored here**: the web's content is frozen (this repo
+retires at `PLAY_LIVE`), so its wardrobe stays open-by-40 and its unlocks test
+keeps the literal — parts carry no economy, so simulator parity is untouched.
 
-Also: `tests/unlocks.test.ts` pins "everything open by rank 40". That has to
-become a bound derived from the data or every release breaks the suite.
+### 4. A "what's new" surface — **DONE 2026-09-07, in the FLUTTER app**
+~~`registerType: 'autoUpdate'` delivers new code but silently~~ (reload half
+shipped 2026-08-24). The content half now exists in the app: a config feed
+keyed by versionCode (`game/config/whats_new.dart` — append an entry in the
+same commit as any release content), a seen-marker in its own prefs key
+outside the save (survives rebirth and מחיקת הכל, never travels in DC1), a
+bottom sheet on the first launch after an update, and fresh installs marked
+silently. The WEB never gets the content half — frozen, see item 3.
 
-### 4. A "what's new" surface
-~~`registerType: 'autoUpdate'` delivers new code but silently, and can reload
-the page under a player mid-frenzy.~~ **The reload half shipped 2026-08-24**:
-`prompt` mode + an update toast that waits for a tap (§4). Still missing is the
-content half — nothing announces *what* changed or that the cap rose from 50 to
-55. For a weekly rhythm that screen is the highest-value missing piece.
-
-### 5. The two ad rewards, behind a stub
-See §7 and `docs/DOMAIN-AND-ADS.md`.
+### 5. The two ad rewards, behind a stub — **DONE 2026-09-07, in the FLUTTER app**
+Stub overlay + both offer surfaces visible on the tester track; the encore is
+measured (+7–9% ceiling). See the Flutter repo's `docs/ADS.md`.
 
 ---
 
