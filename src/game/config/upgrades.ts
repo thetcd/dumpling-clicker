@@ -121,40 +121,40 @@ export const UPGRADES: UpgradeDef[] = [
   {
     id: 'team-spirit',
     nameHe: 'רוח צוות',
-    descHe: 'כל הצוות מועך איתכם. החלק מהייצור שבכל מעיכה — כפול 1.5.',
+    descHe: 'כל הצוות מועך איתכם. החלק מהייצור שבכל מעיכה — כפול 1.4.',
     cost: 60_000,
     multiplier: 1.5, // floor: never a dud with no production owned
-    shareMultiplier: 1.5,
+    shareMultiplier: 1.4,
     permanentFromRank: 10,
     unlockAtClicks: 110,
   },
   {
     id: 'grandma-hands',
     nameHe: 'ידיים של סבתא',
-    descHe: 'אין מעיכה כמו של סבתא. החלק מהייצור שבכל מעיכה — כפול 2.',
+    descHe: 'אין מעיכה כמו של סבתא. החלק מהייצור שבכל מעיכה — כפול 1.45.',
     cost: 200_000,
     multiplier: 2, // floor: never a dud with no production owned
-    shareMultiplier: 2,
+    shareMultiplier: 1.45,
     permanentFromRank: 13,
     unlockAtClicks: 120,
   },
   {
     id: 'assembly-line',
     nameHe: 'פס ייצור',
-    descHe: 'מעיכה אחת מזיזה את כל הקו. החלק מהייצור — כפול 1.4.',
+    descHe: 'מעיכה אחת מזיזה את כל הקו. החלק מהייצור — כפול 1.5.',
     cost: 800_000,
     multiplier: 1.5, // floor: never a dud with no production owned
-    shareMultiplier: 1.4,
+    shareMultiplier: 1.5,
     permanentFromRank: 16,
     unlockAtClicks: 175,
   },
   {
     id: 'quantum-squish',
     nameHe: 'מעיכה קוונטית',
-    descHe: 'מועך בכל היקומים במקביל. החלק מהייצור שבכל מעיכה — כפול 2.5.',
+    descHe: 'מועך בכל היקומים במקביל. החלק מהייצור שבכל מעיכה — כפול 1.55.',
     cost: 5_000_000,
     multiplier: 2, // floor: never a dud with no production owned
-    shareMultiplier: 2.5,
+    shareMultiplier: 1.55,
     permanentFromRank: 20,
     unlockAtClicks: 250,
   },
@@ -190,13 +190,14 @@ export const UPGRADES: UpgradeDef[] = [
 /** The payoff of a critical squish before any upgrade raises it. */
 export const CRIT_BASE_MULT = 7;
 
-// MEASURED 2026-08-21 on an endgame board, not reasoned about:
-//   2 taps/sec — tapping adds 21% over idle without crit, 44% with the tier.
-//   5 taps/sec — 53% without, 110% with. Crit EV with all three owned is x2.10.
-// Rewarding tapping harder is exactly what Gal asked for, and the pacing cost
-// is small: `node tools/simulate.mjs 5 3000 1.5` reaches rebirth 30 in 26.3h
-// against 32.2h at 2 taps/sec. If that ever needs pulling back, move critChance
-// or critMult — NOT the share table, which is what keeps taps alive at all.
+// MEASURED 2026-09-07, after the share-ladder flatten (x10.5 -> x4.72; Dor's
+// 2026-08-24 call — tapping was 284% of idle from rank 20 under permanence):
+//   full ladder, 5 taps/sec — 118% of idle without crit, ~248% with the tier
+//   (crit EV with all three owned is x2.10). 2 taps/sec — 47% / 99%.
+//   mid-run (two share upgrades): 5 taps/sec = 50.7% — tests/economy pins >=50%.
+//   time to cap: idle 28.8h, 2 taps 20.2h, 5 taps 14.1h (was 15.1h / 9.0h).
+// If tapping ever needs pulling back further, move critChance or critMult —
+// NOT the share table, which is what keeps taps alive at all.
 
 export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(
   UPGRADES.map((u) => [u.id, u]),

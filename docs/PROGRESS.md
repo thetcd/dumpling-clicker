@@ -546,12 +546,14 @@ every deploy, privacy + about pages, Web Share, and a 224KB bundle.
       sign-off is §8.
 2. **The last ~7 hours of the game hand out nothing** (§6.3). Every cosmetic is
       spent by ~3.4h, the cap is at ~10.2h, and `dz-new` never fires again.
-3. **Tapping swallows the game from rank 20** — measured at 284% of total idle
-      income at 5 taps/sec, ~680% with three fingers. Not caused by the
-      permanence ranks; `CLICK_DPS_SHARE = 0.05` against a ×10.5 share ladder
-      was always ≥262% once all four share upgrades are owned. What changed is
-      that it moved from the end of a long run to *all of every run* past rank
-      20. Dor's call 2026-08-24: ship it, retune the share ladder next.
+3. ~~**Tapping swallows the game from rank 20**~~ **Done 2026-09-07** — the
+      share ladder flattened from ×10.5 (1.5/2/1.4/2.5) to ×4.72
+      (1.4/1.45/1.5/1.55) in BOTH repos (simulator byte-parity re-verified).
+      Measured: 5 taps/sec is now 118% of idle at the full ladder (was 284%),
+      50.7% mid-run (the test pin is ≥50%); time to cap idle 28.8h / 2 taps
+      20.2h / 5 taps 14.1h. `CLICK_DPS_SHARE` untouched, per Dor's call.
+      Crit still doubles tap income late (~248% with the tier) — trim crit,
+      not the share table, if Dor's playtest says it is still too strong.
 4. ~~**Saves die with no rescue path.**~~ **Done 2026-08-24** — the backup code
       in the settings sheet (§4): copy a `DC1:` code, paste to restore.
 5. ~~**Updates are silent and can reload a kid mid-frenzy.**~~ **The toast half

@@ -117,10 +117,10 @@ describe('clickValueWith', () => {
   test('previews a share multiplier against current production', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    // grandma-hands is share x2 AND flat x2 — the flat part is the floor that
+    // grandma-hands is share x1.45 AND flat x2 — the flat part is the floor that
     // stops it being a dud with no producers owned (see upgrades.ts)
     const after = clickValueWith(s, 'grandma-hands');
-    expect(after).toBeCloseTo(2 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    expect(after).toBeCloseTo(2 + CLICK_DPS_SHARE * 1.45 * 1_000, 10);
     expect(after).toBeGreaterThan(clickValue(s));
   });
 });
@@ -151,23 +151,23 @@ describe('clickValue', () => {
   test('share-scaling upgrades multiply the production share as well as the base', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 }; // 1000 dps
-    s.upgrades = ['grandma-hands']; // shareMultiplier 2, multiplier 2
-    expect(clickValue(s)).toBeCloseTo(2 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    s.upgrades = ['grandma-hands']; // shareMultiplier 1.45, multiplier 2
+    expect(clickValue(s)).toBeCloseTo(2 + CLICK_DPS_SHARE * 1.45 * 1_000, 10);
   });
 
   test('share-scaling upgrades stack multiplicatively with each other', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    s.upgrades = ['grandma-hands', 'quantum-squish']; // share x2 * x2.5, flat x2 * x2
-    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 5 * 1_000, 10);
+    s.upgrades = ['grandma-hands', 'quantum-squish']; // share x1.45 * x1.55, flat x2 * x2
+    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 1.45 * 1.55 * 1_000, 10);
   });
 
   test('flat multipliers and share multipliers apply to their own term', () => {
     const s = createInitialState(0);
     s.producers = { stall: 1_000 };
-    // fast-fingers is flat x2; grandma-hands is flat x2 AND share x2
+    // fast-fingers is flat x2; grandma-hands is flat x2 AND share x1.45
     s.upgrades = ['fast-fingers', 'grandma-hands'];
-    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 2 * 1_000, 10);
+    expect(clickValue(s)).toBeCloseTo(4 + CLICK_DPS_SHARE * 1.45 * 1_000, 10);
   });
 
   test('with no producers the production share contributes nothing', () => {
