@@ -64,8 +64,13 @@ export default defineConfig({
         globIgnores: ['og.png'],
         navigateFallback: `${base}index.html`,
         // The SPA fallback must not swallow the standalone static pages
-        // (privacy/about — required by Play and AdSense) or /.well-known/.
-        navigateFallbackDenylist: [/\/(privacy|about)\.html$/, /\/\.well-known\//],
+        // (privacy/about/delete-account — required by Play), app-ads.txt, or
+        // /.well-known/.
+        navigateFallbackDenylist: [
+          /\/(privacy|about|delete-account)\.html$/,
+          /\/app-ads\.txt$/, // AdMob crawls it; it must never get the SPA
+          /\/\.well-known\//,
+        ],
       },
     }),
   ],
